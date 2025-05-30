@@ -74,7 +74,7 @@ analyze_commits() {
     echo ""
     
     # Get commits based on filter
-    local git_log_cmd="git log --pretty=format:%H|%ai|%an|%s"
+    local git_log_cmd="git log --pretty=format:'%H|%ai|%an|%s'"
     if [ -n "$branch" ] && [ "$branch" != "HEAD" ]; then
         git_log_cmd="$git_log_cmd $branch"
     fi
@@ -117,13 +117,13 @@ analyze_commits() {
         IFS='|' read -r hash date author subject <<< "$commit"
         
         # Count commit types
-        if [[ $subject =~ ^fix(\(.+\))?:\ ]]; then
+        if [[ $subject =~ ^fix(\(.+\))?:[[:space:]] ]]; then
             ((bug_fixes++))
-        elif [[ $subject =~ ^feat(\(.+\))?:\ ]]; then
+        elif [[ $subject =~ ^feat(\(.+\))?:[[:space:]] ]]; then
             ((features++))
-        elif [[ $subject =~ ^refactor(\(.+\))?:\ ]]; then
+        elif [[ $subject =~ ^refactor(\(.+\))?:[[:space:]] ]]; then
             ((refactors++))
-        elif [[ $subject =~ ^perf(\(.+\))?:\ ]]; then
+        elif [[ $subject =~ ^perf(\(.+\))?:[[:space:]] ]]; then
             ((perf_improvements++))
         else
             ((other++))
@@ -140,11 +140,11 @@ analyze_commits() {
     done
     
     # Show commit type summary
-    echo "  ${GREEN}✓${NC} Bug Fixes:    $bug_fixes"
-    echo "  ${GREEN}✓${NC} Features:     $features"
-    echo "  ${GREEN}✓${NC} Refactoring:  $refactors"
-    echo "  ${GREEN}✓${NC} Performance:  $perf_improvements"
-    echo "  ${GREEN}✓${NC} Other:        $other"
+    echo -e "  ${GREEN}✓${NC} Bug Fixes:    $bug_fixes"
+    echo -e "  ${GREEN}✓${NC} Features:     $features"
+    echo -e "  ${GREEN}✓${NC} Refactoring:  $refactors"
+    echo -e "  ${GREEN}✓${NC} Performance:  $perf_improvements"
+    echo -e "  ${GREEN}✓${NC} Other:        $other"
     echo ""
     
     # Analyze file patterns
@@ -174,7 +174,7 @@ analyze_commits() {
     local bug_fix_files=()
     for commit in "${commits[@]}"; do
         IFS='|' read -r hash date author subject <<< "$commit"
-        if [[ $subject =~ ^fix(\(.+\))?:\ ]]; then
+        if [[ $subject =~ ^fix(\(.+\))?:[[:space:]] ]]; then
             while IFS= read -r file; do
                 bug_fix_files+=("$file")
             done < <(git show --name-only --format="" "$hash")
@@ -182,7 +182,7 @@ analyze_commits() {
     done
     
     if [ ${#bug_fix_files[@]} -gt 0 ]; then
-        echo "  ${YELLOW}⚠${NC}  Areas with multiple bug fixes (potential problem areas):"
+        echo -e "  ${YELLOW}⚠${NC}  Areas with multiple bug fixes (potential problem areas):"
         echo "${bug_fix_files[@]}" | tr ' ' '\n' | sort | uniq -c | sort -nr | head -3 | while read count file; do
             if [ $count -gt 1 ]; then
                 echo "     $file: $count fixes"
@@ -193,10 +193,10 @@ analyze_commits() {
     
     # Pattern 2: Feature development areas
     if [ $features -gt 0 ]; then
-        echo "  ${GREEN}✨${NC} Feature development focus:"
+        echo -e "  ${GREEN}✨${NC} Feature development focus:"
         for commit in "${commits[@]}"; do
             IFS='|' read -r hash date author subject <<< "$commit"
-            if [[ $subject =~ ^feat(\(.+\))?:\ (.+)$ ]]; then
+            if [[ $subject =~ ^feat(\(.+\))?:[[:space:]](.+)$ ]]; then
                 echo "     • ${BASH_REMATCH[2]}"
             fi
         done | head -5
@@ -205,10 +205,10 @@ analyze_commits() {
     
     # Pattern 3: Performance improvements
     if [ $perf_improvements -gt 0 ]; then
-        echo "  ${BLUE}⚡${NC} Performance optimizations:"
+        echo -e "  ${BLUE}⚡${NC} Performance optimizations:"
         for commit in "${commits[@]}"; do
             IFS='|' read -r hash date author subject <<< "$commit"
-            if [[ $subject =~ ^perf(\(.+\))?:\ (.+)$ ]]; then
+            if [[ $subject =~ ^perf(\(.+\))?:[[:space:]](.+)$ ]]; then
                 echo "     • ${BASH_REMATCH[2]}"
             fi
         done
@@ -222,8 +222,17 @@ analyze_commits() {
     local prev_date=""
     for commit in "${commits[@]:0:10}"; do
         IFS='|' read -r hash date author subject <<< "$commit"
-        local commit_date=$(date -d "$date" "+%Y-%m-%d")
-        local commit_time=$(date -d "$date" "+%H:%M")
+        
+        # Parse date based on OS
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS date command
+            local commit_date=$(echo "$date" | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S %z" "{}" "+%Y-%m-%d" 2>/dev/null || echo "$date" | cut -d' ' -f1)
+            local commit_time=$(echo "$date" | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S %z" "{}" "+%H:%M" 2>/dev/null || echo "$date" | cut -d' ' -f2 | cut -d':' -f1-2)
+        else
+            # GNU date command (Linux)
+            local commit_date=$(date -d "$date" "+%Y-%m-%d")
+            local commit_time=$(date -d "$date" "+%H:%M")
+        fi
         
         if [ "$commit_date" != "$prev_date" ]; then
             echo -e "  ${BLUE}$commit_date${NC}"
@@ -256,7 +265,7 @@ save_session_insights() {
     echo -e "${GREEN}Saving session insights to knowledge base...${NC}"
     
     # Get commits for analysis
-    local git_log_cmd="git log --pretty=format:%H|%s"
+    local git_log_cmd="git log --pretty=format:'%H|%s'"
     if [ -n "$branch" ] && [ "$branch" != "HEAD" ]; then
         git_log_cmd="$git_log_cmd $branch"
     fi
@@ -269,7 +278,7 @@ save_session_insights() {
     
     # Save bug fix patterns
     while IFS='|' read -r hash subject; do
-        if [[ $subject =~ ^fix(\(.+\))?:\ (.+)$ ]]; then
+        if [[ $subject =~ ^fix(\(.+\))?:[[:space:]](.+)$ ]]; then
             local fix_desc="${BASH_REMATCH[2]}"
             local fix_details=$(git show -s --format=%B "$hash" | tail -n +2 | tr '\n' ' ')
             
@@ -288,7 +297,7 @@ save_session_insights() {
     
     # Save performance insights
     while IFS='|' read -r hash subject; do
-        if [[ $subject =~ ^perf(\(.+\))?:\ (.+)$ ]]; then
+        if [[ $subject =~ ^perf(\(.+\))?:[[:space:]](.+)$ ]]; then
             local perf_desc="${BASH_REMATCH[2]}"
             local perf_details=$(git show -s --format=%B "$hash" | tail -n +2 | tr '\n' ' ')
             
