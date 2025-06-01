@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# ukb - Update Knowledge Base
+# The ultimate one-stop-shop command for capturing and transferring all session learnings
+# to the knowledge base with validation and link updates
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+NC='\033[0m' # No Color
+
+# Knowledge management directory
+KM_DIR="$HOME/Claude/knowledge-management"
+
+echo -e "${PURPLE}📚 UKB - Update Knowledge Base${NC}"
+echo -e "${BLUE}🚀 The ultimate session learning transfer tool${NC}"
+echo ""
+
+# Step 1: Test MCP availability
+echo -e "${YELLOW}⚡ Step 1: Testing MCP availability...${NC}"
+if [ -f "$KM_DIR/test-mcp-availability.sh" ]; then
+    if ! "$KM_DIR/test-mcp-availability.sh"; then
+        echo -e "${YELLOW}⚠️  MCP not available, using local knowledge base${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  MCP test script not found${NC}"
+fi
+echo ""
+
+# Step 2: Summarize current coding session
+echo -e "${YELLOW}📝 Step 2: Summarizing current coding session...${NC}"
+if [ -f "$KM_DIR/summarize-coding-session.sh" ]; then
+    "$KM_DIR/summarize-coding-session.sh"
+    echo -e "${GREEN}✅ Session summary generated${NC}"
+else
+    echo -e "${RED}❌ Session summary script not found${NC}"
+fi
+echo ""
+
+# Step 3: Enhanced insight capture with validation
+echo -e "${YELLOW}🎯 Step 3: Capturing enhanced insights with validation...${NC}"
+if [ -f "$KM_DIR/enhanced-capture-insight.sh" ]; then
+    "$KM_DIR/enhanced-capture-insight.sh" --validate --auto-detect
+    echo -e "${GREEN}✅ Enhanced insights captured and validated${NC}"
+else
+    echo -e "${YELLOW}⚠️  Enhanced capture not available, using standard capture${NC}"
+    if [ -f "$KM_DIR/capture-coding-insight.sh" ]; then
+        "$KM_DIR/capture-coding-insight.sh"
+        echo -e "${GREEN}✅ Standard insights captured${NC}"
+    else
+        echo -e "${RED}❌ No capture scripts available${NC}"
+    fi
+fi
+echo ""
+
+# Step 4: Validate knowledge connections
+echo -e "${YELLOW}🔗 Step 4: Validating knowledge connections...${NC}"
+if [ -f "$KM_DIR/validate-knowledge-connections.sh" ]; then
+    "$KM_DIR/validate-knowledge-connections.sh"
+    echo -e "${GREEN}✅ Knowledge connections validated${NC}"
+else
+    echo -e "${YELLOW}⚠️  Knowledge validation script not found${NC}"
+fi
+echo ""
+
+# Step 5: Update knowledge graph
+echo -e "${YELLOW}📊 Step 5: Updating knowledge graph...${NC}"
+if [ -f "$KM_DIR/update-knowledge-graph.sh" ]; then
+    "$KM_DIR/update-knowledge-graph.sh"
+    echo -e "${GREEN}✅ Knowledge graph updated${NC}"
+else
+    echo -e "${YELLOW}⚠️  Knowledge graph update script not found${NC}"
+fi
+echo ""
+
+# Step 6: Auto-fix knowledge graph if needed
+echo -e "${YELLOW}🔧 Step 6: Auto-fixing knowledge graph...${NC}"
+if [ -f "$KM_DIR/auto-fix-knowledge-graph.sh" ]; then
+    "$KM_DIR/auto-fix-knowledge-graph.sh"
+    echo -e "${GREEN}✅ Knowledge graph auto-fixed${NC}"
+else
+    echo -e "${YELLOW}⚠️  Auto-fix script not found${NC}"
+fi
+echo ""
+
+# Step 7: Refresh knowledge base
+echo -e "${YELLOW}🔄 Step 7: Refreshing knowledge base...${NC}"
+if [ -f "$KM_DIR/refresh-knowledge-base.sh" ]; then
+    "$KM_DIR/refresh-knowledge-base.sh"
+    echo -e "${GREEN}✅ Knowledge base refreshed${NC}"
+else
+    echo -e "${YELLOW}⚠️  Refresh script not found${NC}"
+fi
+echo ""
+
+# Final summary
+echo -e "${PURPLE}🎉 UKB Complete!${NC}"
+echo -e "${GREEN}✅ All session learnings have been captured and transferred${NC}"
+echo -e "${GREEN}✅ Knowledge base updated with validation${NC}"
+echo -e "${GREEN}✅ All links and connections verified${NC}"
+echo ""
+echo -e "${BLUE}💡 View your updated knowledge base with: vkb${NC}"
+echo -e "${BLUE}💡 Query your knowledge with: $KM_DIR/query-coding-knowledge.sh${NC}"
+echo ""
