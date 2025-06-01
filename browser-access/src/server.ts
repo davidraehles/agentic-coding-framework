@@ -19,6 +19,20 @@ import {
   operationLogs,
   setServerInstance,
 } from "./logging.js";
+
+// Helper function to get the correct browser WebSocket URL
+async function getBrowserWebSocketUrl(cdpUrl: string): Promise<string> {
+  try {
+    // Extract port from CDP URL (e.g., "ws://localhost:9222" -> "9222")
+    const port = cdpUrl.split(':').pop();
+    const response = await fetch(`http://localhost:${port}/json/version`);
+    const data = await response.json();
+    return data.webSocketDebuggerUrl;
+  } catch (error) {
+    log(`Failed to get browser WebSocket URL: ${error}`, "error");
+    return cdpUrl; // Fallback to original URL
+  }
+}
 import { TOOLS, handleToolCall } from "./tools.js";
 import { PROMPTS, getPrompt } from "./prompts.js";
 import {
@@ -28,7 +42,7 @@ import {
 } from "./resources.js";
 
 // Define Stagehand configuration
-export const stagehandConfig: ConstructorParams = {
+export const getStagehandConfig = async (): Promise<ConstructorParams> => ({
   env:
     process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID
       ? "BROWSERBASE"
@@ -56,7 +70,7 @@ export const stagehandConfig: ConstructorParams = {
       : undefined,
   localBrowserLaunchOptions: process.env.LOCAL_CDP_URL
     ? {
-        cdpUrl: process.env.LOCAL_CDP_URL,
+        cdpUrl: await getBrowserWebSocketUrl(process.env.LOCAL_CDP_URL),
       }
     : undefined,
   enableCaching: true /* Enable caching functionality */,
@@ -68,13 +82,15 @@ export const stagehandConfig: ConstructorParams = {
     baseURL: "https://api.anthropic.com",
   } /* Configuration options for the model client */,
   useAPI: false,
-};
+});
 
 // Global state
 let stagehand: Stagehand | undefined;
 
 // Ensure Stagehand is initialized
 export async function ensureStagehand() {
+  const stagehandConfig = await getStagehandConfig();
+  
   if (
     stagehandConfig.env === "LOCAL" &&
     !stagehandConfig.localBrowserLaunchOptions?.cdpUrl
@@ -106,7 +122,8 @@ export async function ensureStagehand() {
           error.message.includes("context destroyed"))
       ) {
         log("Browser session expired, reinitializing Stagehand...", "info");
-        stagehand = new Stagehand(stagehandConfig);
+        const newConfig = await getStagehandConfig();
+        stagehand = new Stagehand(newConfig);
         await stagehand.init();
         return stagehand;
       }
@@ -175,12 +192,13 @@ export function createServer() {
         stagehand = await ensureStagehand();
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
+        const config = await getStagehandConfig();
         return {
           content: [
             {
               type: "text",
               text: `Failed to initialize Stagehand: ${errorMsg}.\n\nConfig: ${JSON.stringify(
-                stagehandConfig,
+                config,
                 null,
                 2
               )}`,

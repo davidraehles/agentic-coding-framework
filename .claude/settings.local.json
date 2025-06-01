@@ -27,7 +27,10 @@
       "mcp__memory__create_relations",
       "Bash(rm:*)",
       "mcp__memory__search_nodes",
-      "mcp__memory__read_graph"
+      "mcp__memory__read_graph",
+      "Bash(pkill:*)",
+      "mcp__browser-access__stagehand_observe",
+      "mcp__browser-access__stagehand_act"
     ],
     "deny": []
   }

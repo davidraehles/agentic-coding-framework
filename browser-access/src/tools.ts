@@ -2,6 +2,8 @@ import { Stagehand } from "@browserbasehq/stagehand";
 import { CallToolResult, Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getServerInstance, operationLogs } from "./logging.js";
 import { screenshots } from "./resources.js";
+import { writeFileSync } from "fs";
+import { join } from "path";
 
 // Define the Stagehand tools
 export const TOOLS: Tool[] = [
@@ -246,6 +248,11 @@ export async function handleToolCall(
           .replace(/:/g, "-")}`;
         screenshots.set(name, screenshotBase64);
 
+        // Save screenshot to file in current working directory
+        const filename = `${name}.png`;
+        const filepath = join(process.cwd(), filename);
+        writeFileSync(filepath, screenshotBuffer);
+
         // Notify the client that the resources changed
         const serverInstance = getServerInstance();
         if (serverInstance) {
@@ -258,7 +265,7 @@ export async function handleToolCall(
           content: [
             {
               type: "text",
-              text: `Screenshot taken with name: ${name}`,
+              text: `Screenshot taken with name: ${name} and saved to ${filepath}`,
             },
             {
               type: "image",
