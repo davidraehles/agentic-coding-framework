@@ -46,12 +46,9 @@ trap cleanup EXIT
 check_mcp_availability() {
     log "Checking MCP availability..."
     if ! command -v claude-code >/dev/null 2>&1; then
-        log "Claude Code CLI not available - running in standalone mode"
-        echo -e "${YELLOW}⚠️  Running in standalone mode (no direct MCP operations)${NC}"
-        return 1
+        error_exit "Claude Code CLI not available. MCP operations require Claude Code."
     fi
     echo -e "${GREEN}✓ MCP available${NC}"
-    return 0
 }
 
 # Analyze current session using git
@@ -223,12 +220,9 @@ add_to_shared_memory_entity() {
     obs_array=$(echo "$observations" | jq -R -s 'split("\n") | map(select(length > 0))')
     
     # Add to shared memory using jq
-    local timestamp
-    timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     jq --arg name "$name" \
        --arg type "$type" \
        --argjson obs "$obs_array" \
-       --arg timestamp "$timestamp" \
        '.entities += [{
            "type": "entity",
            "name": $name,
@@ -236,7 +230,7 @@ add_to_shared_memory_entity() {
            "observations": $obs
        }] |
        .metadata.total_entities = (.entities | length) |
-       .metadata.last_updated = $timestamp' \
+       .metadata.last_updated = now | strftime("%Y-%m-%dT%H:%M:%SZ")' \
        "$SHARED_MEMORY" > "$SHARED_MEMORY.tmp" && mv "$SHARED_MEMORY.tmp" "$SHARED_MEMORY"
 }
 
@@ -276,12 +270,9 @@ add_to_shared_memory_relation() {
     fi
     
     # Add relation
-    local timestamp
-    timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     jq --arg from "$from" \
        --arg rel "$relation" \
        --arg to "$to" \
-       --arg timestamp "$timestamp" \
        '.relations += [{
            "type": "relation",
            "from": $from,
@@ -289,7 +280,7 @@ add_to_shared_memory_relation() {
            "to": $to
        }] |
        .metadata.total_relations = (.relations | length) |
-       .metadata.last_updated = $timestamp' \
+       .metadata.last_updated = now | strftime("%Y-%m-%dT%H:%M:%SZ")' \
        "$SHARED_MEMORY" > "$SHARED_MEMORY.tmp" && mv "$SHARED_MEMORY.tmp" "$SHARED_MEMORY"
 }
 
@@ -299,10 +290,7 @@ main() {
     echo -e "${BLUE}========================================${NC}"
     
     # Check prerequisites
-    local mcp_available=false
-    if check_mcp_availability; then
-        mcp_available=true
-    fi
+    check_mcp_availability
     
     # Analyze session
     local session_file
@@ -316,13 +304,9 @@ main() {
     fi
     
     # Update metadata
-    local timestamp contributor
-    timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    contributor=$(whoami)
-    jq --arg contributor "$contributor" \
-       --arg timestamp "$timestamp" \
+    jq --arg contributor "$(whoami)" \
        '.metadata.contributors |= (. + [$contributor] | unique) |
-        .metadata.last_updated = $timestamp' \
+        .metadata.last_updated = now | strftime("%Y-%m-%dT%H:%M:%SZ")' \
        "$SHARED_MEMORY" > "$SHARED_MEMORY.tmp" && mv "$SHARED_MEMORY.tmp" "$SHARED_MEMORY"
     
     # Summary
