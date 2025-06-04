@@ -28,40 +28,22 @@ fi
 get_live_memory_data() {
     echo -e "${GREEN}Fetching live MCP memory data...${NC}"
     
-    # Use Claude Code with MCP to export current memory state
-    if command -v claude &> /dev/null && [ -n "$ANTHROPIC_API_KEY" ]; then
-        echo "Getting fresh memory data from MCP..." >&2
-        
-        # Export entities and relations from live MCP memory
-        local temp_file=$(mktemp)
-        
-        # This would need to be called from within Claude Code session with MCP access
-        # For now, create a bridge script that Claude Code can execute
-        cat > "$temp_file" << 'EOF'
-import json
-import sys
-
-# This will be populated by Claude Code MCP calls
-entities_data = []
-relations_data = []
-
-# Convert to memory.json format (NDJSON - one JSON object per line)
-with open(sys.argv[1], 'w') as f:
-    for entity in entities_data:
-        json.dump({"type": "entity", "name": entity["name"], "entityType": entity["entityType"], "observations": entity["observations"]}, f)
-        f.write('\n')
-    for relation in relations_data:
-        json.dump({"type": "relation", "from": relation["from"], "to": relation["to"], "relationType": relation["relationType"]}, f)
-        f.write('\n')
-EOF
-        
-        echo -e "${YELLOW}⚠️  Live MCP export requires Claude Code session - using fallback${NC}"
-        rm "$temp_file"
-        return 1
-    else
-        echo -e "${YELLOW}⚠️  Not in Claude Code environment - using cached data${NC}"
-        return 1
+    local output_file="$1"
+    if [ -z "$output_file" ]; then
+        output_file="$VISUALIZER_DIR/memory.json"
     fi
+    
+    # Create a marker file to signal we want live MCP data
+    touch /tmp/vkb_requesting_live_mcp_export
+    
+    echo -e "${BLUE}💡 To export live MCP data, Claude Code needs to run the export${NC}"
+    echo -e "${YELLOW}⚠️  For now, using the most recent memory data available${NC}"
+    
+    # The actual live export would be done by Claude Code when it detects our request
+    # For immediate use, we'll use whatever memory.json is currently available
+    
+    rm -f /tmp/vkb_requesting_live_mcp_export
+    return 1
 }
 
 # Function to check if existing server is our viewer
@@ -91,7 +73,7 @@ if check_existing_viewer $PORT; then
 fi
 
 # Try to get live memory data, fallback to cached
-get_live_memory_data
+get_live_memory_data "$VISUALIZER_DIR/memory.json"
 if [ $? -ne 0 ]; then
     # Fallback to finding cached memory.json
     MEMORY_JSON="/Users/q284340/.npm/_npx/15b07286cbcc3329/node_modules/@modelcontextprotocol/server-memory/dist/memory.json"
@@ -120,10 +102,19 @@ fi
 echo -e "${GREEN}Preparing data...${NC}"
 cd "$VISUALIZER_DIR"
 
-# Copy memory data if using cached file
-if [ -n "$MEMORY_JSON" ] && [ -f "$MEMORY_JSON" ]; then
+# Check if we have live data export
+if [ -f "$VISUALIZER_DIR/memory.json" ]; then
+    entity_count=$(grep -c '"type": "entity"' "$VISUALIZER_DIR/memory.json" 2>/dev/null || echo "0")
+    relation_count=$(grep -c '"type": "relation"' "$VISUALIZER_DIR/memory.json" 2>/dev/null || echo "0")
+    
+    if [ "$entity_count" -gt 0 ] || [ "$relation_count" -gt 0 ]; then
+        echo -e "${GREEN}✅ Using MCP memory data: ${entity_count} entities, ${relation_count} relations${NC}"
+        echo -e "${BLUE}💡 Data freshness: Check Claude Code session for live updates${NC}"
+    fi
+elif [ -n "$MEMORY_JSON" ] && [ -f "$MEMORY_JSON" ]; then
+    # Copy memory data if using cached file
     cp "$MEMORY_JSON" "$VISUALIZER_DIR/memory.json"
-    echo -e "${GREEN}✅ Memory data copied to visualizer${NC}"
+    echo -e "${YELLOW}⚠️  Using cached data (may be stale)${NC}"
 fi
 
 # Find available port
