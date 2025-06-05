@@ -30,7 +30,9 @@
       "mcp__memory__read_graph",
       "Bash(pkill:*)",
       "mcp__browser-access__stagehand_observe",
-      "mcp__browser-access__stagehand_act"
+      "mcp__browser-access__stagehand_act",
+      "Bash(grep:*)",
+      "Bash(./vkb start)"
     ],
     "deny": []
   }
