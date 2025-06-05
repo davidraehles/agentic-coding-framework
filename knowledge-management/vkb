@@ -91,8 +91,10 @@ prepare_memory_data() {
     mkdir -p "$(dirname "$memory_dist")"
     
     # Convert from our format to NDJSON format expected by visualizer
+    # Also deduplicate entities to prevent orphans
     {
-        jq -r '.entities[] | @json' "$SHARED_MEMORY" 2>/dev/null || true
+        # Deduplicate entities by name (keep the latest one)
+        jq -r '.entities | group_by(.name) | map(max_by(.created // "2000-01-01")) | .[] | @json' "$SHARED_MEMORY" 2>/dev/null || true
         jq -r '.relations[] | @json' "$SHARED_MEMORY" 2>/dev/null || true
     } > "$memory_dist"
     

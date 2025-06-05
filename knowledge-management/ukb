@@ -467,6 +467,12 @@ add_to_shared_memory_entity() {
     local observations="$3"
     local significance="${4:-5}"
     
+    # Check if entity already exists
+    if jq -e --arg name "$name" '.entities[] | select(.name == $name)' "$SHARED_MEMORY" >/dev/null 2>&1; then
+        echo "  Entity already exists: $name (skipping)"
+        return
+    fi
+    
     # Convert observations to JSON array
     local obs_array
     obs_array=$(echo "$observations" | jq -R -s 'split("\n") | map(select(length > 0))')
@@ -601,7 +607,19 @@ analyze_session() {
     
     # Get current project context
     local project_name
-    project_name=$(basename "$PWD")
+    # Use git remote to determine actual project name if available
+    if git remote -v 2>/dev/null | grep -q origin; then
+        # Extract project name from git remote URL
+        project_name=$(git remote get-url origin 2>/dev/null | sed -E 's/.*[:/]([^/]+)\/[^/]+\.git$/\1/' || basename "$PWD")
+        # Handle common cases
+        case "$project_name" in
+            "q284340"|"user"|".")
+                project_name=$(basename "$PWD")
+                ;;
+        esac
+    else
+        project_name=$(basename "$PWD")
+    fi
     
     # Determine main language
     local main_language="unknown"
