@@ -32,7 +32,11 @@
       "mcp__browser-access__stagehand_observe",
       "mcp__browser-access__stagehand_act",
       "Bash(grep:*)",
-      "Bash(./vkb start)"
+      "Bash(./vkb start)",
+      "Bash(./vkb status)",
+      "Bash(./build-visualizer.sh:*)",
+      "Bash(./vkb:*)",
+      "Bash(./clean-rebuild-visualizer.sh:*)"
     ],
     "deny": []
   }
