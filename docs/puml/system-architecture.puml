@@ -1,0 +1,46 @@
+@startuml system-architecture
+!theme amiga
+title Knowledge Management System Architecture
+
+package "Knowledge Capture Layer" {
+  [Git Repository] as git
+  [UKB Command] as ukb
+  [Commit Analysis] as analysis
+}
+
+package "Data Storage Layer" {
+  [shared-memory.json] as storage
+  [.backups/] as backups
+}
+
+package "Visualization Layer" {
+  [VKB Command] as vkb
+  [HTTP Server] as server
+  [Memory Visualizer] as visualizer
+  [Web Browser] as browser
+}
+
+package "MCP Integration" {
+  [Claude Code] as claude
+  [MCP Memory Server] as mcp
+}
+
+git --> analysis : Commit data
+analysis --> ukb : Extracted insights
+ukb --> storage : Knowledge graph updates
+storage --> backups : Automated backups
+
+storage --> vkb : Read memory data
+vkb --> server : Start/manage server
+server --> visualizer : Serve graph data
+visualizer --> browser : Interactive visualization
+
+claude <--> mcp : MCP operations
+mcp <--> storage : Sync operations
+claude --> ukb : Trigger knowledge capture
+
+note right of storage : Authoritative data source\nGit-tracked for team sharing
+note right of visualizer : Interactive D3.js graph\nColor-coded by entity type
+note right of mcp : Persistent memory\nCross-session knowledge
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml knowledge-workflow
+!theme amiga
+title Knowledge Management Workflow
+
+actor Developer as dev
+participant "Git Repository" as git
+participant "UKB Command" as ukb
+participant "Shared Memory" as memory
+participant "VKB Command" as vkb
+participant "Visualization Server" as viz
+participant "Browser" as browser
+
+== Daily Development ==
+dev -> git : Make commits with\nconventional format\n(fix:, feat:, etc.)
+git -> git : Store commit history
+
+== Knowledge Capture ==
+dev -> ukb : Run 'ukb' command\n(auto mode)
+ukb -> git : Analyze recent commits
+git -> ukb : Return commit data
+ukb -> ukb : Extract insights\nClassify by type\nGenerate entities
+ukb -> memory : Update shared-memory.json\nAdd entities & relations
+memory -> memory : Store knowledge graph
+
+== Knowledge Visualization ==
+dev -> vkb : Run 'vkb' command
+vkb -> memory : Read shared-memory.json
+vkb -> vkb : Convert to visualization format
+vkb -> viz : Start HTTP server\n(localhost:8080)
+viz -> browser : Open knowledge graph
+browser -> viz : Request memory.json
+viz -> browser : Serve interactive graph
+
+== Team Collaboration ==
+dev -> git : Push changes\n(includes shared-memory.json)
+git -> git : Share knowledge across team
+note right : All team members get\nupdated knowledge base
+
+@enduml

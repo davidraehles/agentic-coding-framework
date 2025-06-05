@@ -1,62 +1,190 @@
 # Claude Scripts Collection
 
-This repository contains various scripts and tools created with Claude Code, organized by topic.
+This repository contains various scripts and tools created with Claude Code, focused on knowledge management and development productivity.
 
-## Directory Structure
+![Viewer](docs/imag/viewer.png)
+
+## 📚 Documentation
+
+- **[Complete Documentation](docs/documentation.md)** - Comprehensive system documentation
+- **[Team Setup Guide](TEAM_KNOWLEDGE_SETUP.md)** - Quick start for team collaboration
+- **[Architecture Diagrams](docs/imag/)** - System architecture and workflow diagrams
+
+## 🎯 Quick Start
+
+### Knowledge Management System
+
+The primary focus of this repository is an intelligent knowledge management system that automatically captures and visualizes programming insights.
+
+```bash
+# Update knowledge base (capture session insights)
+ukb
+
+# View knowledge base (interactive visualization)
+vkb
+```
+
+**Key Features:**
+
+- 🤖 **Automatic capture** from git commits
+- 🌐 **Interactive visualization** at localhost:8080
+- 🔄 **Team sharing** via git-tracked knowledge base
+- 🎯 **Transferable patterns** in central green hub
+- 🔗 **MCP integration** for persistent memory
+
+## 📁 Directory Structure
 
 ```
 ~/Claude/
 ├── README.md                  # This file
-├── knowledge-management/      # Knowledge capture and visualization tools
-│   ├── README.md             # Detailed docs for knowledge management
-│   ├── vkb                   # Visual Knowledge Base viewer
-│   ├── capture-*.sh          # Knowledge capture scripts
-│   ├── query-*.sh            # Knowledge query tools
-│   └── ...                   # Other knowledge management scripts
-└── [future-topics]/          # Additional topic directories as needed
+├── TEAM_KNOWLEDGE_SETUP.md    # Quick setup guide
+├── docs/                      # Complete documentation
+│   ├── documentation.md       # Main documentation
+│   ├── puml/                  # PlantUML source files
+│   └── imag/                  # Generated diagrams
+├── shared-memory.json         # Knowledge base (git-tracked)
+├── knowledge-management/      # Core KM system
+│   ├── ukb                   # Update Knowledge Base command
+│   ├── vkb                   # View Knowledge Base command
+│   ├── browser               # Browser integration
+│   └── dist/                 # Visualization files
+└── browser-access/           # Browser automation tools
+    ├── src/                  # TypeScript source
+    └── dist/                 # Compiled MCP server
 ```
 
-## Topics
+## 🚀 Core Commands
 
-### Knowledge Management
-Tools for capturing, organizing, and visualizing coding insights and knowledge.
-- **Main tool**: `vkb` - Visual Knowledge Base viewer
-- See `knowledge-management/README.md` for detailed documentation
+| Command | Purpose | Usage |
+|---------|---------|-------|
+| `ukb` | Update Knowledge Base | Analyzes git commits, extracts insights |
+| `vkb` | View Knowledge Base | Starts visualization server on :8080 |
+| `vkb restart` | Restart Visualization | Refreshes server with latest data |
+| `vkb stop` | Stop Server | Stops background visualization server |
 
-### Future Topics
-Additional subdirectories will be created as new script categories are developed:
-- `automation/` - Task automation scripts
-- `development/` - Development workflow tools
-- `analysis/` - Code analysis utilities
-- `productivity/` - Productivity enhancers
+## 🔧 System Components
 
-## Quick Access
+### Knowledge Capture
 
-The most commonly used scripts have aliases in `~/.zshrc`:
+- **Git Integration**: Analyzes conventional commit messages
+- **Automatic Classification**: Categorizes insights by type (fix, feat, perf, etc.)
+- **Entity Generation**: Creates structured knowledge entities
+- **Relationship Mapping**: Links insights to projects and patterns
+
+### Visualization
+
+- **Interactive Graph**: D3.js-based knowledge graph visualization
+- **Color Coding**: Entity types have distinct colors (System=green, Project=blue)
+- **Filtering**: Search and filter by entity type or relationship
+- **Detail Views**: Click nodes for comprehensive information
+
+### Team Collaboration
+
+- **Git-Tracked Knowledge**: `shared-memory.json` is version controlled
+- **Automatic Sharing**: Push/pull shares knowledge across team
+- **Conflict Resolution**: Merge strategies for concurrent updates
+- **Backup System**: Automated backups of knowledge base
+
+## 🎨 Knowledge Graph Features
+
+### Central Hub Pattern
+
+The system uses a **green "CodingKnowledge" hub** that aggregates transferable programming patterns:
+
+- **ConditionalLoggingPattern**: Debug logging with runtime level checking
+- **ReduxStateManagementPattern**: React state management with TypeScript
+- **ThreeJSReactIntegrationPattern**: 3D graphics integration patterns
+- **MCPKnowledgeIntegrationPattern**: Persistent memory workflows
+
+### Entity Types
+
+- 🟢 **System**: Core hubs and frameworks (green nodes)
+- 🔵 **Project**: Software projects (blue nodes)  
+- ⚪ **TransferableKnowledge**: Cross-project reusable patterns
+- ⚪ **TechnicalInsight**: Project-specific learnings
+- ⚪ **Technology**: Tools and frameworks
+
+## 🔗 Browser Automation
+
+The repository also includes browser automation tools for extended workflows:
+
 ```bash
-alias vkb="~/Claude/knowledge-management/vkb"
+cd browser-access
+npm install    # Install dependencies
+npm run build  # Build MCP server
 ```
 
-## Version Control
+This enables browser automation through MCP (Model Context Protocol) integration with Claude Code.
 
-This entire directory is under git version control. To work with the repository:
+## 📈 Usage Examples
+
+### Daily Development Workflow
 
 ```bash
-cd ~/Claude
-git status              # Check current status
-git add .              # Stage changes
-git commit -m "msg"    # Commit changes
-git log                # View history
+# 1. Normal development with conventional commits
+git commit -m "feat: add conditional logging for debug mode"
+git commit -m "fix: resolve memory leak in timeline rendering"
+
+# 2. Capture insights at end of session
+ukb
+
+# 3. Explore knowledge graph
+vkb
+# Opens browser at localhost:8080
 ```
 
-## Contributing
+### Team Knowledge Sharing
 
-When adding new scripts:
-1. Create an appropriate topic subdirectory if it doesn't exist
-2. Place the script in the relevant subdirectory
-3. Update the subdirectory's README.md
-4. Commit changes with a descriptive message
+```bash
+# Share your insights
+git add shared-memory.json
+git commit -m "knowledge: add React performance patterns"
+git push
 
-## License
+# Get team insights
+git pull
+vkb restart  # Refresh visualization with team updates
+```
 
-These scripts are personal tools created for productivity enhancement.
+### Pattern Discovery
+
+1. **Browse Graph**: Use visualization to identify common patterns
+2. **Extract Patterns**: Promote successful solutions to transferable knowledge
+3. **Apply Elsewhere**: Reference patterns in new projects
+4. **Continuous Learning**: Build institutional knowledge over time
+
+## 🛠️ Requirements
+
+- **Git**: Version control and team collaboration
+- **Python 3**: HTTP server for visualization
+- **Node.js**: Browser automation tools
+- **jq**: JSON processing (install via `brew install jq`)
+- **PlantUML**: Documentation diagram generation (optional)
+
+## 🔧 Installation
+
+The system is ready to use after cloning. Optional setup:
+
+```bash
+# Add convenient aliases to ~/.zshrc or ~/.bashrc
+echo 'alias ukb="~/Claude/knowledge-management/ukb"' >> ~/.zshrc
+echo 'alias vkb="~/Claude/knowledge-management/vkb"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+## 🤝 Contributing
+
+When adding new functionality:
+
+1. **Document Changes**: Update relevant documentation
+2. **Follow Patterns**: Use conventional commit format
+3. **Test Integration**: Verify knowledge capture works
+4. **Update Schema**: Document new entity types or relationships
+
+## 📄 License
+
+These tools are designed for development productivity enhancement and team knowledge sharing.
+
+---
+
+**For complete documentation, see [docs/documentation.md](docs/documentation.md)**

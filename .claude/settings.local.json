@@ -36,7 +36,8 @@
       "Bash(./vkb status)",
       "Bash(./build-visualizer.sh:*)",
       "Bash(./vkb:*)",
-      "Bash(./clean-rebuild-visualizer.sh:*)"
+      "Bash(./clean-rebuild-visualizer.sh:*)",
+      "Bash(plantuml:*)"
     ],
     "deny": []
   }

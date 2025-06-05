@@ -1,5 +1,7 @@
 # Team Knowledge Management Setup
 
+> **📚 For complete documentation, see [docs/documentation.md](docs/documentation.md)**
+
 ## Quick Start
 
 After cloning this repository, the knowledge management system is ready to use:
@@ -71,13 +73,17 @@ vkb
 ## Directory Structure
 ```
 Claude/
-├── shared-memory.json              # Shared knowledge base
-├── knowledge-management/
-│   ├── ukb                        # Update Knowledge Base
-│   ├── vkb                        # View Knowledge Base  
-│   ├── insights/                  # Local insight files
-│   └── relations/                 # Pending relations
-└── TEAM_KNOWLEDGE_SETUP.md       # This file
+├── README.md                      # Main documentation entry point
+├── TEAM_KNOWLEDGE_SETUP.md       # This quick setup guide
+├── docs/                          # Complete documentation
+│   ├── documentation.md           # Comprehensive system docs
+│   └── imag/                      # Architecture diagrams
+├── shared-memory.json             # Shared knowledge base
+└── knowledge-management/
+    ├── ukb                        # Update Knowledge Base
+    ├── vkb                        # View Knowledge Base
+    ├── browser                    # Browser integration
+    └── dist/                      # Visualization files
 ```
 
 ## Team Workflow
