@@ -177,13 +177,37 @@ vkb restart  # Refresh visualization with team updates
 
 ## 🔧 Installation
 
-The system is ready to use after cloning. Optional setup:
+### Quick Install (Recommended)
 
 ```bash
-# Add convenient aliases to ~/.zshrc or ~/.bashrc
-echo 'alias ukb="~/Claude/knowledge-management/ukb"' >> ~/.zshrc
-echo 'alias vkb="~/Claude/knowledge-management/vkb"' >> ~/.zshrc
-source ~/.zshrc
+# Clone the repository
+git clone <repository-url> ~/Claude
+cd ~/Claude
+
+# Run the universal installer
+./install.sh
+
+# Reload your shell
+source ~/.bashrc  # or ~/.zshrc on macOS
+```
+
+The installer automatically:
+- ✅ Checks and installs dependencies
+- ✅ Clones and builds memory-visualizer
+- ✅ Builds MCP servers (browser-access, claude-logger)
+- ✅ Creates global `ukb` and `vkb` commands
+- ✅ Configures your shell environment
+- ✅ Works on macOS, Linux, and Windows (WSL/Git Bash)
+
+### Platform-Specific
+
+- **Windows Users**: Use `install.bat` for native Command Prompt, or `./install.sh` in Git Bash/WSL
+- **Full Guide**: See [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) for detailed instructions
+
+### Uninstalling
+
+```bash
+./uninstall.sh  # Removes installation but preserves your knowledge data
 ```
 
 ## 🤝 Contributing

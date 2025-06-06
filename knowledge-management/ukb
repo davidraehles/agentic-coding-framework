@@ -353,7 +353,7 @@ create_transferable_patterns() {
     while IFS= read -r pattern; do
         [[ -z "$pattern" ]] && continue
         
-        local pattern_name="${pattern^}Pattern"  # Capitalize first letter
+        local pattern_name="$(echo "$pattern" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')Pattern"  # Capitalize first letter
         local significance=9  # High significance for transferable patterns
         
         # Create pattern description based on type

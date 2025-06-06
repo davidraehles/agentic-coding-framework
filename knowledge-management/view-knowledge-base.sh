@@ -1,0 +1,1 @@
+/Users/q284340/Claude/knowledge-management/vkb
