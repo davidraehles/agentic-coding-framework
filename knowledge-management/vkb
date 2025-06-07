@@ -5,9 +5,9 @@
 set -euo pipefail
 
 # Configuration
-CLAUDE_REPO="/Users/q284340/Claude"
+CLAUDE_REPO="/Users/q284340/Agentic/coding"
 SHARED_MEMORY="$CLAUDE_REPO/shared-memory.json"
-VISUALIZER_DIR="/Users/q284340/Agentic/memory-visualizer"
+VISUALIZER_DIR="/Users/q284340/Agentic/coding/memory-visualizer"
 SERVER_PORT=8080
 PID_FILE="/tmp/vkb-server.pid"
 LOG_FILE="/tmp/vkb-server.log"

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # Configuration
-CLAUDE_REPO="/Users/q284340/Claude"
+CLAUDE_REPO="/Users/q284340/Agentic/coding"
 SHARED_MEMORY="$CLAUDE_REPO/shared-memory.json"
 INSIGHTS_DIR="$CLAUDE_REPO/knowledge-management/insights"
 RELATIONS_DIR="$CLAUDE_REPO/knowledge-management/relations"

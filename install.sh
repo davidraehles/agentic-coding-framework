@@ -89,29 +89,36 @@ test_ssh_github() {
     local github_ok=false
     local bmw_github_ok=false
     
-    # Test public GitHub
-    if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
-        success "SSH access to GitHub.com is configured"
-        github_ok=true
-    else
-        warning "SSH access to GitHub.com not configured"
-    fi
-    
-    # Test BMW GitHub
-    if ssh -T git@cc-github.bmwgroup.net 2>&1 | grep -q -E "(successfully authenticated|Welcome to GitLab)"; then
+    # Test BMW GitHub first (priority for internal users)
+    info "Testing cc-github.bmwgroup.net SSH access..."
+    local bmw_response=$(timeout 5s ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -T git@cc-github.bmwgroup.net 2>&1 || true)
+    if echo "$bmw_response" | grep -q -iE "(successfully authenticated|Welcome to GitLab|You've successfully authenticated)"; then
         success "SSH access to cc-github.bmwgroup.net is configured"
         bmw_github_ok=true
     else
-        warning "SSH access to cc-github.bmwgroup.net not configured"
+        warning "SSH access to cc-github.bmwgroup.net not configured (may be outside VPN)"
     fi
     
-    if [[ "$github_ok" == false ]] && [[ "$bmw_github_ok" == false ]]; then
-        warning "No SSH access configured. Will use HTTPS for cloning."
-        warning "To set up SSH keys, visit: https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
+    # Test public GitHub second
+    info "Testing GitHub.com SSH access..."
+    local github_response=$(timeout 5s ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -T git@github.com 2>&1 || true)
+    if echo "$github_response" | grep -q -i "successfully authenticated"; then
+        success "SSH access to GitHub.com is configured"
+        github_ok=true
+    else
+        warning "SSH access to GitHub.com not configured (may be inside VPN)"
+    fi
+    
+    if [[ "$bmw_github_ok" == true ]]; then
+        info "Will use SSH for BMW repositories, HTTPS fallback for external repositories"
+        return 0
+    elif [[ "$github_ok" == true ]]; then
+        info "Will use SSH for external repositories, HTTPS fallback for BMW repositories"
+        return 0
+    else
+        warning "No SSH access detected. Will use HTTPS for all repositories."
         return 1
     fi
-    
-    return 0
 }
 
 # Check for required dependencies
@@ -155,17 +162,35 @@ clone_repository() {
     local target_dir="$3"
     local repo_name=$(basename "$target_dir")
     
-    info "Attempting to clone $repo_name using SSH..."
+    # Determine if this is a BMW repository
+    local is_bmw_repo=false
+    if [[ "$ssh_url" == *"bmwgroup.net"* ]]; then
+        is_bmw_repo=true
+    fi
+    
+    info "Attempting to clone $repo_name..."
+    
+    # Try SSH first
     if git clone "$ssh_url" "$target_dir" 2>/dev/null; then
         success "Successfully cloned $repo_name using SSH"
         return 0
     else
-        warning "SSH clone failed, trying HTTPS..."
-        if git clone "$https_url" "$target_dir"; then
+        if [[ "$is_bmw_repo" == true ]]; then
+            warning "SSH clone failed (may be outside VPN), trying HTTPS..."
+        else
+            warning "SSH clone failed (may be inside VPN), trying HTTPS..."
+        fi
+        
+        if git clone "$https_url" "$target_dir" 2>/dev/null; then
             success "Successfully cloned $repo_name using HTTPS"
             return 0
         else
-            error_exit "Failed to clone $repo_name using both SSH and HTTPS"
+            # For external repos, if HTTPS fails inside VPN, provide helpful message
+            if [[ "$is_bmw_repo" == false ]]; then
+                error_exit "Failed to clone $repo_name. If you're inside the corporate VPN, external GitHub access may be blocked."
+            else
+                error_exit "Failed to clone $repo_name. Please check your network connection and credentials."
+            fi
             return 1
         fi
     fi
