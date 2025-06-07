@@ -3,7 +3,15 @@
 # Supports: macOS, Linux, Windows (via WSL/Git Bash)
 # Version: 1.0.0
 
-set -euo pipefail
+# Check if script is being sourced or executed
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Script is being executed directly
+    SCRIPT_EXECUTED=true
+    set -euo pipefail
+else
+    # Script is being sourced
+    SCRIPT_EXECUTED=false
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -344,26 +352,42 @@ configure_shell_environment() {
     local claude_path_export="export PATH=\"$CLAUDE_REPO/bin:\$PATH\""
     local claude_repo_export="export CLAUDE_REPO=\"$CLAUDE_REPO\""
     
+    # Clean up old aliases from all shell config files
+    local config_files=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.zprofile")
+    
+    for config_file in "${config_files[@]}"; do
+        if [[ -f "$config_file" ]]; then
+            info "Cleaning up old configurations in $config_file..."
+            # Remove old alias blocks and exports
+            sed -i.bak '/# ===============================================/,/💡 Master commands/d' "$config_file" 2>/dev/null || true
+            sed -i.bak '/Enhanced Knowledge Management Aliases/,/💡 Master commands/d' "$config_file" 2>/dev/null || true
+            sed -i.bak '/alias ukb=/d' "$config_file" 2>/dev/null || true
+            sed -i.bak '/alias vkb=/d' "$config_file" 2>/dev/null || true
+            sed -i.bak '/alias claude-mcp=/d' "$config_file" 2>/dev/null || true
+            sed -i.bak '/unalias ukb/d' "$config_file" 2>/dev/null || true
+            sed -i.bak '/unalias vkb/d' "$config_file" 2>/dev/null || true
+            # Remove old CLAUDE_REPO exports
+            sed -i.bak '/CLAUDE_REPO.*Claude/d' "$config_file" 2>/dev/null || true
+        fi
+    done
+    
     # Check if already configured
-    if grep -q "CLAUDE_REPO" "$SHELL_RC" 2>/dev/null; then
-        info "Shell already configured, updating paths..."
-        # Update existing configuration
-        sed -i.bak "/CLAUDE_REPO/d" "$SHELL_RC"
-        sed -i.bak "/claude.*bin/d" "$SHELL_RC"
+    if grep -q "CLAUDE_REPO.*$CLAUDE_REPO" "$SHELL_RC" 2>/dev/null; then
+        info "Shell already configured with correct paths"
+    else
+        # Add configuration
+        {
+            echo ""
+            echo "# Claude Knowledge Management System"
+            echo "$claude_repo_export"
+            echo "$claude_path_export"
+            echo ""
+        } >> "$SHELL_RC"
     fi
     
-    # Add configuration
-    {
-        echo ""
-        echo "# Claude Knowledge Management System"
-        echo "$claude_repo_export"
-        echo "$claude_path_export"
-        echo ""
-    } >> "$SHELL_RC"
-    
-    # For Windows, also update .bash_profile if it exists
-    if [[ "$PLATFORM" == "windows" ]] && [[ -f "$HOME/.bash_profile" ]]; then
-        if ! grep -q "CLAUDE_REPO" "$HOME/.bash_profile" 2>/dev/null; then
+    # Also update .bash_profile on macOS since it's commonly used
+    if [[ "$PLATFORM" == "macos" ]] && [[ -f "$HOME/.bash_profile" ]]; then
+        if ! grep -q "CLAUDE_REPO.*$CLAUDE_REPO" "$HOME/.bash_profile" 2>/dev/null; then
             {
                 echo ""
                 echo "# Claude Knowledge Management System"
@@ -374,7 +398,7 @@ configure_shell_environment() {
         fi
     fi
     
-    success "Shell environment configured"
+    success "Shell environment configured and old aliases removed"
 }
 
 # Setup MCP configuration
@@ -578,32 +602,40 @@ main() {
     setup_mcp_config
     verify_installation
     
+    # Create activation script for immediate use
+    cat > "$CLAUDE_REPO/.activate" << EOF
+#!/bin/bash
+# Activate Claude Knowledge Management environment
+export CLAUDE_REPO="$CLAUDE_REPO"
+export PATH="$CLAUDE_REPO/bin:\$PATH"
+echo "✅ Claude Knowledge Management environment activated!"
+echo "Commands 'ukb' and 'vkb' are now available."
+EOF
+    chmod +x "$CLAUDE_REPO/.activate"
+    
     # Final instructions
     echo ""
     echo -e "${GREEN}🎉 Installation completed successfully!${NC}"
     echo ""
-    echo -e "${CYAN}📋 Next steps:${NC}"
-    echo "1. Reload your shell configuration:"
-    echo "   source $SHELL_RC"
+    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}⚡ To start using the commands immediately, run:${NC}"
+    echo -e "${CYAN}   source .activate${NC}"
+    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
-    echo "2. Test the commands:"
-    echo "   ukb --help    # Update Knowledge Base"
-    echo "   vkb           # View Knowledge Base"
+    echo -e "${CYAN}📋 Available commands:${NC}"
+    echo "   ukb  # Update Knowledge Base"
+    echo "   vkb  # View Knowledge Base"
     echo ""
-    echo "3. Configure MCP servers (optional):"
-    echo "   - Copy .env.example to .env and fill in your API keys"
-    echo "   - Add MCP server configurations to Claude Code settings"
-    echo ""
-    echo "4. Start capturing knowledge:"
-    echo "   - Run 'ukb' after coding sessions to capture insights"
-    echo "   - Run 'vkb' to visualize your knowledge graph"
+    echo -e "${CYAN}📋 Optional configuration:${NC}"
+    echo "1. Configure API keys for MCP servers:"
+    echo "   cp .env.example .env"
+    echo "   nano .env  # Add your API keys"
     echo ""
     echo -e "${BLUE}📚 Documentation:${NC}"
     echo "   - README.md: General documentation"
-    echo "   - docs/: Detailed documentation"
     echo "   - TEAM_KNOWLEDGE_SETUP.md: Team setup guide"
     echo ""
-    echo -e "${GREEN}Happy knowledge capturing! 🧠${NC}"
+    echo -e "${GREEN}Note: Commands will persist in new terminals after restarting your shell.${NC}"
     
     log "Installation completed successfully"
 }
