@@ -45,10 +45,12 @@ graph TD
 ### Inside Corporate Network (CN)
 
 **Memory Visualizer (Mirrored):**
+
 - Always uses CN mirror: `cc-github.bmwgroup.net/frankwoernle/memory-visualizer`
 - Rationale: Contains team modifications not available in public version
 
 **Browserbase (Public-Only):**
+
 - Repository exists + Proxy working → Update successfully
 - Repository exists + No proxy → Skip update, continue with existing
 - Repository missing + Proxy working → Clone successfully  
@@ -57,6 +59,7 @@ graph TD
 ### Outside Corporate Network
 
 **All Repositories:**
+
 - Use public repositories
 - Memory Visualizer: Uses public fork `github.com/fwornle/memory-visualizer`
 - Browserbase: Uses upstream `github.com/browserbase/mcp-server-browserbase`
@@ -83,11 +86,13 @@ graph TD
 ### Error Handling
 
 **Network-Related Failures:**
+
 - Proxy detection prevents hanging operations
 - Timeouts ensure installation continues
 - Clear error messages with actionable hints
 
 **Repository Access Failures:**
+
 - SSH failures fall back to HTTPS
 - HTTPS failures are logged with context
 - Missing repositories don't block entire installation
@@ -95,11 +100,13 @@ graph TD
 ## Proxy Detection
 
 ### Test Method
+
 ```bash
 timeout 5s curl -s --connect-timeout 5 https://google.de >/dev/null 2>&1
 ```
 
 ### Rationale
+
 - Google.de is a stable, external endpoint
 - Tests actual HTTP/HTTPS proxy functionality
 - Fast timeout prevents installation delays
@@ -110,11 +117,13 @@ timeout 5s curl -s --connect-timeout 5 https://google.de >/dev/null 2>&1
 ### Installation Report Categories
 
 **Warnings Array:**
+
 - Repository update failures (non-critical)
 - Proxy/network access issues
 - Build warnings that don't prevent functionality
 
 **Failures Array:**
+
 - Missing repositories that couldn't be cloned
 - Critical build failures
 - Missing dependencies that prevent core functionality
@@ -122,11 +131,13 @@ timeout 5s curl -s --connect-timeout 5 https://google.de >/dev/null 2>&1
 ### User Guidance
 
 **Inside CN with Proxy Issues:**
+
 1. Check proxy configuration
 2. Run installer outside corporate network
 3. Manual repository setup instructions
 
 **SSH Access Issues:**
+
 1. SSH key configuration links
 2. Alternative HTTPS methods
 3. Repository access verification steps
