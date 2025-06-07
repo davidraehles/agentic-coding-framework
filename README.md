@@ -33,18 +33,39 @@ vkb
 - 🔗 **MCP integration** for persistent memory
 - 📝 **Conversation logging** to `.specstory/history/` for AI interaction history
 
+## 🚀 Installation
+
+1. **Clone and setup**:
+   ```bash
+   git clone <repository-url> ~/Agentic/coding
+   cd ~/Agentic/coding
+   cp .env.example .env  # Configure API keys if needed
+   ./install.sh
+   source ~/.zshrc  # or ~/.bashrc on Linux
+   ```
+
+2. **Start using**:
+   ```bash
+   ukb  # Update knowledge base
+   vkb  # View knowledge visualization
+   ```
+
 ## 📁 Directory Structure
 
 ```
-~/Claude/
+~/Agentic/coding/
 ├── README.md                  # This file
 ├── TEAM_KNOWLEDGE_SETUP.md    # Quick setup guide
+├── .env.example              # Environment variables template
+├── .env                      # Your API keys (git-ignored)
+├── install.sh                # Universal installer script
 ├── docs/                      # Complete documentation
 │   ├── documentation.md       # Main documentation
 │   ├── claude-logger-mcp.md  # Conversation logging docs
 │   ├── puml/                  # PlantUML source files
 │   └── imag/                  # Generated diagrams
 ├── shared-memory.json         # Knowledge base (git-tracked)
+├── claude-code-mcp.json      # MCP config template
 ├── .specstory/               # Claude Code conversation history
 │   └── history/              # Auto-logged conversations
 ├── knowledge-management/      # Core KM system
@@ -55,9 +76,13 @@ vkb
 ├── browser-access/           # Browser automation tools
 │   ├── src/                  # TypeScript source
 │   └── dist/                 # Compiled MCP server
-└── claude-logger-mcp/        # Conversation logging MCP server
-    ├── src/                  # TypeScript source
-    └── dist/                 # Compiled server
+├── claude-logger-mcp/        # Conversation logging MCP server
+│   ├── src/                  # TypeScript source
+│   └── dist/                 # Compiled server
+├── memory-visualizer/        # Knowledge graph visualization
+│   └── dist/                 # Built visualization app
+└── mcp-server-browserbase/   # Browser automation MCP
+    └── stagehand/            # Stagehand integration
 ```
 
 ## 🚀 Core Commands

@@ -2,9 +2,56 @@
 
 > **📚 For complete documentation, see [docs/documentation.md](docs/documentation.md)**
 
+## 🚀 Installation
+
+### Prerequisites
+- Git, Node.js, npm, Python 3, and jq installed
+- macOS, Linux, or Windows (via WSL/Git Bash)
+- SSH access to cc-github.bmwgroup.net (for team's memory-visualizer)
+- SSH access to github.com (optional, for browserbase)
+
+### Setup Process
+
+1. **Clone the repository** (if not already done):
+   ```bash
+   git clone <repository-url> ~/Agentic/coding
+   cd ~/Agentic/coding
+   ```
+
+2. **Configure environment variables**:
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env to add your API keys (optional, for MCP servers)
+   nano .env  # or use your preferred editor
+   ```
+
+3. **Run the installer**:
+   ```bash
+   ./install.sh
+   ```
+
+   The installer will:
+   - ✅ Check for required dependencies
+   - ✅ Install/update memory-visualizer from team repository (if not present)
+   - ✅ Install/update mcp-server-browserbase (if not present)
+   - ✅ Build MCP servers (browser-access, claude-logger)
+   - ✅ Create command wrappers (ukb, vkb)
+   - ✅ Configure your shell environment
+   - ✅ Process MCP configuration with correct paths
+   - ✅ Install MCP config to Claude application directory
+
+4. **Reload your shell**:
+   ```bash
+   source ~/.zshrc  # macOS
+   # or
+   source ~/.bashrc  # Linux/Windows
+   ```
+
 ## Quick Start
 
-After cloning this repository, the knowledge management system is ready to use:
+After installation, the knowledge management system is ready to use:
 
 ```bash
 # Update knowledge base (capture session insights)
@@ -93,7 +140,25 @@ Claude/
 3. **Knowledge Review**: Run `vkb` to visualize and explore
 4. **Team Sync**: Git push/pull shares knowledge automatically
 
+## Environment Variables
+
+The `.env` file supports the following variables:
+
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `ANTHROPIC_API_KEY` | For browser-access MCP server | Optional |
+| `BROWSERBASE_API_KEY` | For Browserbase integration | Optional |
+| `BROWSERBASE_PROJECT_ID` | Browserbase project identifier | Optional |
+| `LOCAL_CDP_URL` | Chrome DevTools Protocol URL | Optional (default: ws://localhost:9222) |
+
+**Note**: API keys are only required if you plan to use the MCP servers for browser automation. The core knowledge management system (ukb/vkb) works without any API keys.
+
 ## Troubleshooting
+
+### Installation Issues
+- **Missing dependencies**: The installer will list any missing dependencies and provide installation commands
+- **Permission denied**: Run `chmod +x install.sh` before running the installer
+- **Path not updated**: Manually source your shell config file or restart your terminal
 
 ### Server Issues
 ```bash
