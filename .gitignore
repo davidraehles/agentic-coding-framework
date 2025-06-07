@@ -42,13 +42,15 @@ dist/
 .env.local
 .env.*.local
 
-# MCP configuration (contains processed paths)
+# MCP configuration (contains processed paths and secrets)
 claude-code-mcp.json.bak
 claude-code-mcp.json.template
+claude-code-mcp-processed.json
 
 # Installation artifacts
 install.log
 memory-visualizer/
+.activate
 
 # Shared memory (if you want to keep it local)
 shared-memory.json
