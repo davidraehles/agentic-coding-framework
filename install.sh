@@ -26,14 +26,33 @@ NC='\033[0m' # No Color
 CLAUDE_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_LOG="$CLAUDE_REPO/install.log"
 
-# Repository URLs - SSH by default, HTTPS as fallback
-MEMORY_VISUALIZER_REPO_SSH="git@cc-github.bmwgroup.net:frankwoernle/memory-visualizer.git"
-MEMORY_VISUALIZER_REPO_HTTPS="https://cc-github.bmwgroup.net/frankwoernle/memory-visualizer.git"
+# Repository URLs - will be set based on CN/VPN detection
+MEMORY_VISUALIZER_REPO_SSH=""
+MEMORY_VISUALIZER_REPO_HTTPS=""
 MEMORY_VISUALIZER_DIR="$CLAUDE_REPO/memory-visualizer"
 
-BROWSERBASE_REPO_SSH="git@github.com:browserbase/mcp-server-browserbase.git"
-BROWSERBASE_REPO_HTTPS="https://github.com/browserbase/mcp-server-browserbase.git"
+BROWSERBASE_REPO_SSH=""
+BROWSERBASE_REPO_HTTPS=""
 BROWSERBASE_DIR="$CLAUDE_REPO/mcp-server-browserbase"
+
+# Installation status tracking
+INSIDE_CN=false
+PROXY_WORKING=false
+INSTALLATION_WARNINGS=()
+INSTALLATION_FAILURES=()
+
+# Repository URLs by network location
+# Only memory-visualizer has a CN mirror, others always use public repos
+
+# Memory Visualizer (HAS CN MIRROR)
+MEMORY_VISUALIZER_CN_SSH="git@cc-github.bmwgroup.net:frankwoernle/memory-visualizer.git"
+MEMORY_VISUALIZER_CN_HTTPS="https://cc-github.bmwgroup.net/frankwoernle/memory-visualizer.git"
+MEMORY_VISUALIZER_PUBLIC_SSH="git@github.com:fwornle/memory-visualizer.git"
+MEMORY_VISUALIZER_PUBLIC_HTTPS="https://github.com/fwornle/memory-visualizer.git"
+
+# Browserbase (NO CN MIRROR - always use public)
+BROWSERBASE_SSH="git@github.com:browserbase/mcp-server-browserbase.git"
+BROWSERBASE_HTTPS="https://github.com/browserbase/mcp-server-browserbase.git"
 
 # Platform detection
 PLATFORM=""
@@ -90,42 +109,80 @@ warning() {
     log "WARNING: $1"
 }
 
-# Test SSH connectivity to GitHub and corporate GitHub
-test_ssh_github() {
-    info "Testing SSH connectivity to Git repositories..."
+# Detect network location and set repository URLs
+detect_network_and_set_repos() {
+    info "Detecting network location (CN vs Public)..."
     
-    local github_ok=false
-    local bmw_github_ok=false
+    local inside_cn=false
+    local cn_ssh_ok=false
+    local public_ssh_ok=false
     
-    # Test BMW GitHub first (priority for internal users)
-    info "Testing cc-github.bmwgroup.net SSH access..."
+    # Test BMW GitHub accessibility to determine if inside CN
+    info "Testing cc-github.bmwgroup.net accessibility..."
     local bmw_response=$(timeout 5s ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -T git@cc-github.bmwgroup.net 2>&1 || true)
     if echo "$bmw_response" | grep -q -iE "(successfully authenticated|Welcome to GitLab|You've successfully authenticated)"; then
-        success "SSH access to cc-github.bmwgroup.net is configured"
-        bmw_github_ok=true
+        success "Inside Corporate Network - SSH access to cc-github.bmwgroup.net works"
+        inside_cn=true
+        cn_ssh_ok=true
     else
-        warning "SSH access to cc-github.bmwgroup.net not configured (may be outside VPN)"
+        # Try HTTPS to CN to double-check
+        if timeout 5s curl -s --connect-timeout 5 https://cc-github.bmwgroup.net >/dev/null 2>&1; then
+            info "Inside Corporate Network - cc-github.bmwgroup.net accessible via HTTPS"
+            inside_cn=true
+        else
+            info "Outside Corporate Network - cc-github.bmwgroup.net not accessible"
+            inside_cn=false
+        fi
     fi
     
-    # Test public GitHub second
-    info "Testing GitHub.com SSH access..."
-    local github_response=$(timeout 5s ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -T git@github.com 2>&1 || true)
-    if echo "$github_response" | grep -q -i "successfully authenticated"; then
-        success "SSH access to GitHub.com is configured"
-        github_ok=true
+    if [[ "$inside_cn" == true ]]; then
+        info "🏢 Corporate Network detected - using selective CN mirrors"
+        INSIDE_CN=true
+        # Memory Visualizer: Use CN mirror (has modifications)
+        MEMORY_VISUALIZER_REPO_SSH="$MEMORY_VISUALIZER_CN_SSH"
+        MEMORY_VISUALIZER_REPO_HTTPS="$MEMORY_VISUALIZER_CN_HTTPS"
+        # Browserbase: Use public repo (no CN mirror)
+        BROWSERBASE_REPO_SSH="$BROWSERBASE_SSH"
+        BROWSERBASE_REPO_HTTPS="$BROWSERBASE_HTTPS"
     else
-        warning "SSH access to GitHub.com not configured (may be inside VPN)"
+        info "🌍 Public network detected - using public repositories"
+        # Test public GitHub SSH
+        info "Testing github.com SSH access..."
+        local github_response=$(timeout 5s ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -T git@github.com 2>&1 || true)
+        if echo "$github_response" | grep -q -i "successfully authenticated"; then
+            success "SSH access to github.com works"
+            public_ssh_ok=true
+        fi
+        
+        # All repositories: Use public repos
+        MEMORY_VISUALIZER_REPO_SSH="$MEMORY_VISUALIZER_PUBLIC_SSH"
+        MEMORY_VISUALIZER_REPO_HTTPS="$MEMORY_VISUALIZER_PUBLIC_HTTPS"
+        BROWSERBASE_REPO_SSH="$BROWSERBASE_SSH"
+        BROWSERBASE_REPO_HTTPS="$BROWSERBASE_HTTPS"
     fi
     
-    if [[ "$bmw_github_ok" == true ]]; then
-        info "Will use SSH for BMW repositories, HTTPS fallback for external repositories"
+    # Log selected repositories
+    info "Selected repositories:"
+    info "  Memory Visualizer: $(echo "$MEMORY_VISUALIZER_REPO_SSH" | sed 's/git@//' | sed 's/.git$//')"
+    info "  Browserbase: $(echo "$BROWSERBASE_REPO_SSH" | sed 's/git@//' | sed 's/.git$//')"
+    
+    return 0
+}
+
+# Test proxy connectivity for external repos
+test_proxy_connectivity() {
+    if [[ "$INSIDE_CN" == false ]]; then
+        PROXY_WORKING=true  # Outside CN, assume direct access works
         return 0
-    elif [[ "$github_ok" == true ]]; then
-        info "Will use SSH for external repositories, HTTPS fallback for BMW repositories"
-        return 0
+    fi
+    
+    info "Testing proxy connectivity for external repositories..."
+    if timeout 5s curl -s --connect-timeout 5 https://google.de >/dev/null 2>&1; then
+        success "Proxy is working - external repositories accessible"
+        PROXY_WORKING=true
     else
-        warning "No SSH access detected. Will use HTTPS for all repositories."
-        return 1
+        warning "Proxy not working or external access blocked"
+        PROXY_WORKING=false
     fi
 }
 
@@ -204,6 +261,52 @@ clone_repository() {
     fi
 }
 
+# Handle non-mirrored repository inside CN (with proxy detection)
+handle_non_mirrored_repo_cn() {
+    local repo_name="$1"
+    local ssh_url="$2"
+    local https_url="$3"
+    local target_dir="$4"
+    
+    if [[ -d "$target_dir" ]]; then
+        info "$repo_name already exists, attempting update..."
+        cd "$target_dir"
+        
+        if [[ "$PROXY_WORKING" == true ]]; then
+            info "Proxy working - attempting update from external repo"
+            if timeout 5s git pull origin main 2>/dev/null; then
+                success "$repo_name updated successfully"
+                return 0
+            else
+                warning "Could not update $repo_name (network/proxy issue)"
+                INSTALLATION_WARNINGS+=("$repo_name: Could not update from external repo")
+                return 0  # Continue - we have existing code
+            fi
+        else
+            warning "Proxy not working - skipping update of $repo_name"
+            INSTALLATION_WARNINGS+=("$repo_name: Skipped update due to proxy/network issues")
+            return 0  # Continue - we have existing code
+        fi
+    else
+        # Repository doesn't exist - try to clone
+        if [[ "$PROXY_WORKING" == true ]]; then
+            info "Proxy working - attempting to clone $repo_name"
+            if clone_repository "$ssh_url" "$https_url" "$target_dir" 2>/dev/null; then
+                success "$repo_name cloned successfully"
+                return 0
+            else
+                warning "Failed to clone $repo_name despite working proxy"
+                INSTALLATION_FAILURES+=("$repo_name: Failed to clone external repository")
+                return 1
+            fi
+        else
+            warning "Cannot clone $repo_name - proxy not working and no existing copy"
+            INSTALLATION_FAILURES+=("$repo_name: Cannot clone - no proxy access and repository missing")
+            return 1
+        fi
+    fi
+}
+
     if [[ ${#missing_deps[@]} -ne 0 ]]; then
         echo -e "${RED}Missing required dependencies: ${missing_deps[*]}${NC}"
         echo -e "${YELLOW}Please install the missing dependencies and run the installer again.${NC}"
@@ -240,7 +343,14 @@ install_memory_visualizer() {
     if [[ -d "$MEMORY_VISUALIZER_DIR" ]]; then
         info "Memory visualizer already exists, updating..."
         cd "$MEMORY_VISUALIZER_DIR"
-        git pull origin main || warning "Could not update memory-visualizer"
+        
+        # Simple update - no remote manipulation
+        info "Updating from current remote: $(git remote get-url origin 2>/dev/null || echo 'unknown')"
+        if timeout 10s git pull origin main 2>/dev/null; then
+            success "Memory visualizer updated"
+        else
+            warning "Could not update memory-visualizer, using existing version"
+        fi
     else
         info "Cloning memory-visualizer repository..."
         clone_repository "$MEMORY_VISUALIZER_REPO_SSH" "$MEMORY_VISUALIZER_REPO_HTTPS" "$MEMORY_VISUALIZER_DIR"
@@ -266,20 +376,37 @@ install_memory_visualizer() {
 install_browserbase() {
     echo -e "\n${CYAN}🌐 Installing mcp-server-browserbase...${NC}"
     
-    if [[ -d "$BROWSERBASE_DIR" ]]; then
-        info "mcp-server-browserbase already exists, skipping..."
+    # Handle differently based on network location
+    if [[ "$INSIDE_CN" == true ]]; then
+        # Inside CN - use special handling for non-mirrored repo
+        handle_non_mirrored_repo_cn "mcp-server-browserbase" "$BROWSERBASE_REPO_SSH" "$BROWSERBASE_REPO_HTTPS" "$BROWSERBASE_DIR"
+        local clone_result=$?
     else
-        info "Cloning mcp-server-browserbase repository..."
-        clone_repository "$BROWSERBASE_REPO_SSH" "$BROWSERBASE_REPO_HTTPS" "$BROWSERBASE_DIR" || warning "Failed to clone mcp-server-browserbase"
+        # Outside CN - normal clone/update
+        if [[ -d "$BROWSERBASE_DIR" ]]; then
+            info "mcp-server-browserbase already exists, updating..."
+            cd "$BROWSERBASE_DIR"
+            if timeout 10s git pull origin main 2>/dev/null; then
+                success "mcp-server-browserbase updated"
+            else
+                warning "Could not update mcp-server-browserbase"
+            fi
+        else
+            info "Cloning mcp-server-browserbase repository..."
+            clone_repository "$BROWSERBASE_REPO_SSH" "$BROWSERBASE_REPO_HTTPS" "$BROWSERBASE_DIR"
+            local clone_result=$?
+        fi
     fi
     
-    # Check if stagehand directory exists within browserbase
+    # Only proceed with build if we have the repository
     if [[ -d "$BROWSERBASE_DIR/stagehand" ]]; then
         info "Installing stagehand dependencies..."
         cd "$BROWSERBASE_DIR/stagehand"
         npm install || warning "Failed to install stagehand dependencies"
         npm run build || warning "Failed to build stagehand"
         success "Stagehand (browserbase) installed successfully"
+    else
+        warning "Browserbase repository not available - skipping stagehand build"
     fi
     
     cd "$CLAUDE_REPO"
@@ -590,7 +717,8 @@ main() {
     
     # Run installation steps
     check_dependencies
-    test_ssh_github
+    detect_network_and_set_repos
+    test_proxy_connectivity
     install_memory_visualizer
     install_browserbase
     install_mcp_servers
@@ -612,31 +740,60 @@ echo "Commands 'ukb' and 'vkb' are now available."
 EOF
     chmod +x "$CLAUDE_REPO/.activate"
     
-    # Final instructions
-    echo ""
-    echo -e "${GREEN}🎉 Installation completed successfully!${NC}"
-    echo ""
-    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${YELLOW}⚡ To start using the commands immediately, run:${NC}"
-    echo -e "${CYAN}   source .activate${NC}"
-    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-    echo -e "${CYAN}📋 Available commands:${NC}"
-    echo "   ukb  # Update Knowledge Base"
-    echo "   vkb  # View Knowledge Base"
-    echo ""
-    echo -e "${CYAN}📋 Optional configuration:${NC}"
-    echo "1. Configure API keys for MCP servers:"
-    echo "   cp .env.example .env"
-    echo "   nano .env  # Add your API keys"
-    echo ""
-    echo -e "${BLUE}📚 Documentation:${NC}"
-    echo "   - README.md: General documentation"
-    echo "   - TEAM_KNOWLEDGE_SETUP.md: Team setup guide"
-    echo ""
-    echo -e "${GREEN}Note: Commands will persist in new terminals after restarting your shell.${NC}"
+    # Installation status report
+    show_installation_status
     
-    log "Installation completed successfully"
+    log "Installation completed"
+}
+
+# Show comprehensive installation status
+show_installation_status() {
+    echo ""
+    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    
+    if [[ ${#INSTALLATION_FAILURES[@]} -eq 0 && ${#INSTALLATION_WARNINGS[@]} -eq 0 ]]; then
+        echo -e "${GREEN}🎉 Installation completed successfully!${NC}"
+    elif [[ ${#INSTALLATION_FAILURES[@]} -eq 0 ]]; then
+        echo -e "${YELLOW}⚠️  Installation completed with warnings${NC}"
+    else
+        echo -e "${RED}❌ Installation completed with some failures${NC}"
+    fi
+    
+    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    
+    # Show warnings
+    if [[ ${#INSTALLATION_WARNINGS[@]} -gt 0 ]]; then
+        echo -e "\n${YELLOW}⚠️  Warnings:${NC}"
+        for warning in "${INSTALLATION_WARNINGS[@]}"; do
+            echo -e "  ${YELLOW}•${NC} $warning"
+        done
+    fi
+    
+    # Show failures
+    if [[ ${#INSTALLATION_FAILURES[@]} -gt 0 ]]; then
+        echo -e "\n${RED}❌ Failures:${NC}"
+        for failure in "${INSTALLATION_FAILURES[@]}"; do
+            echo -e "  ${RED}•${NC} $failure"
+        done
+        echo ""
+        echo -e "${RED}⚠️  IMPORTANT: Some components failed to install!${NC}"
+        echo -e "${RED}   The system may not work fully until these issues are resolved.${NC}"
+        if [[ "$INSIDE_CN" == true && "$PROXY_WORKING" == false ]]; then
+            echo -e "${YELLOW}   Hint: External repository access is blocked. Try:${NC}"
+            echo -e "${YELLOW}   1. Configure your proxy settings${NC}"
+            echo -e "${YELLOW}   2. Run installer from outside corporate network${NC}"
+        fi
+    fi
+    
+    echo ""
+    echo -e "${CYAN}📋 Next steps:${NC}"
+    echo -e "   ${CYAN}⚡ To start using commands immediately:${NC} source .activate"
+    echo -e "   ${CYAN}📖 Commands available:${NC} ukb (Update Knowledge Base), vkb (View Knowledge Base)"
+    
+    if [[ ${#INSTALLATION_FAILURES[@]} -eq 0 ]]; then
+        echo ""
+        echo -e "${GREEN}Happy knowledge capturing! 🧠${NC}"
+    fi
 }
 
 # Run main function
