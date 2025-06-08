@@ -4,6 +4,7 @@
 **Applicability:** Development tools, debugging systems, production applications  
 **Technologies:** JavaScript, TypeScript, React, Node.js  
 **Significance:** 8/10  
+**Origin Project:** DynArch (Autonomous Driving Visualization System)
 
 ## Problem Statement
 
@@ -12,10 +13,165 @@ Debug output and logging can cause significant performance degradation in produc
 - Complex debug UI rendering that's conditionally displayed
 - Real-time performance monitoring that impacts frame rates
 - Development tools that need debug capabilities without production overhead
+- Complex systems with multiple subsystems requiring granular debug control
 
 ## Solution Overview
 
 Implement runtime log level checking with conditional rendering patterns that completely eliminate performance overhead when debug features are disabled. The pattern provides zero-cost abstractions for debug functionality.
+
+## Original Implementation: DynArch System
+
+### Advanced Dual-Axis Filtering Architecture
+
+The ConditionalLoggingPattern originated in the DynArch autonomous driving visualization system, where it evolved into a sophisticated logging architecture featuring dual-axis filtering: **log levels** (priority-based) and **log categories** (domain-based).
+
+![DynArch Architecture](./images/architecture.png)
+
+#### DynArch Logger Configuration
+
+**5 Hierarchical Log Levels:**
+```javascript
+const LogLevels = {
+  ERROR: { name: 'ERROR', value: 0 },    // Highest priority
+  WARN: { name: 'WARN', value: 1 },
+  INFO: { name: 'INFO', value: 2 },
+  DEBUG: { name: 'DEBUG', value: 3 },
+  TRACE: { name: 'TRACE', value: 4 }     // Lowest priority
+};
+```
+
+**13 Specialized Categories:**
+```javascript
+const LogCategories = {
+  // Core Lifecycle Group
+  CONFIG: 'CONFIG',
+  LIFECYCLE: 'LIFECYCLE', 
+  STATE_MGMT: 'STATE_MGMT',
+  UI: 'UI',
+  
+  // Visualization Group
+  GEOMETRY: 'GEOMETRY',
+  ROUTING: 'ROUTING',
+  SENSOR_ANIM: 'SENSOR_ANIM',
+  CONNECTION_ANIM: 'CONNECTION_ANIM',
+  TIMING_DIAGRAM: 'TIMING_DIAGRAM',
+  
+  // Simulation Flow Group
+  SCHEDULER: 'SCHEDULER',
+  SIM_STATE: 'SIM_STATE',
+  
+  // Data Processing Group
+  PACKAGE_MAN: 'PACKAGE_MAN',
+  DATA_PACKAGE: 'DATA_PACKAGE',
+  PROCESSOR: 'PROCESSOR',
+  PROCESSING_ANIM: 'PROCESSING_ANIM',
+  
+  DEFAULT: 'DEFAULT'
+};
+```
+
+#### Dynamic Color System with Automatic Contrast
+
+```javascript
+class Logger {
+  static log(level, category, ...messages) {
+    const levelName = level.name;
+    const categoryName = category;
+    
+    // Dual-axis filtering - both level AND category must be active
+    if (!Logger.activeLevels.has(levelName) || 
+        !Logger.activeCategories.has(categoryName)) {
+      return; // Zero-cost exit
+    }
+    
+    // Dynamic color calculation
+    const baseColor = Logger.getCategoryColor(categoryName);
+    const levelColor = Logger.adjustColorForLevel(baseColor, levelName);
+    const textColor = Logger.calculateContrastColor(levelColor);
+    
+    // Styled console output
+    console[Logger.getConsoleMethod(levelName)](
+      `%c[${categoryName}] [${levelName}]`,
+      `color: ${textColor}; background-color: ${levelColor}; padding: 2px 4px;`,
+      ...messages
+    );
+  }
+}
+```
+
+#### Persistent Configuration System
+
+```javascript
+// Automatic localStorage integration
+Logger.setActiveLevels = function(levelsIterable) {
+  Logger.activeLevels = new Set(levelsIterable);
+  localStorage.setItem('logger_active_levels', 
+    JSON.stringify([...Logger.activeLevels]));
+};
+
+Logger.setActiveCategories = function(categoriesIterable) {
+  Logger.activeCategories = new Set(categoriesIterable);
+  localStorage.setItem('logger_active_categories', 
+    JSON.stringify([...Logger.activeCategories]));
+};
+
+// Restore on page load
+Logger.initializeFromStorage();
+```
+
+#### Advanced UI Control System
+
+The DynArch implementation includes a sophisticated LoggingControl component with:
+
+- **Hierarchical Level Selection**: Enabling ERROR automatically enables WARN, INFO, DEBUG, TRACE
+- **Category Grouping**: Logical grouping of related system components
+- **Real-time Synchronization**: Changes immediately reflected across all logging calls
+- **Color-coded Indicators**: Visual feedback matching console output colors
+
+![Simulation Data Flow](./images/sim-dataflow.png)
+
+#### Evolution History in DynArch
+
+Based on git commit analysis, the ConditionalLoggingPattern evolved through several key phases:
+
+**Phase 1: Basic Logging Integration (April 2025)**
+- Initial replacement of console.log statements with structured Logger calls
+- Integration across core components: DataAnimation, ProcessorAnimation, Connections
+
+**Phase 2: Category Classification System**
+- Introduction of the 13-category system for domain-specific logging
+- Specialized categories for different visualization subsystems
+
+**Phase 3: Persistent Configuration (commit 462f1b9)**
+- localStorage integration for log level persistence
+- Runtime configuration without code changes
+
+**Phase 4: Advanced UI Controls (commit 77512ba)**
+- LoggingControl component with hierarchical level management
+- Dynamic color assignment based on category configuration
+- Real-time visual feedback system
+
+**Phase 5: Production Optimization**
+- Zero-performance-impact conditional logging
+- Global console access for debugging: `window.Logger`
+- Enhanced error handling and state management
+
+**Notable Usage Patterns in DynArch:**
+```javascript
+// Lifecycle logging
+Logger.log(LogLevels.INFO, LogCategories.LIFECYCLE, 'Visualization initialized');
+
+// Performance monitoring  
+Logger.log(LogLevels.DEBUG, LogCategories.GEOMETRY, 'Viewport culling:', {
+  visible: visibleObjects.length,
+  total: allObjects.length,
+  reduction: `${reductionPercent}%`
+});
+
+// State transitions
+Logger.log(LogLevels.TRACE, LogCategories.STATE_MGMT, 'Animation state changed:', 
+  { from: prevState, to: newState });
+```
 
 ## Implementation Pattern
 
