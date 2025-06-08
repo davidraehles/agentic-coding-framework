@@ -20,9 +20,10 @@ The Knowledge Management (KM) system is designed to automatically capture, organ
 
 - **Automatic Knowledge Capture**: Extracts insights from git commits using conventional commit format
 - **Interactive Visualization**: Web-based graph interface for exploring knowledge relationships
-- **Transferable Patterns**: Central hub for cross-project reusable solutions
+- **Transferable Patterns**: Central hub for cross-project reusable solutions including comprehensive insights
 - **Team Sharing**: Git-tracked knowledge base for seamless team collaboration
 - **MCP Integration**: Persistent memory across Claude Code sessions
+- **Detailed Pattern Documentation**: In-depth insights with implementation examples and diagrams
 
 ### Core Concepts
 
@@ -114,19 +115,22 @@ The system consists of three main layers:
 ### Insight Naming Conventions
 
 #### Node Names
+
 - **Transferable Patterns**: Use clear, descriptive names ending with "Pattern" (e.g., `ReduxStateManagementPattern`, `NetworkAwareInstallationPattern`)
 - **Project-Specific Insights**: Include project context and specific functionality (e.g., `TimelineViewportOptimization`, `KnowledgeGraphVisualization`)
 - **Technical Components**: Use full descriptive names (e.g., `ClaudeLoggerMCPServer`, `StagehandBrowserAutomation`)
 
 #### Insight File Names
+
 - **Location**: All detailed insights go in `knowledge-management/insights/`
 - **Format**: Use kebab-case with descriptive names that match the node name but without "Pattern" suffix
-- **Examples**: 
+- **Examples**:
   - Node: `ReduxStateManagementPattern` → File: `redux-state-management.md`
   - Node: `NetworkAwareInstallationPattern` → File: `network-aware-installation.md`
   - Node: `KnowledgeManagementSystem` → File: `knowledge-management-system.md`
 
 #### Significance Scoring
+
 - **Architecture/System Design**: 9-10 (highest priority for transferability)
 - **State Management Patterns**: 8-9 (high value for complex applications)
 - **Performance Optimizations**: 7-8 (valuable but context-dependent)
@@ -310,21 +314,25 @@ The system includes automatic logging of all Claude Code conversations through t
 ### Enabling Auto-Logging
 
 1. **Start automatic logging**:
+
    ```
    User: Enable automatic logging
    ```
-   
+
 2. All subsequent conversations are automatically saved to:
+
    ```
    .specstory/history/YYYY-MM-DD-Auto-logged Claude Code Session.md
    ```
 
 3. **Check logging status**:
+
    ```
    User: Is auto-logging active?
    ```
 
 4. **Stop logging**:
+
    ```
    User: Stop logging
    ```

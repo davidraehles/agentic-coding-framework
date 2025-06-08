@@ -10,6 +10,7 @@ This repository contains various scripts and tools created with Claude Code, foc
 - **[Team Setup Guide](TEAM_KNOWLEDGE_SETUP.md)** - Quick start for team collaboration
 - **[Installation Architecture](docs/installation-architecture.md)** - Network detection and repository strategy
 - **[Architecture Diagrams](docs/imag/)** - System architecture and workflow diagrams
+- **[Insights Library](knowledge-management/insights/)** - Detailed transferable patterns and solutions
 
 ## 🎯 Quick Start
 
@@ -80,6 +81,10 @@ vkb  # View knowledge visualization
 │   ├── ukb                   # Update Knowledge Base command
 │   ├── vkb                   # View Knowledge Base command
 │   ├── browser               # Browser integration
+│   ├── insights/             # Detailed pattern documentation
+│   │   ├── *.md              # Individual insight files
+│   │   ├── images/           # Diagrams and screenshots
+│   │   └── puml/             # PlantUML source files
 │   └── dist/                 # Visualization files
 ├── browser-access/           # Browser automation tools
 │   ├── src/                  # TypeScript source
@@ -138,10 +143,13 @@ vkb  # View knowledge visualization
 
 The system uses a **green "CodingKnowledge" hub** that aggregates transferable programming patterns:
 
-- **ConditionalLoggingPattern**: Debug logging with runtime level checking
-- **ReduxStateManagementPattern**: React state management with TypeScript
-- **ThreeJSReactIntegrationPattern**: 3D graphics integration patterns
-- **MCPKnowledgeIntegrationPattern**: Persistent memory workflows
+- **ConditionalLoggingPattern**: Advanced dual-axis debug logging with performance optimization
+- **ReduxStateManagementPattern**: React state management with TypeScript and MVI architecture
+- **MCPKnowledgePersistencePattern**: Comprehensive knowledge management system for teams
+- **NetworkAwareInstallationPattern**: Enterprise-ready installation with network adaptation
+- **StateDrivenAnimationPipelinePattern**: Reactive animation systems with state management
+- **StrategyBasedModularRoutingPattern**: Flexible routing architectures
+- **ViewportCullingPattern**: Performance optimization for large-scale visualizations
 
 ### Entity Types
 
@@ -196,9 +204,22 @@ vkb restart  # Refresh visualization with team updates
 ### Pattern Discovery
 
 1. **Browse Graph**: Use visualization to identify common patterns
-2. **Extract Patterns**: Promote successful solutions to transferable knowledge
-3. **Apply Elsewhere**: Reference patterns in new projects
-4. **Continuous Learning**: Build institutional knowledge over time
+2. **Review Insights**: Explore detailed documentation in `knowledge-management/insights/`
+3. **Extract Patterns**: Promote successful solutions to transferable knowledge
+4. **Apply Elsewhere**: Reference patterns in new projects
+5. **Continuous Learning**: Build institutional knowledge over time
+
+### Available Insights
+
+The system includes comprehensive documentation for transferable patterns:
+
+- **[Conditional Logging Pattern](knowledge-management/insights/ConditionalLoggingPattern.md)** - Zero-overhead debug logging with dual-axis filtering
+- **[MCP Knowledge Persistence](knowledge-management/insights/MCPKnowledgePersistencePattern.md)** - Complete knowledge management system architecture
+- **[Network-Aware Installation](knowledge-management/insights/NetworkAwareInstallationPattern.md)** - Enterprise installation patterns with network adaptation
+- **[Redux State Management](knowledge-management/insights/ReduxStateManagementPattern.md)** - MVI architecture with TypeScript
+- **[State-Driven Animation Pipeline](knowledge-management/insights/StateDrivenAnimationPipelinePattern.md)** - Reactive animation systems
+- **[Strategy-Based Modular Routing](knowledge-management/insights/StrategyBasedModularRoutingPattern.md)** - Flexible routing architectures
+- **[Viewport Culling](knowledge-management/insights/ViewportCullingPattern.md)** - Performance optimization for large-scale visualizations
 
 ## 🛠️ Requirements
 
