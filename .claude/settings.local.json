@@ -43,7 +43,9 @@
       "Bash(./knowledge-management/vkb restart:*)",
       "Bash(./knowledge-management/vkb stop:*)",
       "Bash(kill:*)",
-      "Bash(ukb)"
+      "Bash(ukb)",
+      "Bash(ukb:*)",
+      "Bash(vkb status:*)"
     ],
     "deny": []
   }
