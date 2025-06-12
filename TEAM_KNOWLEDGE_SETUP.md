@@ -155,7 +155,7 @@ vkb
 
 ## Directory Structure
 ```
-Claude/
+coding/
 ├── README.md                      # Main documentation entry point
 ├── TEAM_KNOWLEDGE_SETUP.md       # This quick setup guide
 ├── docs/                          # Complete documentation

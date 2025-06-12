@@ -26,7 +26,7 @@ ANTHROPIC_API_KEY=your-actual-api-key-here
 LOCAL_CDP_URL=ws://localhost:9222
 
 # Project path (will be set automatically by installer)
-CLAUDE_PROJECT_PATH=/path/to/your/claude/repo
+CLAUDE_PROJECT_PATH=/path/to/your/coding/repo
 ```
 
 ### 2. Run the installer

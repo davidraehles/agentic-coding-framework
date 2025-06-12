@@ -136,7 +136,7 @@ To enable automatic logging of all conversations:
    User: Please enable automatic logging
    Assistant: [Calls enable_auto_logging tool]
    🔴 Auto-logging enabled! Conversations will be saved to:
-   /Users/q284340/Claude/.specstory/history/2025-06-05-Auto-logged Claude Code Session.md
+   /Users/q284340/Agentic/coding/.specstory/history/2025-06-05-Auto-logged Claude Code Session.md
    ```
 
 2. **Check status**:
@@ -145,7 +145,7 @@ To enable automatic logging of all conversations:
    Assistant: [Calls auto_log_status tool]
    📊 Auto-logging is ENABLED
    🆔 Current session: 2025-06-05-Auto-logged Claude Code Session
-   📁 Logs directory: /Users/q284340/Claude/.specstory/history/
+   📁 Logs directory: /Users/q284340/Agentic/coding/.specstory/history/
    ```
 
 3. **Disable when done**:
@@ -259,7 +259,7 @@ Once enabled, ALL your conversations will be automatically saved to `.specstory/
 ### Step 4: View Your Logs
 Your conversations are saved as markdown files in:
 ```
-/Users/q284340/Claude/.specstory/history/
+/Users/q284340/Agentic/coding/.specstory/history/
 ```
 
 Each file is named with timestamp and contains the full conversation with metadata.

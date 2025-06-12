@@ -4,8 +4,8 @@
 
 ```bash
 # Clone the repository
-git clone <repository-url> ~/Claude
-cd ~/Claude
+git clone <repository-url> ~/Agentic/coding
+cd ~/Agentic/coding
 
 # Run the installer
 ./install.sh
@@ -44,8 +44,8 @@ The installation script sets up:
 brew install git node python3 jq
 
 # Clone and install
-git clone <repository-url> ~/Claude
-cd ~/Claude
+git clone <repository-url> ~/Agentic/coding
+cd ~/Agentic/coding
 ./install.sh
 source ~/.zshrc
 ```
@@ -58,8 +58,8 @@ sudo apt-get update
 sudo apt-get install -y git nodejs npm python3 python3-pip jq
 
 # Clone and install
-git clone <repository-url> ~/Claude
-cd ~/Claude
+git clone <repository-url> ~/Agentic/coding
+cd ~/Agentic/coding
 ./install.sh
 source ~/.bashrc
 ```
@@ -73,8 +73,8 @@ sudo apt-get update
 sudo apt-get install -y git nodejs npm python3 python3-pip jq
 
 # Clone and install
-git clone <repository-url> ~/Claude
-cd ~/Claude
+git clone <repository-url> ~/Agentic/coding
+cd ~/Agentic/coding
 ./install.sh
 source ~/.bashrc
 ```
@@ -89,8 +89,8 @@ source ~/.bashrc
 # 4. Install jq from https://stedolan.github.io/jq/download/
 
 # In Git Bash terminal
-git clone <repository-url> ~/Claude
-cd ~/Claude
+git clone <repository-url> ~/Agentic/coding
+cd ~/Agentic/coding
 ./install.sh
 source ~/.bashrc
 ```
@@ -140,7 +140,7 @@ vkb status
      "mcpServers": {
        "browser-access": {
          "command": "node",
-         "args": ["~/Claude/browser-access/dist/index.js"]
+         "args": ["~/Agentic/coding/browser-access/dist/index.js"]
        }
      }
    }
@@ -154,7 +154,7 @@ Add to Claude Code MCP settings:
   "mcpServers": {
     "claude-logger": {
       "command": "node",
-      "args": ["~/Claude/claude-logger-mcp/dist/index.js"]
+      "args": ["~/Agentic/coding/claude-logger-mcp/dist/index.js"]
     }
   }
 }
@@ -196,14 +196,14 @@ Add to Claude Code MCP settings:
 source ~/.bashrc  # or ~/.zshrc
 
 # Check PATH
-echo $PATH | grep -q "Claude/bin" && echo "PATH is set" || echo "PATH not set"
+echo $PATH | grep -q "Agentic/coding/bin" && echo "PATH is set" || echo "PATH not set"
 ```
 
 ### Memory visualizer issues
 
 ```bash
 # Rebuild visualizer
-cd ~/Claude/memory-visualizer
+cd ~/Agentic/coding/memory-visualizer
 npm install
 npm run build
 ```
@@ -212,9 +212,9 @@ npm run build
 
 ```bash
 # Fix script permissions
-chmod +x ~/Claude/knowledge-management/ukb
-chmod +x ~/Claude/knowledge-management/vkb
-chmod +x ~/Claude/bin/*
+chmod +x ~/Agentic/coding/knowledge-management/ukb
+chmod +x ~/Agentic/coding/knowledge-management/vkb
+chmod +x ~/Agentic/coding/bin/*
 ```
 
 ### Port conflicts (vkb)

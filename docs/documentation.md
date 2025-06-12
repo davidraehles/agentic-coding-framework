@@ -366,7 +366,7 @@ The system includes automatic logging of all Claude Code conversations through t
 The knowledge base expects these directory structures:
 
 ```
-~/Claude/
+~/Agentic/coding/
 ├── shared-memory.json              # Main knowledge base
 ├── knowledge-management/
 │   ├── ukb                        # Update command
@@ -381,7 +381,7 @@ VKB server configuration in `vkb` script:
 
 ```bash
 SERVER_PORT=8080
-SHARED_MEMORY="/Users/q284340/Claude/shared-memory.json"
+SHARED_MEMORY="/Users/q284340/Agentic/coding/shared-memory.json"
 VISUALIZER_DIR="/Users/q284340/Agentic/memory-visualizer"
 ```
 

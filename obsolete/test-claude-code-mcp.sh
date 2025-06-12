@@ -15,7 +15,7 @@ fi
 echo "✅ MCP config file found"
 
 # Check if the MCP server executable exists
-SERVER_FILE="/Users/q284340/Claude/browser-access/dist/index.js"
+SERVER_FILE="/Users/q284340/Agentic/coding/browser-access/dist/index.js"
 if [ ! -f "$SERVER_FILE" ]; then
     echo "❌ MCP server file not found: $SERVER_FILE"
     exit 1
