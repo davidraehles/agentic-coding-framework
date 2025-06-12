@@ -147,4 +147,8 @@ export class AutoLogger extends EventEmitter {
   async shutdown(): Promise<void> {
     await this.endCurrentSession();
   }
+
+  async getCurrentSessionId(): Promise<string | null> {
+    return this.currentSessionId;
+  }
 }

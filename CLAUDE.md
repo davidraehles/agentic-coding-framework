@@ -2,6 +2,23 @@
 
 This file provides essential guidance to Claude Code when working in this repository.
 
+## 🔴 CRITICAL: AUTOMATIC CONVERSATION LOGGING
+
+**STATUS**: ✅ **WORKING** - Automatic conversation logging is now fully functional via I/O stream interception.
+
+**HOW IT WORKS**: 
+- `claude-mcp` automatically starts `start-auto-logger.sh` which intercepts stdin/stdout
+- Node.js monitoring process detects conversation boundaries and logs exchanges
+- **Smart routing**: Content is intelligently analyzed and routed to appropriate `.specstory/history/` directories
+- **Coding-related content** (ukb, vkb, knowledge management, MCP, etc.) always goes to `coding/.specstory/history/`
+- **Other content** goes to the current project's `.specstory/history/`
+
+**KEY FEATURES**:
+- No manual intervention required
+- Content-aware logging (coding vs. project-specific)
+- Cross-project knowledge management preservation
+- Real-time logging during conversations
+
 ## 🚨 CRITICAL: How to Start Claude Code
 
 **ALWAYS** start Claude Code using the `claude-mcp` command:
@@ -55,10 +72,10 @@ source .activate
 2. **MCP Memory** → Runtime knowledge graph storage
 3. **shared-memory.json** → Git-tracked persistent storage
 
-### Auto-Logging
-- Conversations automatically logged to `.specstory/history/`
-- Each session creates timestamped markdown file
-- No manual activation needed when using `claude-mcp`
+### Auto-Logging  
+- ✅ **WORKING**: I/O stream interception via `start-auto-logger.sh`
+- Smart content routing to appropriate projects
+- Real-time conversation capture and parsing
 
 ### MCP Configuration
 - Template: `claude-code-mcp.json` (with placeholders)
@@ -85,3 +102,4 @@ This system is designed for team use:
 2. **Run `ukb` regularly to capture insights**
 3. **Check `.specstory/history/` for past conversations**
 4. **The MCP memory persists across sessions when started correctly**
+5. **Automatic logging is now working** - conversations are automatically saved with smart routing

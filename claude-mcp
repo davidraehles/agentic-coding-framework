@@ -58,7 +58,22 @@ if [[ -x "$SCRIPT_DIR/sync-shared-knowledge.sh" ]]; then
 fi
 
 echo -e "${BLUE}📚 Cross-project knowledge ready${NC}"
-echo
 
-# Launch Claude with the MCP config
-exec claude --mcp-config "$MCP_CONFIG" "$@"
+# Start automatic conversation logging
+LOGGER_SCRIPT="$CODING_REPO_DIR/start-auto-logger.sh"
+if [[ -x "$LOGGER_SCRIPT" ]]; then
+    echo -e "${BLUE}🔴 Starting automatic conversation logging...${NC}"
+    echo -e "${GREEN}📁 Logs will be saved to appropriate .specstory/history/ directories${NC}"
+    echo
+    
+    # Launch Claude with the logger intercepting streams
+    # Pass the current directory, coding repo, and any Claude arguments
+    exec "$LOGGER_SCRIPT" "$(pwd)" "$CODING_REPO_DIR" "$@"
+else
+    echo -e "${YELLOW}⚠️  Auto-logger script not found at: $LOGGER_SCRIPT${NC}"
+    echo -e "${YELLOW}⚠️  Conversations will NOT be automatically logged${NC}"
+    echo
+    
+    # Launch Claude without logging
+    exec claude --mcp-config "$MCP_CONFIG" "$@"
+fi
