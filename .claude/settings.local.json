@@ -18,7 +18,7 @@
       "Bash(ln:*)",
       "Bash(vkb)",
       "mcp__browser-access__stagehand_navigate",
-      "Bash(./obsolete/start-chrome-debug.sh:*)",
+      "Bash(./browser-access/start-chrome-debug.sh:*)",
       "mcp__browser-access__screenshot",
       "Bash(./knowledge-management/update-knowledge-graph.sh:*)",
       "Bash(./knowledge-management/enhanced-capture-insight.sh:*)",
@@ -46,7 +46,9 @@
       "Bash(ukb)",
       "Bash(ukb:*)",
       "Bash(vkb status:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(./claude-mcp:*)",
+      "Bash(./browser-access/start-chrome-debug.sh:*)"
     ],
     "deny": []
   }

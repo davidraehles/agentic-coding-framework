@@ -95,7 +95,7 @@ If MCP servers can't find files:
 ### Chrome Debugging
 
 For browser-access to work:
-1. Start Chrome with debugging enabled: `./obsolete/start-chrome-debug.sh` (or use the `browser` command if installed)
+1. Start Chrome with debugging enabled: `./browser-access/start-chrome-debug.sh` (or use the `browser` command if installed)
 2. Verify the debugging port matches `LOCAL_CDP_URL` in your `.env`
 
 ## Updating Configuration
