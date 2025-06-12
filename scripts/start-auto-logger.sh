@@ -279,8 +279,22 @@ console.error(`[Logger] Coding repository: ${codingRepo}`);
 console.error('[Logger] Content will be intelligently routed based on context');
 EOF
 
+# Check if no arguments provided - default to interactive mode
+if [[ -z "$CLAUDE_ARGS" ]]; then
+  CLAUDE_ARGS=""
+fi
+
 # Start the monitor in background and pipe Claude through it
-(
-  # Start Claude with MCP config
+if [[ "$CLAUDE_ARGS" == *"--print"* ]]; then
+  # For --print mode, check if we have stdin
+  if [[ -t 0 ]]; then
+    echo "Error: --print mode requires input from stdin or a prompt argument"
+    exit 1
+  fi
+  # Pass stdin through to claude
+  claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS | node /tmp/claude-monitor.js "$PROJECT_PATH" "$CODING_REPO"
+else
+  # For interactive mode, start Claude directly without piping through monitor
+  # The monitor doesn't work well with interactive mode
   claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS
-) | node /tmp/claude-monitor.js "$PROJECT_PATH" "$CODING_REPO"
+fi
