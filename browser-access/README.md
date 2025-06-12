@@ -6,7 +6,11 @@ A customized Model Context Protocol (MCP) server that provides AI-powered web au
 
 1. **Build the server**:
    ```bash
-   ./setup-browser-access.sh
+   # Use the main install script which handles browser-access setup
+   ../install.sh
+   
+   # Or build manually:
+   npm install && npm run build
    ```
 
 2. **Set environment variables**:
@@ -23,7 +27,11 @@ A customized Model Context Protocol (MCP) server that provides AI-powered web au
 
 3. **Test the setup**:
    ```bash
-   ./test-browser-access.sh
+   # Use the main test approach via claude-mcp
+   ../claude-mcp
+   
+   # Or run the obsolete test script if needed:
+   ../obsolete/test-browser-access.sh
    ```
 
 ## Browser Setup Options
@@ -36,9 +44,9 @@ Start Chrome with debugging enabled using the provided script:
 browser                    # Start Chrome in debug mode
 browser google.com         # Start Chrome and navigate to Google
 
-# Or run directly:
-./start-chrome-debug.sh    # Start Chrome in debug mode
-./start-chrome-debug.sh https://example.com  # Start and navigate to URL
+# Or run directly (script moved to obsolete/):
+../obsolete/start-chrome-debug.sh    # Start Chrome in debug mode
+../obsolete/start-chrome-debug.sh https://example.com  # Start and navigate to URL
 ```
 
 ### Option 2: Browserbase Cloud
@@ -51,7 +59,7 @@ export BROWSERBASE_PROJECT_ID="your-project-id"
 
 ## Chrome Debug Script Features
 
-The `start-chrome-debug.sh` script (aliased as `browser`) provides:
+The `start-chrome-debug.sh` script (moved to `../obsolete/`, aliased as `browser`) provides:
 
 - ✅ **Auto-detection** of Chrome/Chromium installation
 - ✅ **Port conflict handling** - detects if Chrome debug is already running

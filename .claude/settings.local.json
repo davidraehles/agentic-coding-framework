@@ -18,7 +18,7 @@
       "Bash(ln:*)",
       "Bash(vkb)",
       "mcp__browser-access__stagehand_navigate",
-      "Bash(./start-chrome-debug.sh:*)",
+      "Bash(./obsolete/start-chrome-debug.sh:*)",
       "mcp__browser-access__screenshot",
       "Bash(./knowledge-management/update-knowledge-graph.sh:*)",
       "Bash(./knowledge-management/enhanced-capture-insight.sh:*)",
