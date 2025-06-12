@@ -50,8 +50,8 @@ When inside CN, the installer tests external connectivity using `curl google.de`
 
 1. **Clone the repository** (if not already done):
    ```bash
-   git clone <repository-url> ~/project
-   cd ~/project
+   git clone <repository-url> ~/coding
+   cd ~/coding
    ```
 
 2. **Configure environment variables**:

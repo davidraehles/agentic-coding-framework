@@ -2,12 +2,12 @@
 
 ## Quick Start
 
-> **Note:** Throughout this guide, `~/project` represents your chosen installation directory. You can clone to any location you prefer (e.g., `~/claude-knowledge`, `~/workspace/knowledge-system`, etc.). The `$PROJECT_ROOT` variable in examples should be replaced with your actual project path.
+> **Note:** Throughout this guide, `~/coding` is used as an example installation directory. You can clone to any location you prefer (e.g., `~/claude-knowledge`, `~/workspace/knowledge-system`, etc.). Replace `~/coding` with your chosen path, and update `$PROJECT_ROOT` variables in configuration examples accordingly.
 
 ```bash
 # Clone the repository to your preferred location
-git clone <repository-url> ~/project
-cd ~/project
+git clone <repository-url> ~/coding
+cd ~/coding
 
 # Run the installer
 ./install.sh
@@ -46,8 +46,8 @@ The installation script sets up:
 brew install git node python3 jq
 
 # Clone and install
-git clone <repository-url> ~/project
-cd ~/project
+git clone <repository-url> ~/coding
+cd ~/coding
 ./install.sh
 source ~/.zshrc
 ```
@@ -60,8 +60,8 @@ sudo apt-get update
 sudo apt-get install -y git nodejs npm python3 python3-pip jq
 
 # Clone and install
-git clone <repository-url> ~/project
-cd ~/project
+git clone <repository-url> ~/coding
+cd ~/coding
 ./install.sh
 source ~/.bashrc
 ```
@@ -75,8 +75,8 @@ sudo apt-get update
 sudo apt-get install -y git nodejs npm python3 python3-pip jq
 
 # Clone and install
-git clone <repository-url> ~/project
-cd ~/project
+git clone <repository-url> ~/coding
+cd ~/coding
 ./install.sh
 source ~/.bashrc
 ```
@@ -91,8 +91,8 @@ source ~/.bashrc
 # 4. Install jq from https://stedolan.github.io/jq/download/
 
 # In Git Bash terminal
-git clone <repository-url> ~/project
-cd ~/project
+git clone <repository-url> ~/coding
+cd ~/coding
 ./install.sh
 source ~/.bashrc
 ```
@@ -178,7 +178,7 @@ Add to Claude Code MCP settings:
 
 3. **Share with team**:
    ```bash
-   cd ~/Claude
+   cd ~/coding
    git add shared-memory.json
    git commit -m "feat: add insights from feature X development"
    git push
@@ -186,7 +186,7 @@ Add to Claude Code MCP settings:
 
 4. **Team members update**:
    ```bash
-   cd ~/Claude
+   cd ~/coding
    git pull
    vkb  # View updated knowledge
    ```
@@ -207,7 +207,7 @@ echo $PATH | grep -q "project/bin" && echo "PATH is set" || echo "PATH not set"
 
 ```bash
 # Rebuild visualizer
-cd ~/project/memory-visualizer
+cd ~/coding/memory-visualizer
 npm install
 npm run build
 ```
@@ -216,9 +216,9 @@ npm run build
 
 ```bash
 # Fix script permissions
-chmod +x ~/project/knowledge-management/ukb
-chmod +x ~/project/knowledge-management/vkb
-chmod +x ~/project/bin/*
+chmod +x ~/coding/knowledge-management/ukb
+chmod +x ~/coding/knowledge-management/vkb
+chmod +x ~/coding/bin/*
 ```
 
 ### Port conflicts (vkb)
@@ -238,7 +238,7 @@ vkb stop
 To remove the installation while preserving your knowledge data:
 
 ```bash
-cd ~/Claude
+cd ~/coding
 ./uninstall.sh
 ```
 

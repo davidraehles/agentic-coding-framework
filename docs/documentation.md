@@ -366,7 +366,7 @@ The system includes automatic logging of all Claude Code conversations through t
 The knowledge base expects these directory structures:
 
 ```
-~/project/
+~/coding/
 ├── shared-memory.json              # Main knowledge base
 ├── knowledge-management/
 │   ├── ukb                        # Update command

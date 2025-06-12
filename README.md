@@ -45,8 +45,8 @@ vkb
 
 ### Quick Setup
 ```bash
-git clone <repository-url> ~/project  # Clone to your preferred location
-cd ~/project
+git clone <repository-url> ~/coding  # "coding" is just an example - use any folder name
+cd ~/coding
 cp .env.example .env  # Configure API keys if needed
 ./install.sh        # Network-aware installation
 source .activate    # Activate commands immediately
@@ -76,7 +76,7 @@ vkb  # View knowledge visualization
 ## 📁 Directory Structure
 
 ```
-~/project/
+~/coding/
 ├── README.md                  # This file
 ├── TEAM_KNOWLEDGE_SETUP.md    # Quick setup guide
 ├── .env.example              # Environment variables template
