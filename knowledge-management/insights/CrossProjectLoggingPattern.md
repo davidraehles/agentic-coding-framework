@@ -99,16 +99,16 @@ claude-mcp
 # Work on coding tools (mention ukb, mcp, etc.)
 # Check both locations for logs:
 ls .specstory/history/
-ls ~/Agentic/coding/.specstory/history/
+ls $PROJECT_ROOT/.specstory/history/
 ```
 
 ### Normalization
 ```bash
 # Fix all existing filenames
-~/Agentic/coding/knowledge-management/normalize-specstory-filenames.sh
+$PROJECT_ROOT/knowledge-management/normalize-specstory-filenames.sh
 
 # Fix specific project
-~/Agentic/coding/knowledge-management/normalize-specstory-filenames.sh /path/to/project
+$PROJECT_ROOT/knowledge-management/normalize-specstory-filenames.sh /path/to/project
 ```
 
 ## Key Files

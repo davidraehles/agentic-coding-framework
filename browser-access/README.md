@@ -99,7 +99,7 @@ The MCP configuration includes:
   "mcpServers": {
     "browser-access": {
       "command": "node", 
-      "args": ["/Users/q284340/Agentic/coding/browser-access/dist/index.js"],
+      "args": ["$PROJECT_ROOT/browser-access/dist/index.js"],
       "env": {
         "LOCAL_CDP_URL": "ws://localhost:9222",
         "ANTHROPIC_API_KEY": "your-api-key"
@@ -150,7 +150,7 @@ Once integrated with Claude Code, you can use natural language commands like:
 2. **Browser Connection**: Ensure Chrome is running with `browser` command
 3. **API Keys**: Verify your ANTHROPIC_API_KEY is valid in the MCP config
 4. **Permissions**: Make sure scripts are executable (`chmod +x *.sh`)
-5. **Command Issues**: Make sure `/Users/q284340/Agentic/coding/knowledge-management` is in your PATH
+5. **Command Issues**: Make sure `$PROJECT_ROOT/knowledge-management` is in your PATH
 
 ## Configuration
 

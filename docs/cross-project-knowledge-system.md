@@ -125,7 +125,7 @@ When creating project-specific CLAUDE.md files:
 ### 5. Regular Sync
 ```bash
 # Ensure local knowledge is current
-cd ~/Agentic/coding
+cd $PROJECT_ROOT
 git pull
 ukb --auto  # Sync MCP with latest
 ```

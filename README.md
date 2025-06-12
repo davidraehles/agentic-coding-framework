@@ -45,8 +45,8 @@ vkb
 
 ### Quick Setup
 ```bash
-git clone <repository-url> ~/Agentic/coding
-cd ~/Agentic/coding
+git clone <repository-url> ~/project  # Clone to your preferred location
+cd ~/project
 cp .env.example .env  # Configure API keys if needed
 ./install.sh        # Network-aware installation
 source .activate    # Activate commands immediately
@@ -76,7 +76,7 @@ vkb  # View knowledge visualization
 ## 📁 Directory Structure
 
 ```
-~/Agentic/coding/
+~/project/
 ├── README.md                  # This file
 ├── TEAM_KNOWLEDGE_SETUP.md    # Quick setup guide
 ├── .env.example              # Environment variables template

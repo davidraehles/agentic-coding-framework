@@ -2,10 +2,12 @@
 
 ## Quick Start
 
+> **Note:** Throughout this guide, `~/project` represents your chosen installation directory. You can clone to any location you prefer (e.g., `~/claude-knowledge`, `~/workspace/knowledge-system`, etc.). The `$PROJECT_ROOT` variable in examples should be replaced with your actual project path.
+
 ```bash
-# Clone the repository
-git clone <repository-url> ~/Agentic/coding
-cd ~/Agentic/coding
+# Clone the repository to your preferred location
+git clone <repository-url> ~/project
+cd ~/project
 
 # Run the installer
 ./install.sh
@@ -44,8 +46,8 @@ The installation script sets up:
 brew install git node python3 jq
 
 # Clone and install
-git clone <repository-url> ~/Agentic/coding
-cd ~/Agentic/coding
+git clone <repository-url> ~/project
+cd ~/project
 ./install.sh
 source ~/.zshrc
 ```
@@ -58,8 +60,8 @@ sudo apt-get update
 sudo apt-get install -y git nodejs npm python3 python3-pip jq
 
 # Clone and install
-git clone <repository-url> ~/Agentic/coding
-cd ~/Agentic/coding
+git clone <repository-url> ~/project
+cd ~/project
 ./install.sh
 source ~/.bashrc
 ```
@@ -73,8 +75,8 @@ sudo apt-get update
 sudo apt-get install -y git nodejs npm python3 python3-pip jq
 
 # Clone and install
-git clone <repository-url> ~/Agentic/coding
-cd ~/Agentic/coding
+git clone <repository-url> ~/project
+cd ~/project
 ./install.sh
 source ~/.bashrc
 ```
@@ -89,8 +91,8 @@ source ~/.bashrc
 # 4. Install jq from https://stedolan.github.io/jq/download/
 
 # In Git Bash terminal
-git clone <repository-url> ~/Agentic/coding
-cd ~/Agentic/coding
+git clone <repository-url> ~/project
+cd ~/project
 ./install.sh
 source ~/.bashrc
 ```
@@ -140,11 +142,13 @@ vkb status
      "mcpServers": {
        "browser-access": {
          "command": "node",
-         "args": ["~/Agentic/coding/browser-access/dist/index.js"]
+         "args": ["/full/path/to/your/project/browser-access/dist/index.js"]
        }
      }
    }
    ```
+   
+   > **Note:** Replace `/full/path/to/your/project` with your actual project installation path (e.g., `/Users/username/project` or wherever you cloned the repository).
 
 ### Claude Logger
 
@@ -154,7 +158,7 @@ Add to Claude Code MCP settings:
   "mcpServers": {
     "claude-logger": {
       "command": "node",
-      "args": ["~/Agentic/coding/claude-logger-mcp/dist/index.js"]
+      "args": ["/full/path/to/your/project/claude-logger-mcp/dist/index.js"]
     }
   }
 }
@@ -196,14 +200,14 @@ Add to Claude Code MCP settings:
 source ~/.bashrc  # or ~/.zshrc
 
 # Check PATH
-echo $PATH | grep -q "Agentic/coding/bin" && echo "PATH is set" || echo "PATH not set"
+echo $PATH | grep -q "project/bin" && echo "PATH is set" || echo "PATH not set"
 ```
 
 ### Memory visualizer issues
 
 ```bash
 # Rebuild visualizer
-cd ~/Agentic/coding/memory-visualizer
+cd ~/project/memory-visualizer
 npm install
 npm run build
 ```
@@ -212,9 +216,9 @@ npm run build
 
 ```bash
 # Fix script permissions
-chmod +x ~/Agentic/coding/knowledge-management/ukb
-chmod +x ~/Agentic/coding/knowledge-management/vkb
-chmod +x ~/Agentic/coding/bin/*
+chmod +x ~/project/knowledge-management/ukb
+chmod +x ~/project/knowledge-management/vkb
+chmod +x ~/project/bin/*
 ```
 
 ### Port conflicts (vkb)

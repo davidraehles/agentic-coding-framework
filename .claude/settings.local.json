@@ -45,7 +45,8 @@
       "Bash(kill:*)",
       "Bash(ukb)",
       "Bash(ukb:*)",
-      "Bash(vkb status:*)"
+      "Bash(vkb status:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

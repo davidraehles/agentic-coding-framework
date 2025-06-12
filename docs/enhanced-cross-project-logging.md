@@ -119,10 +119,10 @@ A script is provided to normalize existing files:
 
 ```bash
 # Normalize all SpecStory files
-~/Agentic/coding/knowledge-management/normalize-specstory-filenames.sh
+$PROJECT_ROOT/knowledge-management/normalize-specstory-filenames.sh
 
 # Normalize specific directory
-~/Agentic/coding/knowledge-management/normalize-specstory-filenames.sh /path/to/project
+$PROJECT_ROOT/knowledge-management/normalize-specstory-filenames.sh /path/to/project
 ```
 
 ### Verification

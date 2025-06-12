@@ -17,7 +17,7 @@ When Claude Code is started with `claude-mcp`, the following environment variabl
 
 Instead of:
 ```markdown
-Check ~/Agentic/coding/shared-memory.json for patterns
+Check $PROJECT_ROOT/shared-memory.json for patterns
 ```
 
 Use:
@@ -29,7 +29,7 @@ Check the shared-memory.json in your Claude tools installation for patterns
 
 Instead of:
 ```bash
-KNOWLEDGE_BASE="~/Agentic/coding/shared-memory.json"
+KNOWLEDGE_BASE="$PROJECT_ROOT/shared-memory.json"
 ```
 
 Use:
@@ -47,7 +47,7 @@ KNOWLEDGE_BASE="${CLAUDE_KNOWLEDGE_BASE:-$CLAUDE_REPO/shared-memory.json}"
 
 Instead of:
 ```markdown
-See patterns in ~/Agentic/coding/shared-memory.json
+See patterns in $PROJECT_ROOT/shared-memory.json
 ```
 
 Use:
@@ -110,7 +110,7 @@ When sharing knowledge patterns, use pattern names rather than file paths:
 See the ReduxStateManagementPattern for React state solutions
 
 # Avoid: Hardcoded paths
-See ~/Agentic/coding/knowledge-management/insights/ReduxStateManagementPattern.md
+See $PROJECT_ROOT/knowledge-management/insights/ReduxStateManagementPattern.md
 ```
 
 ## MCP Memory References
@@ -119,7 +119,7 @@ The MCP memory system should store patterns with portable references:
 ```json
 {
   "observation": "Documentation available in knowledge-management/insights/ directory"
-  // Not: "Documentation at ~/Agentic/coding/knowledge-management/insights/"
+  // Not: "Documentation at $PROJECT_ROOT/knowledge-management/insights/"
 }
 ```
 

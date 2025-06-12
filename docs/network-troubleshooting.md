@@ -174,10 +174,10 @@ grep -r "ukb\|vkb" ~/.bashrc ~/.zshrc ~/.bash_profile 2>/dev/null
 source ~/.zshrc    # or ~/.bashrc
 
 # Manual activation
-source /Users/q284340/Agentic/coding/.activate
+source $PROJECT_ROOT/.activate
 
 # Fix PATH manually
-export PATH="/Users/q284340/Agentic/coding/bin:$PATH"
+export PATH="$PROJECT_ROOT/bin:$PATH"
 
 # Remove old aliases
 unalias ukb 2>/dev/null || true
