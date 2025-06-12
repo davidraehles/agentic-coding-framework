@@ -16,8 +16,8 @@ else
 fi
 
 # Export for Claude Code to know where the knowledge base is
-export CLAUDE_KNOWLEDGE_BASE="$CODING_REPO_DIR/shared-memory.json"
-export CLAUDE_TOOLS_PATH="$CODING_REPO_DIR"
+export CODING_KNOWLEDGE_BASE="$CODING_REPO_DIR/shared-memory.json"
+export CODING_TOOLS_PATH="$CODING_REPO_DIR"
 
 # Path to the MCP config file
 MCP_CONFIG="$CODING_REPO_DIR/claude-code-mcp-processed.json"
@@ -52,15 +52,23 @@ else
 fi
 
 # Run knowledge sync preparation
-if [[ -x "$SCRIPT_DIR/sync-shared-knowledge.sh" ]]; then
+SYNC_SCRIPT="$CODING_REPO_DIR/scripts/sync-shared-knowledge.sh"
+if [[ -x "$SYNC_SCRIPT" ]]; then
     echo -e "${BLUE}🔄 Preparing shared knowledge sync...${NC}"
-    "$SCRIPT_DIR/sync-shared-knowledge.sh"
+    "$SYNC_SCRIPT"
+fi
+
+# Create startup sync instructions for Claude
+SYNC_INSTRUCTIONS="$CODING_REPO_DIR/.mcp-sync/auto-sync.md"
+if [[ -f "$SYNC_INSTRUCTIONS" ]]; then
+    echo -e "${GREEN}🔄 MCP memory sync instructions prepared${NC}"
+    echo -e "${BLUE}💡 Claude will auto-load knowledge base into MCP memory${NC}"
 fi
 
 echo -e "${BLUE}📚 Cross-project knowledge ready${NC}"
 
 # Start automatic conversation logging
-LOGGER_SCRIPT="$CODING_REPO_DIR/start-auto-logger.sh"
+LOGGER_SCRIPT="$CODING_REPO_DIR/scripts/start-auto-logger.sh"
 if [[ -x "$LOGGER_SCRIPT" ]]; then
     echo -e "${BLUE}🔴 Starting automatic conversation logging...${NC}"
     echo -e "${GREEN}📁 Logs will be saved to appropriate .specstory/history/ directories${NC}"

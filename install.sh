@@ -478,7 +478,7 @@ configure_shell_environment() {
     echo -e "\n${CYAN}🐚 Configuring shell environment...${NC}"
     
     local claude_path_export="export PATH=\"$CLAUDE_REPO/bin:\$PATH\""
-    local claude_repo_export="export CLAUDE_REPO=\"$CLAUDE_REPO\""
+    local claude_repo_export="export CODING_REPO=\"$CLAUDE_REPO\""
     
     # Clean up old aliases from all shell config files
     local config_files=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.zprofile")
@@ -494,8 +494,9 @@ configure_shell_environment() {
             sed -i.bak '/alias claude-mcp=/d' "$config_file" 2>/dev/null || true
             sed -i.bak '/unalias ukb/d' "$config_file" 2>/dev/null || true
             sed -i.bak '/unalias vkb/d' "$config_file" 2>/dev/null || true
-            # Remove old CLAUDE_REPO exports
+            # Remove old CLAUDE_REPO/CODING_REPO exports
             sed -i.bak '/CLAUDE_REPO.*Claude/d' "$config_file" 2>/dev/null || true
+            sed -i.bak '/CODING_REPO.*coding/d' "$config_file" 2>/dev/null || true
         fi
     done
     
@@ -516,7 +517,7 @@ EOF
     done
     
     # Check if already configured
-    if grep -q "CLAUDE_REPO.*$CLAUDE_REPO" "$SHELL_RC" 2>/dev/null; then
+    if grep -q "CODING_REPO.*$CLAUDE_REPO" "$SHELL_RC" 2>/dev/null; then
         info "Shell already configured with correct paths"
     else
         # Add configuration
@@ -531,7 +532,7 @@ EOF
     
     # Also update .bash_profile on macOS since it's commonly used
     if [[ "$PLATFORM" == "macos" ]] && [[ -f "$HOME/.bash_profile" ]]; then
-        if ! grep -q "CLAUDE_REPO.*$CLAUDE_REPO" "$HOME/.bash_profile" 2>/dev/null; then
+        if ! grep -q "CODING_REPO.*$CLAUDE_REPO" "$HOME/.bash_profile" 2>/dev/null; then
             {
                 echo ""
                 echo "# Claude Knowledge Management System"
@@ -543,7 +544,7 @@ EOF
     fi
     
     # Create a cleanup script for the current shell session
-    cat > "$CLAUDE_REPO/.cleanup-aliases.sh" << 'EOF'
+    cat > "$CLAUDE_REPO/scripts/cleanup-aliases.sh" << 'EOF'
 #!/bin/bash
 # Cleanup aliases from current shell session
 unalias ukb 2>/dev/null || true
@@ -553,10 +554,10 @@ unset -f ukb 2>/dev/null || true
 unset -f vkb 2>/dev/null || true
 unset -f claude-mcp 2>/dev/null || true
 EOF
-    chmod +x "$CLAUDE_REPO/.cleanup-aliases.sh"
+    chmod +x "$CLAUDE_REPO/scripts/cleanup-aliases.sh"
     
     success "Shell environment configured and old aliases removed"
-    info "If you still see old aliases, run: source $CLAUDE_REPO/.cleanup-aliases.sh"
+    info "If you still see old aliases, run: source $CLAUDE_REPO/scripts/cleanup-aliases.sh"
 }
 
 # Setup MCP configuration
@@ -764,7 +765,7 @@ main() {
     cat > "$CLAUDE_REPO/.activate" << EOF
 #!/bin/bash
 # Activate Claude Knowledge Management environment
-export CLAUDE_REPO="$CLAUDE_REPO"
+export CODING_REPO="$CLAUDE_REPO"
 export PATH="$CLAUDE_REPO/bin:\$PATH"
 echo "✅ Claude Knowledge Management environment activated!"
 echo "Commands 'ukb' and 'vkb' are now available."

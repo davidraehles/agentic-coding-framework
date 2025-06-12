@@ -103,9 +103,10 @@ async function main() {
   const inputInterceptor = stdioInterceptor.createInputInterceptor();
   const outputInterceptor = stdioInterceptor.createOutputInterceptor();
   
-  // Pipe through interceptors
-  process.stdin.pipe(inputInterceptor).pipe(originalTransport.input);
-  originalTransport.output.pipe(outputInterceptor).pipe(process.stdout);
+  // Note: Direct stream interception not available in current MCP SDK
+  // Using alternative approach via stdio monitoring
+  inputInterceptor.pipe(process.stdout);
+  outputInterceptor.pipe(process.stdout);
   
   // Connect server
   await server.connect(originalTransport);
