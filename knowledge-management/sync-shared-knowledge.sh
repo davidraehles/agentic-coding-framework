@@ -12,8 +12,8 @@ NC='\033[0m' # No Color
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLAUDE_REPO="$(dirname "$SCRIPT_DIR")"
-SHARED_MEMORY="$CLAUDE_REPO/shared-memory.json"
+CODING_REPO="$(dirname "$SCRIPT_DIR")"
+SHARED_MEMORY="$CODING_REPO/shared-memory.json"
 
 # Create MCP sync instructions file
 MCP_SYNC_FILE="/tmp/claude-mcp-sync-$(date +%s).md"

@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-CLAUDE_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODING_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo -e "${YELLOW}🗑️  Claude Knowledge Management System - Uninstaller${NC}"
 echo -e "${YELLOW}===================================================${NC}"

@@ -23,8 +23,8 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Installation configuration
-CLAUDE_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_LOG="$CLAUDE_REPO/install.log"
+CODING_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_LOG="$CODING_REPO/install.log"
 
 # Repository URLs - will be set based on CN/VPN detection
 MEMORY_VISUALIZER_REPO_SSH=""

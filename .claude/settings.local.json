@@ -48,7 +48,8 @@
       "Bash(vkb status:*)",
       "Bash(rg:*)",
       "Bash(./claude-mcp:*)",
-      "Bash(./browser-access/start-chrome-debug.sh:*)"
+      "Bash(./browser-access/start-chrome-debug.sh:*)",
+      "Bash(./install.sh:*)"
     ],
     "deny": []
   }
