@@ -9,6 +9,7 @@ This repository contains various scripts and tools created with Claude Code, foc
 - **[Complete Documentation](docs/documentation.md)** - Comprehensive system documentation
 - **[Knowledge Flow Architecture](docs/knowledge-flow-architecture.md)** - Information flow from projects to MCP memory to git storage  
 - **[Automatic Conversation Logging](docs/automatic-conversation-logging.md)** - How Claude Code sessions are automatically logged
+- **[Enhanced Cross-Project Logging](docs/enhanced-cross-project-logging.md)** - Automatic dual logging for coding project work
 - **[Cross-Project Knowledge System](docs/cross-project-knowledge-system.md)** - How knowledge applies across all projects
 - **[Portable Knowledge References](docs/portable-knowledge-references.md)** - Avoiding hardcoded paths for team compatibility
 - **[Team Setup Guide](TEAM_KNOWLEDGE_SETUP.md)** - Quick start for team collaboration
@@ -38,6 +39,7 @@ vkb
 - 🎯 **Transferable patterns** in central green hub
 - 🔗 **MCP integration** for persistent memory with bidirectional sync
 - 📝 **Automatic conversation logging** to `.specstory/history/` - all Claude Code sessions are automatically logged
+- 🔀 **Cross-project logging** - coding project work automatically detected and dual-logged from any project context
 
 ## 🚀 Installation
 
@@ -226,6 +228,7 @@ vkb restart  # Refresh visualization with team updates
 The system includes comprehensive documentation for transferable patterns:
 
 - **[Conditional Logging Pattern](knowledge-management/insights/ConditionalLoggingPattern.md)** - Zero-overhead debug logging with dual-axis filtering
+- **[Cross-Project Logging Pattern](knowledge-management/insights/CrossProjectLoggingPattern.md)** - Automatic dual logging for coding project work
 - **[MCP Knowledge Persistence](knowledge-management/insights/MCPKnowledgePersistencePattern.md)** - Complete knowledge management system architecture
 - **[Network-Aware Installation](knowledge-management/insights/NetworkAwareInstallationPattern.md)** - Enterprise installation patterns with network adaptation
 - **[Redux State Management](knowledge-management/insights/ReduxStateManagementPattern.md)** - MVI architecture with TypeScript

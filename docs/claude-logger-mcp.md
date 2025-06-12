@@ -2,6 +2,8 @@
 
 An MCP (Model Context Protocol) server that provides SpecStory-compatible conversation logging for Claude Code sessions with automatic logging capabilities. The server automatically saves all Claude Code conversations to `.specstory/history/` directory when auto-logging is enabled.
 
+**Enhanced Feature**: The server now includes cross-project logging detection - automatically dual-logs coding project work to both the current project and the coding project's history when relevant keywords are detected.
+
 ## Overview
 
 The Claude Logger MCP server captures and stores Claude Code conversations in well-formatted Markdown files following the SpecStory format. It creates a persistent history of AI interactions that can be searched, referenced, and analyzed. The server now supports both manual and automatic logging modes.
@@ -12,6 +14,7 @@ The Claude Logger MCP server captures and stores Claude Code conversations in we
 claude-logger-mcp/
 ├── src/
 │   ├── index.ts          # Main MCP server implementation
+│   ├── index-auto.ts     # Auto-logging server with cross-project detection
 │   └── logger.ts         # Core logging functionality
 ├── dist/                 # Compiled JavaScript output
 ├── package.json          # Dependencies and scripts
@@ -28,20 +31,23 @@ npm run build
 ```
 
 ### 2. Configure Claude Code MCP
-Add to `claude-code-mcp.json`:
+Add to `claude-code-mcp.json` (automatically done by install.sh):
 ```json
 {
   "mcpServers": {
     "claude-logger": {
       "command": "node",
-      "args": ["/Users/q284340/Claude/claude-logger-mcp/dist/index.js"],
+      "args": ["{{CLAUDE_PROJECT_PATH}}/claude-logger-mcp/dist/index-auto.js"],
       "env": {
-        "PROJECT_PATH": "/Users/q284340/Claude"
+        "PROJECT_PATH": "{{CLAUDE_PROJECT_PATH}}",
+        "CLAUDE_TOOLS_PATH": "{{CLAUDE_PROJECT_PATH}}"
       }
     }
   }
 }
 ```
+
+Note: The server uses `index-auto.js` for automatic logging with cross-project detection.
 
 ## Available Tools
 
@@ -64,7 +70,8 @@ Add to `claude-code-mcp.json`:
 
 ## Output Format
 
-Sessions are stored in `.specstory/history/` as markdown files:
+Sessions are stored in `.specstory/history/` as markdown files with the naming convention:
+`YYYY-MM-DD_HH-MM-descriptive-title.md`
 
 ```markdown
 # Conversation Session: session-name
@@ -88,7 +95,7 @@ Assistant response...
 <details>
 <summary>Metadata</summary>
 
-Model: claude-sonnet-4-20250514  
+Model: claude-opus-4-20250514  
 Tools Used: read_file, write_file  
 Branch: main  
 </details>
@@ -98,6 +105,12 @@ Branch: main
 **Session Ended:** 2025-06-05T10:45:00.000Z  
 **Total Messages:** 2
 ```
+
+### Cross-Project Logging
+When coding project work is detected in another project context, the conversation is dual-logged:
+- Primary log: Current project's `.specstory/history/`
+- Secondary log: Coding project's `.specstory/history/` with `-cross-project` suffix
+- Metadata includes: `project_path: "/original/project (cross-project from coding tools)"`
 
 ## Integration Points
 
@@ -168,21 +181,28 @@ await endSession("feature-implementation", "Successfully implemented user profil
 
 ### Core Components
 
-**index.ts** - MCP Server (`claude-logger-mcp/src/index.ts:21-31`)
+**index.ts** - Manual MCP Server (`claude-logger-mcp/src/index.ts`)
 - Implements MCP protocol handlers
-- Provides 9 tools (4 auto-logging + 5 manual)
+- Provides manual logging tools
 - Manages tool request routing and error handling
+
+**index-auto.ts** - Auto-logging MCP Server (`claude-logger-mcp/src/index-auto.ts`)
+- Automatic conversation capture without manual tool calls
+- Cross-project detection using keyword matching
+- Dual logging for coding project work from other contexts
+- Filename normalization to YYYY-MM-DD_HH-MM format
 
 **logger.ts** - SpecStory Logger
 - Handles file system operations for `.specstory/history`
 - Formats conversations into SpecStory markdown
 - Manages session lifecycle and metadata
+- Consistent filename generation and sanitization
 
-**session-manager.ts** - Auto-logging Manager
-- Singleton pattern for session state management
-- Message queueing and pairing logic
-- Automatic title extraction from first user message
-- Git branch detection integration
+**Cross-Project Detection Keywords**:
+- `ukb`, `vkb`, `shared-memory.json`, `knowledge-base`
+- `mcp`, `claude-mcp`, `specstory`, `claude-logger`
+- `coding project`, `claude tools`, `install.sh`
+- `knowledge management`, `transferable pattern`
 
 ### Dependencies
 - `@modelcontextprotocol/sdk`: MCP protocol implementation
@@ -219,6 +239,8 @@ project-root/
 2. **Metadata Capture**: Include relevant context (branch, tools, model)
 3. **Regular Sessions**: Start/end sessions for logical conversation boundaries
 4. **Summary Writing**: Provide meaningful session summaries for future reference
+5. **Cross-Project Work**: When working on coding tools from other projects, logs are automatically dual-saved
+6. **Filename Convention**: All files follow `YYYY-MM-DD_HH-MM-descriptive-title.md` format
 
 ## How to Use Auto-Logging
 
@@ -268,5 +290,7 @@ DEBUG_LOGGING=1 node /path/to/dist/index.js
 ## Related Documentation
 
 - [Main System Documentation](./documentation.md)
+- [Enhanced Cross-Project Logging](./enhanced-cross-project-logging.md)
 - [SpecStory Format Reference](../.specstory/.what-is-this.md)
 - [MCP Configuration](../claude-code-mcp.json)
+- [Cross-Project Logging Pattern](../knowledge-management/insights/CrossProjectLoggingPattern.md)
