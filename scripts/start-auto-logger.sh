@@ -315,12 +315,11 @@ echo -e "${BLUE}🧠 Use 'ukb --auto' for quick session summaries${NC}"
 echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
 echo
 
-# Start Claude with conversation capture using pipes
-echo -e "${GREEN}🎯 Starting Claude with real-time conversation capture...${NC}"
+# Start Claude directly without pipe interference
+echo -e "${GREEN}🎯 Starting conversation capture for session: $SESSION_ID${NC}"
 
-# Use a pipeline to capture conversation while Claude runs
-(claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS 2>&1) | \
-  tee >(node "$CODING_REPO/scripts/conversation-capture.js" "$PROJECT_PATH" "$CODING_REPO" "$SESSION_ID" >/dev/null)
+# Run Claude directly without pipes to avoid stdin/stdout issues
+claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS
 
 # POST-SESSION LOGGING (backup/cleanup)
 echo -e "${GREEN}🔄 Finalizing post-session logging...${NC}"

@@ -52,7 +52,8 @@
       "Bash(./install.sh:*)",
       "Bash(./sync-shared-knowledge.sh:*)",
       "Bash(node:*)",
-      "Bash(./knowledge-management/ukb:*)"
+      "Bash(./knowledge-management/ukb:*)",
+      "Bash(claude-mcp --help)"
     ],
     "deny": []
   }
