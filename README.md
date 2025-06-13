@@ -1,4 +1,4 @@
-# Claude Scripts Collection
+# Coding Scripts Collection
 
 This repository contains various scripts and tools created with Claude Code, focused on knowledge management and development productivity.
 
@@ -106,7 +106,7 @@ vkb  # View knowledge visualization
 │   └── imag/                  # Generated diagrams
 ├── shared-memory.json         # Knowledge base (git-tracked)
 ├── claude-code-mcp.json      # MCP config template
-├── .specstory/               # Claude Code conversation history
+├── .specstory/               # Conversation history
 │   └── history/              # Auto-logged conversations
 ├── knowledge-management/      # Core KM system
 │   ├── ukb                   # Update Knowledge Base command
@@ -267,8 +267,8 @@ The system includes comprehensive documentation for transferable patterns:
 
 ```bash
 # Clone the repository
-git clone <repository-url> ~/Claude
-cd ~/Claude
+git clone <repository-url> ~/coding
+cd ~/coding
 
 # Run the universal installer
 ./install.sh
