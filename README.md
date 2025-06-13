@@ -2,8 +2,10 @@
 
 This repository contains various scripts and tools created with Claude Code, focused on knowledge management and development productivity.
 
+## Knowledge-Base Viewer:
 ![Knowledge Visualization](docs/imag/viewer.png)
 
+## Session Startup with Key-Insights
 ![Claude MCP Auto-Logging](docs/imag/claude-mcp-autologging.png)
 
 ## 📚 Documentation
