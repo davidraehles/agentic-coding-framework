@@ -2,7 +2,9 @@
 
 This repository contains various scripts and tools created with Claude Code, focused on knowledge management and development productivity.
 
-![Viewer](docs/imag/viewer.png)
+![Knowledge Visualization](docs/imag/viewer.png)
+
+![Claude MCP Auto-Logging](docs/imag/claude-mcp-autologging.png)
 
 ## 📚 Documentation
 
@@ -54,14 +56,23 @@ cp .env.example .env  # Configure API keys if needed
 source .activate    # Activate commands immediately
 ```
 
-### Automatic Conversation Logging
+### Automatic Conversation Logging & Knowledge Loading
 
-Starting Claude Code with the `claude-mcp` command automatically enables conversation logging:
+The screenshot above shows the complete `claude-mcp` startup sequence, demonstrating:
 
-- All prompts and responses are captured to `.specstory/history/`
+**🔄 Auto-Sync Knowledge Base**: On startup, Claude automatically loads the persistent knowledge base (12 entities, 19 relations) into MCP memory, making all previous insights immediately available.
+
+**📝 Post-Session Logging**: Conversations are intelligently captured and routed:
+- **Coding content** (ukb, vkb, knowledge management, MCP) → `coding/.specstory/history/`  
+- **Project-specific content** → current project's `.specstory/history/`
+- **Smart detection** analyzes conversation content for automatic routing
+
+Starting Claude Code with the `claude-mcp` command automatically enables:
+
+- All prompts and responses captured to `.specstory/history/`
 - Each session creates a timestamped markdown file
-- Conversations are preserved for future reference and knowledge extraction
-- No manual activation needed - logging starts automatically with each session
+- Cross-session knowledge persistence via MCP memory
+- No manual activation needed - logging and knowledge loading start automatically
 
 ### Network-Aware Installation
 

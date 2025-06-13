@@ -1,8 +1,10 @@
 # Automatic Conversation Logging
 
+![Claude MCP Auto-Logging](imag/claude-mcp-autologging.png)
+
 ## Overview
 
-The Claude Code MCP integration now includes automatic conversation logging that captures all interactions to `.specstory/history/` without requiring manual intervention.
+The Claude Code MCP integration now includes automatic conversation logging that captures all interactions to `.specstory/history/` without requiring manual intervention. The screenshot above demonstrates the complete startup sequence showing both post-session logging initialization and MCP memory auto-sync with the persistent knowledge base.
 
 ## How It Works
 
