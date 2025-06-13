@@ -47,6 +47,43 @@ if [[ -f "$SHARED_MEMORY" ]]; then
     if jq -e '.entities[] | select(.name == "ClaudeCodeStartupPattern")' "$SHARED_MEMORY" >/dev/null 2>&1; then
         echo -e "${GREEN}✅ Startup pattern knowledge loaded${NC}"
     fi
+
+    # Create startup reminder for Claude
+    SYNC_DIR="$CODING_REPO_DIR/.mcp-sync"
+    mkdir -p "$SYNC_DIR"
+    cat > "$SYNC_DIR/startup-reminder.md" << 'STARTUP_EOF'
+# 🚨 CLAUDE CODE STARTUP CHECKLIST 🚨
+
+## MANDATORY FIRST STEPS:
+
+1. **Query MCP Memory for patterns:**
+   ```
+   mcp__memory__search_nodes("ConditionalLoggingPattern")
+   mcp__memory__search_nodes("ReduxStateManagementPattern") 
+   mcp__memory__search_nodes("ClaudeCodeStartupPattern")
+   ```
+
+2. **Apply patterns immediately:**
+   - ❌ NEVER use console.log 
+   - ✅ ALWAYS use Logger class
+   - ❌ NEVER use local React state
+   - ✅ ALWAYS use Redux patterns
+
+3. **Knowledge Management Rules:**
+   - ❌ NEVER edit shared-memory.json directly
+   - ✅ ALWAYS use: ukb --interactive or ukb --auto
+   - ✅ Use vkb to visualize knowledge graph
+   - ✅ ukb is in PATH and works from anywhere
+
+4. **Verify logging is working:**
+   - Check if today's session is being logged
+   - Ensure appropriate .specstory/history location
+
+## ⚠️ FAILURE TO FOLLOW = ARCHITECTURAL MISTAKES ⚠️
+
+STARTUP_EOF
+
+    echo -e "${YELLOW}📋 Startup reminder created for Claude${NC}"
 else
     echo -e "${YELLOW}⚠️  No shared knowledge base found at: $SHARED_MEMORY${NC}"
 fi
@@ -66,6 +103,12 @@ if [[ -f "$SYNC_INSTRUCTIONS" ]]; then
 fi
 
 echo -e "${BLUE}📚 Cross-project knowledge ready${NC}"
+echo -e "${GREEN}🔧 Knowledge Management Tools Available:${NC}"
+echo -e "  • ${BLUE}ukb${NC} - Update Knowledge Base (captures insights)"
+echo -e "  • ${BLUE}vkb${NC} - View Knowledge Base (visualizes knowledge graph)"
+echo -e "  • ${YELLOW}CRITICAL: NEVER edit shared-memory.json directly${NC}"
+echo -e "  • ${YELLOW}ALWAYS use: ukb --interactive or ukb --auto${NC}"
+echo
 
 # Start automatic conversation logging
 LOGGER_SCRIPT="$CODING_REPO_DIR/scripts/start-auto-logger.sh"

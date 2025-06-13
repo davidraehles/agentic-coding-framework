@@ -284,17 +284,27 @@ if [[ -z "$CLAUDE_ARGS" ]]; then
   CLAUDE_ARGS=""
 fi
 
-# Start the monitor in background and pipe Claude through it
-if [[ "$CLAUDE_ARGS" == *"--print"* ]]; then
-  # For --print mode, check if we have stdin
-  if [[ -t 0 ]]; then
-    echo "Error: --print mode requires input from stdin or a prompt argument"
-    exit 1
-  fi
-  # Pass stdin through to claude
-  claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS | node /tmp/claude-monitor.js "$PROJECT_PATH" "$CODING_REPO"
-else
-  # For interactive mode, start Claude directly without piping through monitor
-  # The monitor doesn't work well with interactive mode
-  claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS
-fi
+# For now, create a session marker that the system can detect
+SESSION_ID="$(date '+%Y-%m-%d_%H-%M-%S')"
+echo -e "${GREEN}📝 Session ID: $SESSION_ID${NC}"
+
+# Start Claude with MCP config and log session start
+echo "$(date): Claude Code session started from $PROJECT_PATH" >> "$CODING_REPO/.mcp-sync/session-log.txt"
+
+# Store session metadata for post-session logging
+cat > "$CODING_REPO/.mcp-sync/current-session.json" << EOF
+{
+  "sessionId": "$SESSION_ID",
+  "startTime": "$(date -u +%Y-%m-%dT%H:%M:%S.%03NZ)",
+  "projectPath": "$PROJECT_PATH",
+  "codingRepo": "$CODING_REPO",
+  "needsLogging": true
+}
+EOF
+
+echo -e "${YELLOW}💡 Note: This conversation will be logged post-session${NC}"
+echo -e "${BLUE}📋 Use 'ukb log-session' to manually log important exchanges${NC}"
+echo
+
+# Start Claude with MCP config
+exec claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS

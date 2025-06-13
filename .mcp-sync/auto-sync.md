@@ -52,8 +52,8 @@ console.log(`✅ MCP Memory loaded: ${graphState.nodes?.length || 0} entities, $
 
 ## Current Knowledge Base Summary
 
-**Entities to sync:** 11
-**Relations to sync:** 18
+**Entities to sync:** 12
+**Relations to sync:** 19
 
 **Key Patterns Available:**
 - ConditionalLoggingPattern (significance: 8)
@@ -62,6 +62,7 @@ console.log(`✅ MCP Memory loaded: ${graphState.nodes?.length || 0} entities, $
 - MCPKnowledgePersistencePattern (significance: 9)
 - NetworkAwareInstallationPattern (significance: 9)
 - StateDrivenAnimationPipelinePattern (significance: 8)
+- ClaudeCodeStartupPattern (significance: 10)
 - StrategyBasedModularRoutingPattern (significance: 8)
 
-**Sync prepared at:** Thu Jun 12 16:49:16 CEST 2025
+**Sync prepared at:** Fri Jun 13 08:01:45 CEST 2025
