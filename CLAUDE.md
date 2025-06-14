@@ -11,6 +11,7 @@ This file provides essential guidance to Claude Code when working in this reposi
 3. **Load entities**: Use `mcp__memory__create_entities` with data from shared-memory.json
 4. **Load relations**: Use `mcp__memory__create_relations` with relationship data
 5. **Verify sync**: Use `mcp__memory__read_graph` to confirm successful loading
+6. **Apply patterns**: Query and apply critical patterns immediately
 
 **AUTO-SYNC PROCEDURE**: 
 ```typescript
@@ -20,28 +21,50 @@ if (fileExists(syncPath)) {
   const syncInfo = JSON.parse(readFile(syncPath));
   console.log(`🔄 Auto-syncing ${syncInfo.entity_count} entities, ${syncInfo.relation_count} relations`);
   
-  // 2. Load entities from shared-memory.json
+  // 2. Load high-priority entities first (enhanced structure support)
   const sharedMemory = JSON.parse(readFile(process.env.CODING_KNOWLEDGE_BASE));
-  await mcp__memory__create_entities(sharedMemory.entities.map(entity => ({
-    name: entity.name,
-    entityType: entity.entityType,
-    observations: entity.observations || [entity.content || ""],
-    metadata: {
-      significance: entity.significance,
-      created: entity.created,
-      project: entity.project,
-      documentation_link: entity.documentation_link
-    }
-  })));
+  const highPriorityEntities = sharedMemory.entities
+    .filter(e => e.significance >= 8 || e.entityType === 'WorkflowPattern')
+    .map(entity => ({
+      name: entity.name,
+      entityType: entity.entityType,
+      observations: entity.observations || [
+        `Problem: ${entity.problem?.description || 'N/A'}`,
+        `Solution: ${entity.solution?.approach || 'N/A'}`,
+        `Significance: ${entity.significance}/10`
+      ]
+    }));
   
-  // 3. Load relations
-  await mcp__memory__create_relations(sharedMemory.relations);
+  await mcp__memory__create_entities({ entities: highPriorityEntities });
   
-  // 4. Verify and report
+  // 3. Load remaining entities
+  const remainingEntities = sharedMemory.entities
+    .filter(e => (e.significance < 8 && e.entityType !== 'WorkflowPattern'))
+    .map(entity => ({
+      name: entity.name,
+      entityType: entity.entityType,
+      observations: entity.observations || [`${entity.entityType}: ${entity.name}`]
+    }));
+  
+  await mcp__memory__create_entities({ entities: remainingEntities });
+  
+  // 4. Load relations
+  await mcp__memory__create_relations({ relations: sharedMemory.relations });
+  
+  // 5. Verify and apply critical patterns
   const graph = await mcp__memory__read_graph();
   console.log(`✅ Knowledge base synced: ${graph.nodes?.length} entities, ${graph.edges?.length} relations`);
   
-  // 5. Remove sync trigger
+  // 6. Query and apply critical patterns
+  const criticalPatterns = ['ConditionalLoggingPattern', 'ReduxStateManagementPattern', 'ClaudeCodeStartupPattern'];
+  for (const pattern of criticalPatterns) {
+    const result = await mcp__memory__search_nodes(pattern);
+    if (result?.nodes?.length > 0) {
+      console.log(`✅ Pattern loaded: ${pattern}`);
+    }
+  }
+  
+  // 7. Remove sync trigger
   unlinkFile(syncPath);
 }
 ```
@@ -80,6 +103,59 @@ claude-mcp
 ## 🚨 CRITICAL: Knowledge Base Management Rule
 
 **IMPORTANT: The shared-memory.json knowledge base must ALWAYS be updated using the `ukb` command. Never edit this file directly. The ukb tool ensures proper formatting, validation, and synchronization with MCP memory.**
+
+## 🔍 CRITICAL: Pattern Verification and Compliance
+
+**MANDATORY**: At the start of every session and before committing code, verify pattern compliance:
+
+### Pattern Compliance Checklist
+
+1. **ConditionalLoggingPattern**
+   - ❌ NEVER use `console.log`
+   - ✅ ALWAYS use `Logger.log(level, category, message)`
+   - Verify: `grep -r "console\.log" --include="*.js" --include="*.ts" .`
+
+2. **ReduxStateManagementPattern** (React projects)
+   - ❌ NEVER use `useState` for complex state
+   - ✅ ALWAYS use Redux slices with typed hooks
+   - Verify: `grep -r "useState" --include="*.tsx" --include="*.jsx" .`
+
+3. **Enhanced Entity Structure** (Knowledge Management)
+   - ❌ NEVER create flat observation arrays
+   - ✅ ALWAYS use structured observations with types
+   - Example:
+     ```json
+     "observations": [
+       {"type": "problem", "content": "...", "date": "..."},
+       {"type": "solution", "content": "...", "date": "..."},
+       {"type": "metric", "content": "...", "date": "..."}
+     ]
+     ```
+
+### Pattern Verification Tools
+
+```bash
+# Run pattern verification
+./knowledge-management/scripts/verify-patterns.sh
+
+# Migrate entities to enhanced format
+ukb --migrate
+
+# Capture structured insights
+ukb --interactive
+```
+
+### Code Snippet Embedding
+
+When capturing patterns, always include code examples:
+```javascript
+// Pattern implementation example
+const pattern = {
+  solution: {
+    code_example: "actual working code here"
+  }
+};
+```
 
 ## Why This Matters
 
