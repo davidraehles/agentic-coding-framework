@@ -47,39 +47,47 @@ class SmartClaudeLogger {
   detectCodingContent(userMessage, assistantMessage = '') {
     const content = `${userMessage} ${assistantMessage}`.toLowerCase();
     
-    // Keywords that indicate coding/knowledge management work
+    // Keywords that specifically indicate coding/knowledge management work
+    // Made more specific to avoid false positives from timeline work
     const codingKeywords = [
-      'ukb', 'vkb', 'shared-memory.json', 'knowledge-base', 'knowledge base',
-      'mcp', 'claude-mcp', 'specstory', 'claude-logger', 'coding project',
-      'coding repo', 'coding repository', 'agentic/coding', 'install.sh',
-      'knowledge management', 'transferable pattern', 'shared knowledge',
-      'cross-project', '.activate', 'claude tools', 'memory-visualizer',
-      'start-auto-logger', 'automatic logging', 'conversation logging',
-      'CLAUDE.md', 'CODING_REPO', 'todowrite', 'todoread', 'knowledge extraction'
+      'ukb', 'vkb', 'shared-memory.json', 'knowledge-base',
+      'claude-mcp', 'coding project', 'coding repo', 'coding repository', 
+      'agentic/coding', 'install.sh', 'transferable pattern', 
+      'cross-project knowledge', '.activate', 'claude tools', 'memory-visualizer',
+      'start-auto-logger', 'automatic logging script', 'conversation logging system',
+      'CODING_REPO', 'mcp server', 'mcp memory', 'knowledge extraction tool'
     ];
     
-    // File paths that indicate coding work
+    // File paths that specifically indicate coding work
     const codingPaths = [
       '/users/q284340/agentic/coding',
       '~/agentic/coding',
-      'coding/',
-      '.specstory',
-      'knowledge-management',
+      'agentic/coding/',
+      'coding/bin/',
+      'coding/scripts/',
+      'coding/tools/',
+      'knowledge-management/',
       'shared-memory.json'
     ];
     
-    // Check for coding keywords
+    // Specific coding tool operations (not just mentions)
+    const codingOperations = [
+      'ukb --interactive', 'ukb --auto', 'vkb --',
+      'claude-mcp script', 'mcp config', 'knowledge base update',
+      'edit shared-memory.json', 'modify ukb', 'fix logging routing'
+    ];
+    
+    // Check for explicit coding keywords
     const hasCodingKeywords = codingKeywords.some(keyword => content.includes(keyword));
     
-    // Check for coding paths
+    // Check for coding-specific paths
     const hasCodingPaths = codingPaths.some(pathPattern => content.includes(pathPattern));
     
-    // Check if we're modifying coding tools from another project
-    const isModifyingCodingTools = content.includes('ukb') || content.includes('vkb') || 
-                                   content.includes('knowledge') || content.includes('mcp') ||
-                                   content.includes('claude-mcp') || content.includes('logging');
+    // Check for actual coding tool operations
+    const hasCodeToolOperations = codingOperations.some(op => content.includes(op));
     
-    return hasCodingKeywords || hasCodingPaths || isModifyingCodingTools;
+    // More precise detection - require specific evidence of coding work
+    return hasCodingKeywords || hasCodingPaths || hasCodeToolOperations;
   }
 
   generateSessionFilename(targetRepo) {
