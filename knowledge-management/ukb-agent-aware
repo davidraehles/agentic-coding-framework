@@ -1,0 +1,333 @@
+#!/usr/bin/env node
+
+// UKB (Update Knowledge Base) - Agent-Aware Version
+// Works with both Claude Code (MCP) and CoPilot (fallback graph DB)
+
+const path = require('path');
+const fs = require('fs').promises;
+const { getAdapter, getBestAdapter } = require('../lib/agent-registry');
+
+// Configuration
+function findRepoRoot() {
+  let currentDir = process.cwd();
+  
+  while (currentDir !== '/') {
+    const sharedMemoryPath = path.join(currentDir, 'shared-memory.json');
+    const knowledgeDir = path.join(currentDir, 'knowledge-management');
+    
+    if (require('fs').existsSync(sharedMemoryPath) && 
+        require('fs').existsSync(knowledgeDir)) {
+      return currentDir;
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  
+  // Fallback
+  const fallbackPath = '/Users/q284340/Agentic/coding';
+  if (require('fs').existsSync(path.join(fallbackPath, 'shared-memory.json'))) {
+    return fallbackPath;
+  }
+  
+  return process.cwd();
+}
+
+class AgentAwareUKB {
+  constructor() {
+    this.repoRoot = findRepoRoot();
+    this.sharedMemoryPath = path.join(this.repoRoot, 'shared-memory.json');
+    this.adapter = null;
+  }
+
+  async initialize() {
+    // Get the agent adapter based on environment or best available
+    const forcedAgent = process.env.CODING_AGENT;
+    
+    if (forcedAgent) {
+      console.log(`Using forced agent: ${forcedAgent}`);
+      this.adapter = await getAdapter(forcedAgent);
+    } else {
+      console.log('Detecting best available agent...');
+      this.adapter = await getBestAdapter();
+    }
+    
+    console.log(`Initialized with ${this.adapter.constructor.name}`);
+  }
+
+  async captureGitInsights() {
+    console.log('📊 Capturing insights from recent git commits...');
+    
+    // Get recent commits
+    const { executeCommand } = require('../lib/utils/system');
+    
+    try {
+      const commitLog = await executeCommand('git log --oneline -10');
+      const commits = commitLog.split('\n').filter(line => line.trim());
+      
+      const insights = [];
+      
+      for (const commit of commits) {
+        const [hash, ...messageParts] = commit.split(' ');
+        const message = messageParts.join(' ');
+        
+        // Analyze commit for insights
+        if (this.isSignificantCommit(message)) {
+          const insight = await this.analyzeCommit(hash, message);
+          if (insight) {
+            insights.push(insight);
+          }
+        }
+      }
+      
+      if (insights.length > 0) {
+        console.log(`Found ${insights.length} insights from recent commits`);
+        await this.saveInsights(insights);
+      } else {
+        console.log('No significant insights found in recent commits');
+      }
+      
+    } catch (error) {
+      console.error('Failed to capture git insights:', error.message);
+    }
+  }
+
+  async captureInteractiveInsights() {
+    console.log('🤖 Interactive insight capture mode...');
+    
+    const readline = require('readline');
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    const question = (prompt) => {
+      return new Promise((resolve) => {
+        rl.question(prompt, resolve);
+      });
+    };
+
+    try {
+      const name = await question('Entity name: ');
+      const type = await question('Entity type (Pattern/Tool/Concept/Bug/etc.): ');
+      const significance = await question('Significance (1-10): ');
+      const problem = await question('Problem description: ');
+      const solution = await question('Solution approach: ');
+      const additionalObs = await question('Additional observations (optional): ');
+
+      const entity = {
+        name,
+        entityType: type,
+        significance: parseInt(significance) || 5,
+        observations: [
+          `Problem: ${problem}`,
+          `Solution: ${solution}`
+        ]
+      };
+
+      if (additionalObs.trim()) {
+        entity.observations.push(`Additional: ${additionalObs}`);
+      }
+
+      await this.saveInsights([entity]);
+      console.log('✅ Insight captured successfully');
+
+    } finally {
+      rl.close();
+    }
+  }
+
+  async saveInsights(insights) {
+    console.log('💾 Saving insights to memory...');
+    
+    try {
+      // Update shared-memory.json
+      await this.updateSharedMemory(insights);
+      
+      // Sync to agent's memory system
+      await this.syncToAgentMemory(insights);
+      
+      console.log('✅ Insights saved successfully');
+      
+    } catch (error) {
+      console.error('Failed to save insights:', error.message);
+    }
+  }
+
+  async updateSharedMemory(insights) {
+    let sharedMemory = { entities: [], relations: [] };
+    
+    // Load existing data
+    try {
+      const content = await fs.readFile(this.sharedMemoryPath, 'utf8');
+      sharedMemory = JSON.parse(content);
+    } catch (error) {
+      console.log('Creating new shared-memory.json');
+    }
+    
+    // Add new insights
+    for (const insight of insights) {
+      // Check if entity already exists
+      const existingIndex = sharedMemory.entities.findIndex(e => e.name === insight.name);
+      
+      if (existingIndex >= 0) {
+        // Update existing entity
+        sharedMemory.entities[existingIndex] = {
+          ...sharedMemory.entities[existingIndex],
+          ...insight,
+          observations: [
+            ...(sharedMemory.entities[existingIndex].observations || []),
+            ...(insight.observations || [])
+          ]
+        };
+      } else {
+        // Add new entity
+        sharedMemory.entities.push(insight);
+      }
+    }
+    
+    // Write back
+    await fs.writeFile(this.sharedMemoryPath, JSON.stringify(sharedMemory, null, 2));
+  }
+
+  async syncToAgentMemory(insights) {
+    if (!this.adapter.hasCapability('memory')) {
+      console.log('Agent does not support memory operations');
+      return;
+    }
+    
+    try {
+      // Create entities in agent's memory
+      await this.adapter.memoryCreate(insights);
+      console.log('Synced to agent memory');
+      
+      // Create sync trigger for Claude MCP if needed
+      if (this.adapter.constructor.name === 'ClaudeMCPAdapter') {
+        const syncDir = path.join(this.repoRoot, '.mcp-sync');
+        await fs.mkdir(syncDir, { recursive: true });
+        
+        await fs.writeFile(
+          path.join(syncDir, 'sync-required.json'),
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            entity_count: insights.length,
+            relation_count: 0
+          }, null, 2)
+        );
+      }
+      
+    } catch (error) {
+      console.warn('Failed to sync to agent memory:', error.message);
+    }
+  }
+
+  isSignificantCommit(message) {
+    const significantPatterns = [
+      /^feat:/i,
+      /^fix:/i,
+      /^refactor:/i,
+      /^perf:/i,
+      /pattern/i,
+      /implement/i,
+      /add.*feature/i,
+      /optimize/i,
+      /improve/i
+    ];
+    
+    return significantPatterns.some(pattern => pattern.test(message));
+  }
+
+  async analyzeCommit(hash, message) {
+    try {
+      // Get commit details
+      const { executeCommand } = require('../lib/utils/system');
+      const commitDetails = await executeCommand(`git show --stat ${hash}`);
+      
+      // Extract entity name from commit message
+      const name = this.extractEntityName(message);
+      if (!name) return null;
+      
+      return {
+        name,
+        entityType: this.inferEntityType(message),
+        significance: this.calculateSignificance(message, commitDetails),
+        observations: [
+          `Commit: ${message}`,
+          `Hash: ${hash}`,
+          `Auto-captured: ${new Date().toISOString()}`
+        ]
+      };
+      
+    } catch (error) {
+      console.warn(`Failed to analyze commit ${hash}:`, error.message);
+      return null;
+    }
+  }
+
+  extractEntityName(message) {
+    // Simple extraction logic - can be enhanced
+    const patterns = [
+      /(?:feat|fix|add|implement):\s*(.+)/i,
+      /^(.+?)(?:\s*-|\s*:|$)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = message.match(pattern);
+      if (match) {
+        return match[1].trim();
+      }
+    }
+    
+    return null;
+  }
+
+  inferEntityType(message) {
+    if (/pattern/i.test(message)) return 'Pattern';
+    if (/^fix:/i.test(message)) return 'Bug';
+    if (/^feat:/i.test(message)) return 'Feature';
+    if (/refactor/i.test(message)) return 'Refactoring';
+    if (/test/i.test(message)) return 'Test';
+    if (/doc/i.test(message)) return 'Documentation';
+    
+    return 'Concept';
+  }
+
+  calculateSignificance(message, details) {
+    let score = 5; // Base score
+    
+    // Boost for certain patterns
+    if (/^feat:/i.test(message)) score += 2;
+    if (/^fix:/i.test(message)) score += 1;
+    if (/critical|important|major/i.test(message)) score += 2;
+    if (/pattern/i.test(message)) score += 1;
+    
+    // Boost for larger changes
+    const linesChanged = (details.match(/\d+ insertion/g) || []).length + 
+                        (details.match(/\d+ deletion/g) || []).length;
+    if (linesChanged > 100) score += 1;
+    if (linesChanged > 500) score += 1;
+    
+    return Math.min(Math.max(score, 1), 10);
+  }
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  
+  try {
+    const ukb = new AgentAwareUKB();
+    await ukb.initialize();
+    
+    if (args.includes('--interactive')) {
+      await ukb.captureInteractiveInsights();
+    } else {
+      await ukb.captureGitInsights();
+    }
+    
+  } catch (error) {
+    console.error('UKB failed:', error.message);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main();
+}

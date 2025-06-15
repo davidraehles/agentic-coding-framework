@@ -1,298 +1,501 @@
-# Knowledge Flow Architecture
+# Agent-Agnostic Knowledge Flow Architecture
 
 ## Overview
 
-This document describes the comprehensive flow of information from project insights through MCP memory to persistent git storage in the Claude knowledge management system.
+This document describes the comprehensive flow of information from project insights through agent-specific memory systems to persistent git storage in the agent-agnostic coding tools system. The architecture supports both Claude Code (with MCP) and GitHub CoPilot (with fallback services) while maintaining a unified knowledge base.
 
 ## Architecture Components
 
-### 1. **Project Insights Capture**
+### 1. **Unified Insight Capture**
 - **Source**: Development sessions, git commits, conversation logs
-- **Tools**: `ukb` (Update Knowledge Base) script
+- **Tools**: Agent-aware `ukb` (Update Knowledge Base) script
 - **Modes**: Interactive and automatic capture
 - **Location**: Any project directory
+- **Agents**: Works with Claude Code, GitHub CoPilot, or any detected agent
 
-### 2. **MCP Memory Layer** 
-- **Purpose**: Runtime knowledge graph storage and operations
-- **Technology**: Model Context Protocol (MCP) memory server
-- **Scope**: Session-persistent and cross-session knowledge
+### 2. **Agent-Specific Memory Layer**
+- **Claude Code**: MCP memory server for runtime knowledge graph
+- **CoPilot**: Graphology.js for in-memory graph operations
+- **Purpose**: Session-persistent and cross-session knowledge
 - **Operations**: Create entities, add observations, create relations
+- **Compatibility**: Both systems use same data format
 
-### 3. **Local Storage Sync**
-- **File**: `shared-memory.json` in the Claude project
-- **Purpose**: Git-trackable persistent storage
+### 3. **Unified Storage Sync**
+- **File**: `shared-memory.json` in the coding project
+- **Purpose**: Git-trackable persistent storage shared across agents
 - **Format**: Structured JSON with entities, relations, and metadata
 - **Versioning**: Git history provides knowledge evolution tracking
+- **Agent-Agnostic**: Same format regardless of source agent
 
 ## Detailed Information Flow
 
-### Phase 1: Insight Capture
+### Phase 1: Agent-Aware Insight Capture
 
 ```mermaid
-graph TD
-    A[Project Development] --> B[Git Commits]
-    A --> C[Conversation Logs]
-    A --> D[Manual Insights]
+graph TB
+    subgraph "Development Context"
+        A[Project Development]
+        B[Git Commits]
+        C[Conversation Logs]
+        D[Manual Insights]
+    end
     
-    B --> E[ukb --auto]
-    C --> E
-    D --> F[ukb --interactive]
+    subgraph "Agent Detection"
+        AD[Agent Detector]
+        AR[Agent Registry]
+    end
     
-    E --> G[Temporary Insight Files]
-    F --> G
+    subgraph "Capture Tools"
+        UKB[ukb --auto]
+        UKBI[ukb --interactive]
+        UKBA[ukb --agent-aware]
+    end
+    
+    subgraph "Temporary Processing"
+        G[Insight Extraction]
+        H[Pattern Recognition]
+        I[Significance Scoring]
+    end
+    
+    A --> B
+    A --> C
+    A --> D
+    
+    B --> UKB
+    C --> UKB
+    D --> UKBI
+    
+    UKB --> AD
+    UKBI --> AD
+    AD --> AR
+    AR --> UKBA
+    
+    UKBA --> G
+    G --> H
+    H --> I
 ```
 
 **Process**:
-1. **Automatic Mode** (`ukb --auto`):
+1. **Agent Detection**: System automatically detects available agents
+2. **Automatic Mode** (`ukb --auto`):
    - Analyzes recent git commits for patterns
    - Extracts architectural insights from commit messages
    - Identifies performance optimizations and bug fixes
    - Generates insights based on file changes and patterns
 
-2. **Interactive Mode** (`ukb --interactive`):
-   - Prompts developer for deep insights
-   - Captures thought processes and decision rationale
-   - Documents architectural decisions and trade-offs
-   - Records learning experiences and gotchas
+3. **Interactive Mode** (`ukb --interactive`):
+   - Guided insight capture with prompts
+   - Significance ranking (1-10 scale)
+   - Structured observation entry
+   - Real-time validation and suggestions
 
-### Phase 2: MCP Memory Integration
-
-```mermaid
-graph TD
-    A[Temporary Insight Files] --> B[Parse Insights]
-    B --> C[Generate MCP Operations]
-    C --> D[Claude Code Execution]
-    D --> E[MCP Memory Server]
-    
-    E --> F[Entity Creation]
-    E --> G[Relation Building]
-    E --> H[Knowledge Graph Update]
-```
-
-**Process**:
-1. **Insight Processing**:
-   - Parse temporary JSON files containing captured insights
-   - Convert insights to MCP-compatible entity format
-   - Generate observations and metadata for each insight
-
-2. **MCP Operations** (via Claude Code):
-   ```bash
-   # These operations are executed by Claude Code:
-   mcp__memory__create_entities    # Create new knowledge entities
-   mcp__memory__add_observations   # Add details to existing entities
-   mcp__memory__create_relations   # Connect related concepts
-   mcp__memory__search_nodes       # Find existing related entities
-   ```
-
-3. **Knowledge Graph Building**:
-   - Creates bidirectional relationships between concepts
-   - Links project-specific insights to transferable patterns
-   - Maintains significance rankings for insight prioritization
-
-### Phase 3: Persistent Storage Sync
+### Phase 2: Agent-Specific Memory Operations
 
 ```mermaid
-graph TD
-    A[MCP Memory State] --> B[Extract Knowledge Graph]
-    B --> C[Format for JSON Storage]
-    C --> D[Update shared-memory.json]
-    D --> E[Git Commit]
-    E --> F[Persistent Knowledge Base]
+graph TB
+    subgraph "Agent-Specific Processing"
+        subgraph "Claude Code Path"
+            CM[Claude MCP Adapter]
+            MCP[MCP Memory Server]
+            MM[MCP Memory Graph]
+        end
+        
+        subgraph "CoPilot Path"
+            CPA[CoPilot Adapter]
+            GR[Graphology Service]
+            GM[Graph Memory]
+        end
+    end
     
-    F --> G[Cross-Session Access]
-    F --> H[Team Knowledge Sharing]
-    F --> I[Pattern Recognition]
+    subgraph "Unified Operations"
+        CREATE[Create Entities]
+        RELATE[Create Relations]
+        SEARCH[Search Operations]
+        TRAVERSE[Graph Traversal]
+    end
+    
+    subgraph "Sync Triggers"
+        CSYNC[Claude MCP Sync]
+        GSYNC[Graphology Sync]
+        TRIGGER[Sync Trigger Files]
+    end
+    
+    CM --> MCP
+    MCP --> MM
+    CPA --> GR
+    GR --> GM
+    
+    MM --> CREATE
+    GM --> CREATE
+    MM --> RELATE
+    GM --> RELATE
+    MM --> SEARCH
+    GM --> SEARCH
+    MM --> TRAVERSE
+    GM --> TRAVERSE
+    
+    CREATE --> CSYNC
+    RELATE --> CSYNC
+    CREATE --> GSYNC
+    RELATE --> GSYNC
+    
+    CSYNC --> TRIGGER
+    GSYNC --> TRIGGER
 ```
 
-**Process**:
-1. **Memory Extraction**:
-   - Query MCP memory for complete knowledge graph
-   - Extract entities, relations, and metadata
-   - Preserve significance rankings and timestamps
+**Claude Code Process**:
+1. **MCP Integration**: Direct integration with MCP memory server
+2. **Sync Triggers**: Creates `.mcp-sync/sync-required.json` for session startup
+3. **Persistence**: Memory persists across Claude sessions via MCP
+4. **Bidirectional Sync**: MCP memory ↔ shared-memory.json
 
-2. **JSON Serialization**:
-   - Convert MCP memory format to structured JSON
-   - Maintain backward compatibility with existing tools
-   - Include metadata for versioning and provenance
+**CoPilot Process**:
+1. **Graphology Integration**: Pure JavaScript graph operations
+2. **Immediate Persistence**: Direct save to `.coding-tools/memory.json`
+3. **Import/Export**: Compatible with MCP memory format
+4. **Real-time Sync**: Graphology memory ↔ shared-memory.json
 
-3. **Git Integration**:
-   - Update `shared-memory.json` with latest knowledge state
-   - Commit changes to git with descriptive messages
-   - Enable diff viewing of knowledge evolution
+### Phase 3: Cross-Agent Memory Synchronization
 
-## Data Flow Specifications
-
-### Insight Format
-```json
-{
-  "name": "InsightName",
-  "entityType": "TransferablePattern|CodingInsight|Architecture",
-  "observations": [
-    "Detailed description of the insight",
-    "Implementation approach",
-    "Benefits and trade-offs"
-  ],
-  "significance": 8,
-  "project": "source-project",
-  "technologies": ["React", "TypeScript"],
-  "created": "2025-06-10T18:53:07Z"
-}
+```mermaid
+graph TB
+    subgraph "Agent Memory Systems"
+        MCP_MEM[MCP Memory Server]
+        GRAPH_MEM[Graphology Memory]
+    end
+    
+    subgraph "Shared Storage"
+        SHARED[shared-memory.json]
+        LOCAL_CLAUDE[.mcp-sync/]
+        LOCAL_COPILOT[.coding-tools/memory.json]
+    end
+    
+    subgraph "Sync Operations"
+        EXPORT[Export to Shared]
+        IMPORT[Import from Shared]
+        MERGE[Merge Conflicts]
+        VALIDATE[Validate Integrity]
+    end
+    
+    subgraph "Version Control"
+        GIT[Git Repository]
+        COMMIT[Auto-commit Changes]
+        HISTORY[Knowledge History]
+    end
+    
+    MCP_MEM --> EXPORT
+    GRAPH_MEM --> EXPORT
+    EXPORT --> SHARED
+    
+    SHARED --> IMPORT
+    IMPORT --> MCP_MEM
+    IMPORT --> GRAPH_MEM
+    
+    SHARED --> MERGE
+    MERGE --> VALIDATE
+    VALIDATE --> SHARED
+    
+    SHARED --> GIT
+    GIT --> COMMIT
+    COMMIT --> HISTORY
+    
+    LOCAL_CLAUDE <--> MCP_MEM
+    LOCAL_COPILOT <--> GRAPH_MEM
 ```
 
-### MCP Memory Operations
-```javascript
-// Entity Creation
-mcp__memory__create_entities({
-  entities: [{
-    name: "ReduxStateManagementPattern",
-    entityType: "TransferablePattern",
-    observations: [
-      "Redux Toolkit with typed hooks for React applications",
-      "Feature-based slice organization improves maintainability"
-    ]
-  }]
-})
+**Synchronization Process**:
+1. **Export Phase**: Each agent exports its memory to shared format
+2. **Merge Phase**: Intelligent merging of insights from different agents
+3. **Validation Phase**: Consistency checks and duplicate resolution
+4. **Import Phase**: All agents can import the unified knowledge base
 
-// Relation Creation
-mcp__memory__create_relations({
-  relations: [{
-    from: "ReduxStateManagementPattern",
-    to: "TimelineProject", 
-    relationType: "implemented in"
-  }]
-})
+### Phase 4: Conversation Logging Integration
+
+```mermaid
+graph TB
+    subgraph "Agent-Specific Logging"
+        subgraph "Claude Logging"
+            CL[Claude Sessions]
+            MCPL[MCP Logger]
+            CLAUDE_LOG[Claude Log Files]
+        end
+        
+        subgraph "CoPilot Logging"
+            CPL[CoPilot Sessions]
+            SPEC[Specstory Extension]
+            FILE_LOG[File-based Logger]
+            COPILOT_LOG[CoPilot Log Files]
+        end
+    end
+    
+    subgraph "Unified Logging"
+        DETECT[Logger Detection]
+        ROUTE[Smart Routing]
+        UNIFIED[.specstory/history/]
+    end
+    
+    subgraph "Log Processing"
+        PARSE[Parse Conversations]
+        EXTRACT_INSIGHTS[Extract Insights]
+        AUTO_UKB[Auto-trigger UKB]
+    end
+    
+    CL --> MCPL
+    MCPL --> CLAUDE_LOG
+    CPL --> DETECT
+    DETECT --> SPEC
+    DETECT --> FILE_LOG
+    SPEC --> COPILOT_LOG
+    FILE_LOG --> COPILOT_LOG
+    
+    CLAUDE_LOG --> ROUTE
+    COPILOT_LOG --> ROUTE
+    ROUTE --> UNIFIED
+    
+    UNIFIED --> PARSE
+    PARSE --> EXTRACT_INSIGHTS
+    EXTRACT_INSIGHTS --> AUTO_UKB
 ```
 
-### Shared Memory JSON Structure
-```json
-{
-  "metadata": {
-    "version": "2.0.0",
-    "last_updated": "2025-06-10T18:53:07Z",
-    "total_entities": 12,
-    "total_relations": 21,
-    "last_mode": "interactive"
-  },
-  "entities": [...],
-  "relations": [...]
-}
+**Logging Integration**:
+1. **Agent Detection**: Automatically detects available logging systems
+2. **Smart Routing**: Routes logs to appropriate directories based on content
+3. **Format Unification**: All logs stored in compatible format
+4. **Insight Extraction**: Automated extraction of insights from conversations
+
+### Phase 5: Knowledge Visualization and Access
+
+```mermaid
+graph TB
+    subgraph "Data Sources"
+        SM[shared-memory.json]
+        LOGS[.specstory/history/]
+        PATTERNS[Pattern Library]
+    end
+    
+    subgraph "Visualization System"
+        VKB[vkb Viewer]
+        WEB[Web Interface]
+        GRAPH_VIZ[Graph Visualization]
+    end
+    
+    subgraph "Query Interface"
+        SEARCH_API[Search API]
+        FILTER[Filtering]
+        EXPORT_VIZ[Export Options]
+    end
+    
+    subgraph "Agent Integration"
+        CLAUDE_ACCESS[Claude Memory Access]
+        COPILOT_ACCESS[CoPilot Memory Access]
+        UNIFIED_API[Unified Memory API]
+    end
+    
+    SM --> VKB
+    LOGS --> VKB
+    PATTERNS --> VKB
+    
+    VKB --> WEB
+    WEB --> GRAPH_VIZ
+    WEB --> SEARCH_API
+    SEARCH_API --> FILTER
+    FILTER --> EXPORT_VIZ
+    
+    UNIFIED_API --> CLAUDE_ACCESS
+    UNIFIED_API --> COPILOT_ACCESS
+    SEARCH_API --> UNIFIED_API
 ```
 
-## Workflow Integration
+## Data Flow Patterns
 
-### Developer Workflow
-1. **Development Session**: Code, commit, iterate
-2. **Insight Capture**: Run `ukb --auto` or `ukb --interactive`
-3. **MCP Sync**: Claude Code processes MCP operations
-4. **Persistence**: Knowledge automatically syncs to git
-5. **Sharing**: Team members get latest knowledge on pull
+### Entity Creation Flow
 
-### Claude Code Integration
-1. **Session Start**: Load knowledge from `shared-memory.json`
-2. **Runtime**: Access MCP memory for context-aware assistance
-3. **Insight Processing**: Execute MCP operations from `ukb` script
-4. **Session End**: Sync MCP state back to persistent storage
+```plantuml
+@startuml
+participant Developer
+participant "ukb Tool" as UKB
+participant "Agent Detector" as AD
+participant "Claude Adapter" as CA
+participant "CoPilot Adapter" as CPA
+participant "MCP Memory" as MCP
+participant "Graphology" as GR
+participant "shared-memory.json" as SM
 
-### Knowledge Evolution
-1. **Capture**: New insights added continuously
-2. **Refine**: Existing insights enhanced with new observations
-3. **Connect**: Relationships discovered and documented
-4. **Transfer**: Patterns generalized across projects
+Developer -> UKB: Run ukb
+UKB -> AD: Detect agent
+alt Claude Available
+    AD -> CA: Initialize adapter
+    CA -> MCP: Create entities
+    MCP -> MCP: Store in memory
+    MCP -> SM: Sync to shared storage
+else CoPilot Available
+    AD -> CPA: Initialize adapter
+    CPA -> GR: Create entities
+    GR -> GR: Store in graph
+    GR -> SM: Sync to shared storage
+end
+UKB -> Developer: Insights captured
+@enduml
+```
 
-## Bidirectional Sync Mechanism
+### Cross-Agent Knowledge Sharing
 
-### MCP → Local Storage
-- **Trigger**: `ukb --auto` completion, session end
-- **Process**: Extract complete MCP memory state
-- **Output**: Updated `shared-memory.json`
-- **Verification**: Compare entity/relation counts
+```plantuml
+@startuml
+participant "Claude User" as CU
+participant "MCP Memory" as MCP
+participant "shared-memory.json" as SM
+participant "CoPilot User" as CPU
+participant "Graphology" as GR
 
-### Local Storage → MCP  
-- **Trigger**: Claude Code session start, manual sync
-- **Process**: Load `shared-memory.json` into MCP memory
-- **Validation**: Ensure all entities and relations exist
-- **Recovery**: Handle missing or corrupted data gracefully
+CU -> MCP: Add knowledge
+MCP -> SM: Export knowledge
+SM -> SM: Git commit
+note right: Knowledge persisted in git
 
-## Error Handling and Recovery
-
-### Sync Failures
-- **Detection**: Compare timestamps and entity counts
-- **Recovery**: Manual sync via `ukb --sync` command
-- **Validation**: Verify bidirectional consistency
-
-### Data Corruption
-- **Prevention**: JSON schema validation before writes
-- **Detection**: Parse errors during load operations
-- **Recovery**: Restore from git history, rebuild from MCP
-
-### Missing Dependencies
-- **MCP Server**: Graceful degradation to local-only mode
-- **Claude Code**: Standalone operation with limited functionality
-- **Git**: Warning messages, continue with local storage
+CPU -> SM: Load knowledge
+SM -> GR: Import knowledge
+GR -> CPU: Knowledge available
+CPU -> GR: Add new insights
+GR -> SM: Export combined knowledge
+SM -> MCP: Import for Claude users
+@enduml
+```
 
 ## Performance Considerations
 
-### Optimization Strategies
-- **Incremental Sync**: Only transfer changed entities
-- **Batched Operations**: Group MCP calls for efficiency
-- **Lazy Loading**: Load knowledge on-demand
-- **Caching**: Cache frequently accessed patterns
+### Memory Optimization
 
-### Scalability Limits
-- **Entity Count**: ~1000 entities before performance impact
-- **Relation Density**: Optimize for <10 relations per entity
-- **Observation Size**: Limit observations to <500 words each
-- **Sync Frequency**: Balance between freshness and performance
+```mermaid
+graph TB
+    subgraph "Optimization Strategies"
+        LAZY[Lazy Loading]
+        CACHE[Intelligent Caching]
+        BATCH[Batch Operations]
+        COMPRESS[Data Compression]
+    end
+    
+    subgraph "Performance Metrics"
+        LOAD_TIME[Load Time]
+        MEMORY_USAGE[Memory Usage]
+        SEARCH_SPEED[Search Speed]
+        SYNC_SPEED[Sync Speed]
+    end
+    
+    subgraph "Monitoring"
+        PERF_LOG[Performance Logging]
+        METRICS[Metrics Collection]
+        ALERTS[Performance Alerts]
+    end
+    
+    LAZY --> LOAD_TIME
+    CACHE --> SEARCH_SPEED
+    BATCH --> SYNC_SPEED
+    COMPRESS --> MEMORY_USAGE
+    
+    LOAD_TIME --> PERF_LOG
+    MEMORY_USAGE --> PERF_LOG
+    SEARCH_SPEED --> METRICS
+    SYNC_SPEED --> METRICS
+    
+    PERF_LOG --> ALERTS
+    METRICS --> ALERTS
+```
+
+### Scalability Metrics
+
+| Component | Small Project | Medium Project | Large Project |
+|-----------|---------------|----------------|---------------|
+| **Entities** | <100 | 100-1000 | 1000+ |
+| **Relations** | <200 | 200-2000 | 2000+ |
+| **Load Time** | <100ms | <500ms | <2s |
+| **Search Time** | <50ms | <200ms | <1s |
+| **Sync Time** | <200ms | <1s | <5s |
+
+## Error Handling and Recovery
+
+### Sync Conflict Resolution
+
+```mermaid
+flowchart TD
+    CONFLICT[Sync Conflict Detected]
+    AUTO_MERGE{Auto-merge possible?}
+    MERGE[Automatic Merge]
+    MANUAL[Manual Resolution]
+    BACKUP[Create Backup]
+    RESOLVE[Apply Resolution]
+    VALIDATE[Validate Result]
+    COMMIT[Commit Changes]
+    
+    CONFLICT --> BACKUP
+    BACKUP --> AUTO_MERGE
+    AUTO_MERGE -->|Yes| MERGE
+    AUTO_MERGE -->|No| MANUAL
+    MERGE --> VALIDATE
+    MANUAL --> RESOLVE
+    RESOLVE --> VALIDATE
+    VALIDATE --> COMMIT
+```
+
+### Failure Recovery
+
+```javascript
+class KnowledgeFlowRecovery {
+  async recoverFromFailure(error) {
+    switch (error.type) {
+      case 'SYNC_FAILURE':
+        return await this.recoverSync();
+      case 'MEMORY_CORRUPTION':
+        return await this.recoverFromBackup();
+      case 'AGENT_UNAVAILABLE':
+        return await this.fallbackToAlternativeAgent();
+      default:
+        return await this.genericRecovery(error);
+    }
+  }
+  
+  async recoverSync() {
+    // Restore from last known good state
+    const backup = await this.getLastValidBackup();
+    await this.restoreFromBackup(backup);
+    return { recovered: true, method: 'backup_restore' };
+  }
+}
+```
 
 ## Security and Privacy
 
 ### Data Protection
-- **Local Storage**: No external transmission required
-- **Git History**: Standard git security practices apply
-- **MCP Memory**: Session-scoped, no persistent external storage
-- **Sensitive Data**: Exclude personal/proprietary information
 
-### Access Control
-- **File Permissions**: Standard filesystem permissions
-- **Git Repository**: Repository-level access control
-- **MCP Operations**: Claude Code session-scoped access
-- **Sharing**: Explicit git push required for team sharing
-
-## Monitoring and Diagnostics
-
-### Health Checks
-```bash
-# Verify sync status
-ukb --status
-
-# Compare MCP vs local storage
-ukb --validate
-
-# Show knowledge graph statistics  
-vkb --stats
+```mermaid
+graph TB
+    subgraph "Security Layers"
+        ENC[Data Encryption]
+        AUTH[Access Control]
+        AUDIT[Audit Logging]
+        BACKUP[Secure Backup]
+    end
+    
+    subgraph "Privacy Controls"
+        FILTER[Content Filtering]
+        REDACT[Sensitive Data Redaction]
+        ANON[Anonymization]
+        RETENTION[Data Retention Policy]
+    end
+    
+    subgraph "Compliance"
+        GDPR[GDPR Compliance]
+        SOC[SOC 2 Type II]
+        ISO[ISO 27001]
+        LOCAL[Local-only Processing]
+    end
+    
+    ENC --> GDPR
+    AUTH --> SOC
+    AUDIT --> ISO
+    FILTER --> LOCAL
+    REDACT --> LOCAL
+    ANON --> GDPR
 ```
 
-### Debugging Tools
-- **Verbose Logging**: `ukb --debug --interactive`
-- **Sync Validation**: `ukb --validate --verbose`
-- **MCP Inspection**: Direct MCP memory queries via Claude Code
-- **Git History**: Track knowledge evolution over time
-
-## Future Enhancements
-
-### Planned Improvements
-1. **Real-time Sync**: Automatic MCP ↔ storage synchronization
-2. **Conflict Resolution**: Handle concurrent modifications gracefully
-3. **Pattern Recognition**: ML-assisted insight categorization
-4. **Cross-Project Transfer**: Automated pattern application suggestions
-5. **Team Collaboration**: Multi-user knowledge contribution workflows
-
-### Integration Opportunities
-- **IDE Plugins**: Direct insight capture from development environment
-- **CI/CD Integration**: Automatic insight extraction from build processes
-- **Documentation Tools**: Auto-generate docs from knowledge patterns
-- **Code Review**: Surface relevant patterns during review process
-
----
-
-This architecture ensures that valuable development insights are captured, organized, and made accessible across development sessions while maintaining data integrity and enabling team collaboration through git-based sharing.
+This agent-agnostic knowledge flow architecture ensures that insights and knowledge are captured, processed, and shared efficiently across different AI coding agents while maintaining data integrity, performance, and security.

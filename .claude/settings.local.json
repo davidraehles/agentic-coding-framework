@@ -55,7 +55,8 @@
       "Bash(./knowledge-management/ukb:*)",
       "Bash(claude-mcp --help)",
       "Bash(curl:*)",
-      "mcp__browser-access__stagehand_extract"
+      "mcp__browser-access__stagehand_extract",
+      "Bash(npm view:*)"
     ],
     "deny": []
   }

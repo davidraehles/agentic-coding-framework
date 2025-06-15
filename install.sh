@@ -1,7 +1,8 @@
 #!/bin/bash
-# Claude Knowledge Management System - Universal Installation Script
-# Supports: macOS, Linux, Windows (via WSL/Git Bash)
-# Version: 1.0.0
+# Agent-Agnostic Coding Tools - Universal Installation Script
+# Supports: Claude Code (with MCP) and GitHub CoPilot (with fallbacks)
+# Platforms: macOS, Linux, Windows (via WSL/Git Bash)
+# Version: 2.0.0
 
 # Check if script is being sourced or executed
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -731,10 +732,98 @@ verify_installation() {
     fi
 }
 
+# Detect available coding agents
+detect_agents() {
+    info "Detecting available coding agents..."
+    
+    local agents_found=()
+    
+    # Check for Claude Code
+    if command -v claude >/dev/null 2>&1; then
+        agents_found+=("claude")
+        success "✓ Claude Code detected"
+    else
+        warning "Claude Code not found"
+    fi
+    
+    # Check for GitHub CoPilot
+    if command -v gh >/dev/null 2>&1; then
+        if gh extension list 2>/dev/null | grep -q copilot; then
+            agents_found+=("copilot")
+            success "✓ GitHub CoPilot detected"
+        else
+            warning "GitHub CLI found but CoPilot extension not installed"
+            info "  Install with: gh extension install github/gh-copilot"
+        fi
+    else
+        warning "GitHub CLI not found"
+        info "  Install from: https://cli.github.com/"
+    fi
+    
+    if [ ${#agents_found[@]} -eq 0 ]; then
+        error "No supported coding agents found. Please install Claude Code or GitHub CoPilot."
+        return 1
+    fi
+    
+    info "Found agents: ${agents_found[*]}"
+    return 0
+}
+
+# Install Node.js dependencies for agent-agnostic functionality
+install_node_dependencies() {
+    info "Installing Node.js dependencies for agent-agnostic functionality..."
+    
+    if [ ! -f "$CODING_REPO/package.json" ]; then
+        error "package.json not found. This is required for agent-agnostic functionality."
+        return 1
+    fi
+    
+    cd "$CODING_REPO"
+    
+    if npm install; then
+        success "✓ Node.js dependencies installed"
+    else
+        error "Failed to install Node.js dependencies"
+        return 1
+    fi
+    
+    # Install Playwright browsers
+    info "Installing Playwright browsers for browser automation fallback..."
+    if npx playwright install chromium; then
+        success "✓ Playwright browsers installed"
+    else
+        warning "Failed to install Playwright browsers. Browser automation may not work."
+        INSTALLATION_WARNINGS+=("Playwright browsers not installed")
+    fi
+}
+
+# Create unified launcher
+setup_unified_launcher() {
+    info "Setting up unified launcher..."
+    
+    local bin_dir="$HOME/bin"
+    mkdir -p "$bin_dir"
+    
+    # Create symlink to coding-agent
+    if [ -f "$CODING_REPO/coding-agent" ]; then
+        ln -sf "$CODING_REPO/coding-agent" "$bin_dir/coding-agent"
+        success "✓ coding-agent launcher created in $bin_dir"
+        
+        # Add to PATH if not already there
+        if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
+            info "Adding $bin_dir to PATH in $SHELL_RC"
+            echo "export PATH=\"$bin_dir:\$PATH\"" >> "$SHELL_RC"
+        fi
+    else
+        error "coding-agent script not found"
+        return 1
+    fi
+}
+
 # Main installation flow
 main() {
-    echo -e "${PURPLE}🚀 Claude Knowledge Management System - Universal Installer${NC}"
-    echo -e "${PURPLE}==========================================================${NC}"
+    echo -e "${PURPLE}🚀 Agent-Agnostic Coding Tools - Universal Installer${NC}"
+    echo -e "${PURPLE}=====================================================${NC}"
     echo ""
     
     # Initialize log
@@ -749,12 +838,15 @@ main() {
     
     # Run installation steps
     check_dependencies
+    detect_agents
+    install_node_dependencies
     detect_network_and_set_repos
     test_proxy_connectivity
     install_memory_visualizer
     install_browserbase
     install_mcp_servers
     create_command_wrappers
+    setup_unified_launcher
     configure_shell_environment
     initialize_shared_memory
     create_example_configs
@@ -762,13 +854,18 @@ main() {
     verify_installation
     
     # Create activation script for immediate use
-    cat > "$CLAUDE_REPO/.activate" << EOF
+    cat > "$CODING_REPO/.activate" << EOF
 #!/bin/bash
-# Activate Claude Knowledge Management environment
-export CODING_REPO="$CLAUDE_REPO"
-export PATH="$CLAUDE_REPO/bin:\$PATH"
-echo "✅ Claude Knowledge Management environment activated!"
-echo "Commands 'ukb' and 'vkb' are now available."
+# Activate Agent-Agnostic Coding Tools environment
+export CODING_REPO="$CODING_REPO"
+export PATH="$CODING_REPO/bin:\$PATH"
+echo "✅ Agent-Agnostic Coding Tools environment activated!"
+echo "Commands 'ukb', 'vkb', and 'coding-agent' are now available."
+echo ""
+echo "Usage:"
+echo "  coding-agent           # Use best available agent"
+echo "  coding-agent --copilot # Force CoPilot"
+echo "  coding-agent --claude  # Force Claude Code"
 EOF
     chmod +x "$CLAUDE_REPO/.activate"
     

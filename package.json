@@ -1,0 +1,43 @@
+{
+  "name": "agent-agnostic-coding-tools",
+  "version": "1.0.0",
+  "description": "Unified coding tools that work with both Claude Code (MCP) and GitHub CoPilot (fallbacks)",
+  "main": "lib/agent-registry.js",
+  "bin": {
+    "coding-agent": "./coding-agent"
+  },
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint lib/",
+    "install-deps": "npm install",
+    "setup": "./install.sh"
+  },
+  "dependencies": {
+    "graphology": "^0.25.4",
+    "graphology-utils": "^2.5.2",
+    "playwright": "^1.40.0",
+    "glob": "^10.3.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.55.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "claude",
+    "copilot",
+    "ai",
+    "coding-tools",
+    "mcp",
+    "graph-database",
+    "browser-automation"
+  ],
+  "author": "Agent-Agnostic Coding Tools",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "."
+  }
+}
