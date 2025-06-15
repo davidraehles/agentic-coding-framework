@@ -76,20 +76,29 @@ if (fileExists(syncPath)) {
 **STATUS**: ✅ **WORKING** - Post-session conversation logging is now fully functional.
 
 **HOW IT WORKS**: 
-- `claude-mcp` automatically starts `start-auto-logger.sh` which sets up session tracking
-- **Post-session capture**: When Claude exits, `post-session-logger.js` captures the conversation
+- `claude-mcp` automatically starts conversation logging via `post-session-logger.js`
+- **Post-session capture**: After each Claude session ends, the logger processes the session data
+- **Session analysis**: The logger analyzes conversation content and extracts meaningful exchanges
 - **Smart routing**: Content is intelligently analyzed and routed to appropriate `.specstory/history/` directories
 - **Coding-related content** (ukb, vkb, knowledge management, MCP, etc.) always goes to `coding/.specstory/history/`
 - **Other content** goes to the current project's `.specstory/history/`
 
+**TECHNICAL IMPLEMENTATION**:
+```bash
+# Post-session logging triggered after Claude session ends
+node /path/to/post-session-logger.js
+```
+
 **KEY FEATURES**:
+- Post-session conversation capture and processing
 - No manual intervention required
 - Content-aware logging (coding vs. project-specific)  
 - Cross-project knowledge management preservation
-- Post-session logging (designed for interactive mode limitations)
+- Intelligent exchange detection and formatting
 - Automatic conversation classification and routing
+- Session completion logging with timestamped files
 
-**WHY POST-SESSION**: Interactive mode Claude Code doesn't expose stdio properly for real-time interception, so post-session logging is the correct approach.
+**ARCHITECTURE**: Post-session logging processes completed Claude sessions to extract and save conversations, ensuring all valuable interactions are preserved for future reference.
 
 ## 🚨 CRITICAL: How to Start Claude Code
 
@@ -103,6 +112,55 @@ claude-mcp
 ## 🚨 CRITICAL: Knowledge Base Management Rule
 
 **IMPORTANT: The shared-memory.json knowledge base must ALWAYS be updated using the `ukb` command. Never edit this file directly. The ukb tool ensures proper formatting, validation, and synchronization with MCP memory.**
+
+### 🔧 Knowledge Base Update Methods
+
+**When updating the knowledge base from conversation insights:**
+
+1. **For existing entities (recommended):** Use direct JSON updates via `jq` for simple observation additions
+2. **For new insights:** Use the piped input method with `ukb --interactive`
+3. **For automated analysis:** Use the `claude-conversation-analyzer.js` script
+
+#### Method 1: Direct Entity Updates (Simple)
+```bash
+# Add new observations to existing entities
+jq --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+   '.entities |= map(
+     if .name == "EntityName" then
+       .observations += ["New insight observation"] |
+       .metadata.last_updated = $timestamp
+     else . end
+   ) | .metadata.last_updated = $timestamp' \
+   shared-memory.json > shared-memory-updated.json && \
+   mv shared-memory-updated.json shared-memory.json
+```
+
+#### Method 2: Piped Input for Interactive UKB
+```bash
+# Create input file with responses
+cat > /tmp/ukb-input.txt << 'EOF'
+Problem description here
+Solution description here  
+Rationale for approach
+Key learnings
+Applicability
+Technologies,comma,separated
+https://reference-urls.com
+code-file1.js,code-file2.js
+1
+EOF
+
+# Pipe to UKB interactive mode
+cat /tmp/ukb-input.txt | ukb --interactive
+```
+
+#### Method 3: Automated Conversation Analysis
+```bash
+# Use the conversation analyzer script
+node scripts/claude-conversation-analyzer.js
+```
+
+**COMMON ISSUE**: If `ukb --interactive` hangs waiting for input, ALWAYS use the piped input method (Method 2) rather than trying to type responses manually.
 
 ## 🔍 CRITICAL: Pattern Verification and Compliance
 
@@ -198,9 +256,9 @@ source .activate
 3. **shared-memory.json** → Git-tracked persistent storage
 
 ### Auto-Logging  
-- ✅ **WORKING**: I/O stream interception via `start-auto-logger.sh`
+- ✅ **WORKING**: Post-session logging via `post-session-logger.js`
 - Smart content routing to appropriate projects
-- Real-time conversation capture and parsing
+- Post-session conversation capture and processing
 
 ### MCP Configuration
 - Template: `claude-code-mcp.json` (with placeholders)
@@ -227,4 +285,4 @@ This system is designed for team use:
 2. **Run `ukb` regularly to capture insights**
 3. **Check `.specstory/history/` for past conversations**
 4. **The MCP memory persists across sessions when started correctly**
-5. **Automatic logging is now working** - conversations are automatically saved with smart routing
+5. **Post-session logging is now working** - conversations are automatically saved after sessions complete

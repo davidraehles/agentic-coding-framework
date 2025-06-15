@@ -47,47 +47,39 @@ class SmartClaudeLogger {
   detectCodingContent(userMessage, assistantMessage = '') {
     const content = `${userMessage} ${assistantMessage}`.toLowerCase();
     
-    // Keywords that specifically indicate coding/knowledge management work
-    // Made more specific to avoid false positives from timeline work
+    // Keywords that indicate coding/knowledge management work
     const codingKeywords = [
-      'ukb', 'vkb', 'shared-memory.json', 'knowledge-base',
-      'claude-mcp', 'coding project', 'coding repo', 'coding repository', 
-      'agentic/coding', 'install.sh', 'transferable pattern', 
-      'cross-project knowledge', '.activate', 'claude tools', 'memory-visualizer',
-      'start-auto-logger', 'automatic logging script', 'conversation logging system',
-      'CODING_REPO', 'mcp server', 'mcp memory', 'knowledge extraction tool'
+      'ukb', 'vkb', 'shared-memory.json', 'knowledge-base', 'knowledge base',
+      'mcp', 'claude-mcp', 'specstory', 'claude-logger', 'coding project',
+      'coding repo', 'coding repository', 'agentic/coding', 'install.sh',
+      'knowledge management', 'transferable pattern', 'shared knowledge',
+      'cross-project', '.activate', 'claude tools', 'memory-visualizer',
+      'start-auto-logger', 'automatic logging', 'conversation logging',
+      'CLAUDE.md', 'CODING_REPO', 'todowrite', 'todoread', 'knowledge extraction'
     ];
     
-    // File paths that specifically indicate coding work
+    // File paths that indicate coding work
     const codingPaths = [
       '/users/q284340/agentic/coding',
       '~/agentic/coding',
-      'agentic/coding/',
-      'coding/bin/',
-      'coding/scripts/',
-      'coding/tools/',
-      'knowledge-management/',
+      'coding/',
+      '.specstory',
+      'knowledge-management',
       'shared-memory.json'
     ];
     
-    // Specific coding tool operations (not just mentions)
-    const codingOperations = [
-      'ukb --interactive', 'ukb --auto', 'vkb --',
-      'claude-mcp script', 'mcp config', 'knowledge base update',
-      'edit shared-memory.json', 'modify ukb', 'fix logging routing'
-    ];
-    
-    // Check for explicit coding keywords
+    // Check for coding keywords
     const hasCodingKeywords = codingKeywords.some(keyword => content.includes(keyword));
     
-    // Check for coding-specific paths
+    // Check for coding paths
     const hasCodingPaths = codingPaths.some(pathPattern => content.includes(pathPattern));
     
-    // Check for actual coding tool operations
-    const hasCodeToolOperations = codingOperations.some(op => content.includes(op));
+    // Check if we're modifying coding tools from another project
+    const isModifyingCodingTools = content.includes('ukb') || content.includes('vkb') || 
+                                   content.includes('knowledge') || content.includes('mcp') ||
+                                   content.includes('claude-mcp') || content.includes('logging');
     
-    // More precise detection - require specific evidence of coding work
-    return hasCodingKeywords || hasCodingPaths || hasCodeToolOperations;
+    return hasCodingKeywords || hasCodingPaths || isModifyingCodingTools;
   }
 
   generateSessionFilename(targetRepo) {
@@ -287,48 +279,18 @@ console.error(`[Logger] Coding repository: ${codingRepo}`);
 console.error('[Logger] Content will be intelligently routed based on context');
 EOF
 
-# Check if no arguments provided - default to interactive mode
-if [[ -z "$CLAUDE_ARGS" ]]; then
-  CLAUDE_ARGS=""
-fi
-
-# Define colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# For now, create a session marker that the system can detect
+# Generate session ID for logging
 SESSION_ID="$(date '+%Y-%m-%d_%H-%M-%S')"
-echo -e "${GREEN}📝 Session ID: $SESSION_ID${NC}"
-
-# Start Claude with MCP config and log session start
-echo "$(date): Claude Code session started from $PROJECT_PATH" >> "$CODING_REPO/.mcp-sync/session-log.txt"
-
-# Store session metadata for post-session logging
-cat > "$CODING_REPO/.mcp-sync/current-session.json" << EOF
-{
-  "sessionId": "$SESSION_ID",
-  "startTime": "$(date -u +%Y-%m-%dT%H:%M:%S.%03NZ)",
-  "projectPath": "$PROJECT_PATH",
-  "codingRepo": "$CODING_REPO",
-  "needsLogging": true
-}
-EOF
-
-echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
-echo -e "${YELLOW}💡 IMPORTANT: This conversation will be logged post-session${NC}"
-echo -e "${YELLOW}📋 TIP: Use 'ukb --interactive' to capture deep insights manually${NC}"
-echo -e "${BLUE}🧠 Use 'ukb --auto' for quick session summaries${NC}"
-echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
-echo
+echo "📝 Session ID: $SESSION_ID"
 
 # Start Claude directly without pipe interference
-echo -e "${GREEN}🎯 Starting conversation capture for session: $SESSION_ID${NC}"
+echo "🎯 Starting conversation capture for session: $SESSION_ID"
 
 # Run Claude directly without pipes to avoid stdin/stdout issues
 claude --mcp-config "$CODING_REPO/claude-code-mcp-processed.json" $CLAUDE_ARGS
 
 # POST-SESSION LOGGING (backup/cleanup)
-echo -e "${GREEN}🔄 Finalizing post-session logging...${NC}"
-node "$CODING_REPO/scripts/post-session-logger.js" "$PROJECT_PATH" "$CODING_REPO" "$SESSION_ID"
+echo "🔄 Finalizing post-session logging..."
+if [ -f "$CODING_REPO/scripts/post-session-logger.js" ]; then
+  node "$CODING_REPO/scripts/post-session-logger.js" "$PROJECT_PATH" "$CODING_REPO" "$SESSION_ID"
+fi

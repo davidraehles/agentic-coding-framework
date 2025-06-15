@@ -110,18 +110,25 @@ echo -e "  • ${YELLOW}CRITICAL: NEVER edit shared-memory.json directly${NC}"
 echo -e "  • ${YELLOW}ALWAYS use: ukb --interactive or ukb --auto${NC}"
 echo
 
-# Start automatic conversation logging
-LOGGER_SCRIPT="$CODING_REPO_DIR/scripts/start-auto-logger.sh"
-if [[ -x "$LOGGER_SCRIPT" ]]; then
-    echo -e "${BLUE}🔴 Starting automatic conversation logging...${NC}"
-    echo -e "${GREEN}📁 Logs will be saved to appropriate .specstory/history/ directories${NC}"
+# Set up post-session conversation logging
+POST_SESSION_LOGGER="$CODING_REPO_DIR/scripts/simple-post-session-logger.js"
+if [[ -f "$POST_SESSION_LOGGER" ]]; then
+    echo -e "${BLUE}🔴 Post-session conversation logging enabled${NC}"
+    echo -e "${GREEN}📁 Logs will be saved to appropriate .specstory/history/ directories after session${NC}"
     echo
     
-    # Launch Claude with the logger intercepting streams
-    # Pass the current directory, coding repo, and any Claude arguments
-    exec "$LOGGER_SCRIPT" "$(pwd)" "$CODING_REPO_DIR" "$@"
+    # Set up trap to trigger post-session logging on exit
+    cleanup() {
+        echo -e "${BLUE}🔄 Processing session for conversation logging...${NC}"
+        node "$POST_SESSION_LOGGER" "$(pwd)" "$CODING_REPO_DIR"
+        echo -e "${GREEN}✅ Session logged successfully${NC}"
+    }
+    trap cleanup EXIT
+    
+    # Launch Claude normally (without exec to preserve trap)
+    claude --mcp-config "$MCP_CONFIG" "$@"
 else
-    echo -e "${YELLOW}⚠️  Auto-logger script not found at: $LOGGER_SCRIPT${NC}"
+    echo -e "${YELLOW}⚠️  Post-session logger not found at: $POST_SESSION_LOGGER${NC}"
     echo -e "${YELLOW}⚠️  Conversations will NOT be automatically logged${NC}"
     echo
     

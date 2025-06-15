@@ -4,46 +4,77 @@
 When working on the coding project (knowledge management tools) from other project contexts, conversation logs were saved only in the current project's `.specstory/history/` folder. This required manual cleanup and made it difficult to track cross-project knowledge management work, undermining the coding project's role as a central knowledge hub.
 
 ## Solution
-Enhanced MCP logging server that automatically detects coding project work and implements dual logging - saving conversations to both the current project AND the coding project's `.specstory/history/` folder.
+Post-session conversation logging system that automatically detects coding project work and routes conversations to the appropriate `.specstory/history/` folder through session analysis and intelligent content detection.
 
 ## Implementation Details
 
-### 1. **Automatic Detection**
-The system detects coding project work using keyword matching:
+### 1. **Post-Session Processing Architecture**
+The system processes completed Claude sessions through a Node.js script for conversation extraction:
 
-```typescript
-// From claude-logger-mcp/src/index-auto.ts
-function detectCodingProjectWork(userMessage: string, assistantMessage: string): boolean {
+```bash
+# Post-session logging triggered after Claude session completion
+node /path/to/post-session-logger.js "$PROJECT_PATH" "$CODING_REPO"
+```
+
+### 2. **Session Data Analysis**
+The post-session script analyzes completed session data for conversation extraction:
+
+```javascript
+// From post-session-logger.js
+function processSession(sessionData) {
+  // Extract conversations from completed session
+  const exchanges = extractExchanges(sessionData);
+  
+  // Detect conversation boundaries using pattern matching
+  exchanges.forEach(exchange => {
+    if (exchange.type === 'user') {
+      // Process user input for content detection
+      processUserMessage(exchange.content);
+    } else if (exchange.type === 'assistant') {
+      // Process assistant response
+      processAssistantMessage(exchange.content);
+    }
+  });
+  
+  // Route to appropriate repository based on content analysis
+  const targetRepo = detectCodingContent(exchanges) ? codingRepo : projectPath;
+  generateLogFile(exchanges, targetRepo);
+}
+```
+
+### 3. **Intelligent Content Detection**
+Automatic routing based on conversation content:
+
+```javascript
+detectCodingContent(userMessage, assistantMessage = '') {
   const content = `${userMessage} ${assistantMessage}`.toLowerCase();
   
   const codingKeywords = [
     'ukb', 'vkb', 'shared-memory.json', 'knowledge-base',
-    'mcp', 'claude-mcp', 'specstory', 'claude-logger',
-    'coding project', 'claude tools', 'install.sh',
-    'knowledge management', 'transferable pattern'
+    'mcp', 'claude-mcp', 'specstory', 'coding project',
+    'knowledge management', 'transferable pattern', 'CLAUDE.md'
   ];
   
   return codingKeywords.some(keyword => content.includes(keyword));
 }
 ```
 
-### 2. **Dual Logging Logic**
-When coding work is detected outside the coding project:
+### 4. **Repository Routing Decision**
+Post-session analysis for log placement:
 
-```typescript
-// Primary log to current project
-await logger.logConversation(currentSessionId, userMsg, assistantMsg, metadata);
-
-// Secondary log to coding project
-if (isCodingWork && !isInCodingProject) {
-  const codingLogger = new SpecStoryLogger(codingProjectPath);
-  const codingSessionId = `${generateSessionId()}-cross-project`;
-  await codingLogger.logConversation(codingSessionId, userMsg, assistantMsg, {
-    ...metadata,
-    project_path: `${projectPath} (cross-project from coding tools)`
-  });
+```javascript
+function routeSession(exchanges) {
+  const shouldGoToCoding = detectCodingContentInSession(exchanges);
+  
+  // Analyze entire session content for routing decision
+  const targetRepo = shouldGoToCoding ? codingRepo : projectPath;
+  
+  // Generate log file in appropriate repository
+  const logPath = path.join(targetRepo, '.specstory', 'history');
+  writeLogFile(logPath, exchanges);
+  
+  console.log(`Session logged to: ${targetRepo}`);
 }
-```
 
 ### 3. **Filename Convention**
 Consistent naming across all projects:
@@ -88,7 +119,7 @@ normalize_filename() {
 ### Setup
 1. Use post-session logging system (automatically configured)
 2. Start Claude Code with `claude-mcp` script
-3. No additional setup required - system is automatic
+3. No additional setup required - system processes sessions automatically after completion
 
 ### Verification
 ```bash
@@ -112,12 +143,11 @@ $PROJECT_ROOT/knowledge-management/normalize-specstory-filenames.sh /path/to/pro
 ```
 
 ## Key Files
-- `scripts/start-auto-logger.sh` - Main entry point for automatic logging
-- `scripts/post-session-logger.js` - Post-session conversation capture and routing
-- `scripts/conversation-capture.js` - Real-time backup capture system
+- `scripts/post-session-logger.js` - Main entry point for post-session logging processing
+- `scripts/claude-mcp-launcher.sh` - MCP integration and knowledge sync
 - `knowledge-management/normalize-specstory-filenames.sh` - Batch filename fixes
-- `docs/enhanced-cross-project-logging.md` - Detailed documentation
-- `docs/automatic-conversation-logging.md` - Post-session logging architecture
+- `CLAUDE.md` - Main documentation with logging architecture
+- `.specstory/history/` - Conversation storage directories (project-specific)
 
 ## Related Patterns
 - **KnowledgePersistencePattern** - Cross-session knowledge persistence and memory integration

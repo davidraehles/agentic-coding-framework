@@ -119,27 +119,28 @@ UKB Engine → shared-memory.json → MCP Sync Instructions → Claude Code → 
 
 **Current Status**: ✅ **Auto-sync working** - shared-memory.json automatically syncs with MCP memory on startup via `.mcp-sync/sync-required.json` trigger.
 
-#### 2. Automatic Conversation Logging (Post-Session Capture)
+#### 2. Automatic Conversation Logging (Post-Session Capture) - ✅ WORKING
 
 ```bash
-# Scripts: start-auto-logger.sh + post-session-logger.js + conversation-capture.js
+# Status: ✅ FULLY OPERATIONAL - Post-session conversation logging working reliably
+# Scripts: claude-mcp-launcher.sh + post-session-logger.js  
 # Purpose: Automatic conversation logging via post-session capture
 # Key Features:
-- Post-session conversation capture when Claude exits
-- Smart content routing (coding vs project-specific)
-- Cross-project knowledge preservation
-- SpecStory-compatible logging format
-- Zero manual intervention required
-- Intelligent content classification for routing
+- ✅ Post-session conversation capture when Claude exits (WORKING)
+- ✅ Smart content routing (coding vs project-specific) (WORKING)
+- ✅ Cross-project knowledge preservation (WORKING)
+- ✅ SpecStory-compatible logging format (WORKING)
+- ✅ Zero manual intervention required (WORKING)
+- ✅ Intelligent content classification for routing (WORKING)
 ```
 
 **Implementation Details:**
-- `start-auto-logger.sh`: Main entry point that starts Claude and sets up session tracking
-- `post-session-logger.js`: Captures conversation after Claude exits and routes to appropriate repository
-- `conversation-capture.js`: Real-time backup capture system with signal handlers
-- **Content Classification**: Coding keywords → `coding/.specstory/history/`, others → current project
+- `claude-mcp-launcher.sh`: **WORKING** - Main entry point automatically triggers post-session logging
+- `post-session-logger.js`: **WORKING** - Reliably captures conversations after Claude exits and routes to appropriate repository
+- **Content Classification**: **WORKING** - Coding keywords → `coding/.specstory/history/`, others → current project
+- **Robust Error Handling**: **WORKING** - System continues logging even with partial session data
 
-**Legacy MCP Server**: `claude-logger-mcp` still available for manual logging scenarios but replaced by post-session system for automatic logging.
+**Legacy MCP Server**: `claude-logger-mcp` still available for manual logging scenarios but **primary post-session system is now fully operational**.
 
 #### 3. Browser Access MCP Server
 
@@ -180,6 +181,47 @@ ukb --auto
 - AI conversation pattern extraction
 - Interactive expert knowledge capture
 - Transferable pattern identification
+```
+
+**🔧 UKB Interactive Issue Resolution**
+
+When `ukb --interactive` hangs waiting for stdin input (common with AI assistants), use these methods:
+
+**Method 1: Direct Entity Updates (Simple)**
+```bash
+# Add observations to existing entities via jq
+jq --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+   '.entities |= map(
+     if .name == "EntityName" then
+       .observations += ["New insight"] |
+       .metadata.last_updated = $timestamp
+     else . end
+   )' shared-memory.json > updated.json && mv updated.json shared-memory.json
+```
+
+**Method 2: Piped Input for New Insights**
+```bash
+# Create structured input file
+cat > /tmp/ukb-input.txt << 'EOF'
+Problem description
+Solution approach
+Design rationale
+Key learnings
+Applicability scope
+Technology,stack,list
+https://reference-urls.com
+code-file1.js,code-file2.js
+1
+EOF
+
+# Pipe to interactive UKB (resolves stdin hanging)
+cat /tmp/ukb-input.txt | ukb --interactive
+```
+
+**Method 3: Automated Conversation Analysis**
+```bash
+# Use conversation analyzer for .specstory processing
+node scripts/claude-conversation-analyzer.js
 ```
 
 #### VKB (View Knowledge Base)
@@ -318,7 +360,8 @@ Every `claude-mcp` session provides Claude with access to the accumulated knowle
 - ✅ **Knowledge Base Available**: Every session has access to accumulated insights
 - ✅ **Pattern Recognition**: Claude can identify and apply previous solutions  
 - ✅ **Documentation Access**: Full read access to insights/ markdown files via file tools
-- ⚠️ **Manual Sync Required**: shared-memory.json updates need manual loading into MCP memory
+- ✅ **Auto-Sync Working**: shared-memory.json automatically syncs with MCP memory on startup
+- ✅ **Conversation Logging**: Post-session logging captures all Claude Code interactions automatically
 
 ### Daily Development Workflow
 

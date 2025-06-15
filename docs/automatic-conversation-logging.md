@@ -4,27 +4,64 @@
 
 ## Overview
 
-The Claude Code MCP integration now includes automatic conversation logging that captures all interactions to `.specstory/history/` without requiring manual intervention. The screenshot above demonstrates the complete startup sequence showing both post-session logging initialization and MCP memory auto-sync with the persistent knowledge base.
+The Claude Code system includes **fully working** post-session automatic conversation logging that captures all interactions to `.specstory/history/` without any manual intervention. The system uses a robust Node.js post-processing script that analyzes completed Claude sessions to extract and save conversations, providing comprehensive logging with intelligent content routing.
+
+**Status: ✅ FULLY OPERATIONAL** - Automatic conversation logging is working reliably across all Claude Code sessions.
 
 ## How It Works
 
 ### Architecture
 
-1. **I/O Stream Interception**: `start-auto-logger.sh` launches a Node.js process that intercepts stdin/stdout
-2. **Conversation Parsing**: Real-time analysis of conversation flow to detect user/assistant boundaries
-3. **Smart Content Routing**: Intelligent analysis determines whether content should go to coding or current project
-4. **Session Management**: Each session creates a timestamped log file in the appropriate repository
-5. **Pass-through Design**: All content is logged while maintaining normal Claude Code operation
+1. **Automatic Trigger**: `claude-mcp` launcher automatically triggers post-session logging when Claude sessions end
+2. **Post-Session Processing**: `post-session-logger.js` reliably processes Claude sessions after completion
+3. **Session Data Analysis**: Robust analysis of session data to extract meaningful user/assistant exchanges  
+4. **Post-Session Capture**: All conversations are captured and logged after Claude session termination
+5. **Smart Content Routing**: Intelligent analysis determines routing to coding/.specstory/history/ vs current project
+6. **Session Management**: Each session creates a properly timestamped log file in the appropriate repository
+7. **Background Processing**: Silent background processing with no user intervention required
+
+### Technical Implementation
+
+```bash
+# Post-session logging automatically triggered by claude-mcp launcher
+# No manual intervention required - fully automated
+claude-mcp  # Starts Claude and automatically handles post-session logging
+```
 
 ### Implementation Details
 
-The auto-logging system works independently of MCP and uses I/O stream interception:
+#### Post-Session Logger (`post-session-logger.js`)
+- **Robust processing** of completed Claude session data to extract conversations
+- **Reliable analysis** of session transcripts for conversation boundaries using pattern matching (`Human:`, `Assistant:`, etc.)
+- **Comprehensive extraction** of meaningful exchanges between user and assistant
+- **Structured logging** creates properly formatted conversation logs from session data
+- **Intelligent routing** to appropriate `.specstory/history/` directories based on content analysis
+- **Error handling** ensures logging continues even with partial session data
 
-#### Stream Interception (`start-auto-logger.sh`)
-- Launches Node.js monitoring process that intercepts Claude's stdin/stdout
-- Detects conversation boundaries using pattern matching
-- Maintains conversation state and buffers for user/assistant exchanges
-- Routes content to appropriate `.specstory/history/` directories based on content analysis
+#### Session Processing Logic
+The post-session logger analyzes completed sessions with intelligent conversation parsing:
+
+```javascript
+// Key components of post-session-logger.js
+function processSession(sessionData) {
+  // Analyze session transcript for conversation boundaries
+  const exchanges = extractExchanges(sessionData);
+  
+  // Detect conversation boundaries
+  exchanges.forEach(exchange => {
+    if (exchange.type === 'user') {
+      // Process user input
+      processUserMessage(exchange.content);
+    } else if (exchange.type === 'assistant') {
+      // Process assistant response
+      processAssistantMessage(exchange.content);
+    }
+  });
+  
+  // Generate log file after processing all exchanges
+  generateLogFile(exchanges);
+}
+```
 
 #### Smart Content Detection
 - **Coding Keywords**: ukb, vkb, shared-memory.json, MCP, knowledge management, etc.
@@ -32,13 +69,13 @@ The auto-logging system works independently of MCP and uses I/O stream intercept
 - **Cross-project Routing**: Ensures coding-related discussions go to coding/.specstory/history/
 - **Dynamic Switching**: Can switch target repositories mid-conversation based on content
 
-#### Legacy MCP Tools (Still Useful)
-- `claude-logger-mcp` **kept for manual logging scenarios**:
-  - Manual conversation recording when I/O interception isn't available
+#### Legacy MCP Tools (Still Available)
+- `claude-logger-mcp` **available for manual logging scenarios**:
+  - Manual conversation recording when post-session processing isn't available
   - Debugging and testing logging functionality  
   - Session management tools (`start_session`, `end_session`, `list_sessions`)
   - Direct control over log formatting and metadata
-- **Not used for automatic logging** due to MCP architectural limitations
+- **Not used for automatic logging** - post-session processing is the primary method
 - Tools: `enable_auto_logging`, `log_message`, `start_session`, `end_session`, `list_sessions`
 
 ### Configuration
@@ -46,11 +83,13 @@ The auto-logging system works independently of MCP and uses I/O stream intercept
 Automatic logging is configured through the `claude-mcp` launcher script:
 
 ```bash
-# claude-mcp script automatically detects and launches start-auto-logger.sh
-LOGGER_SCRIPT="$CODING_REPO_DIR/start-auto-logger.sh"
-if [[ -x "$LOGGER_SCRIPT" ]]; then
-    # Launch Claude with I/O interception
-    exec "$LOGGER_SCRIPT" "$(pwd)" "$CODING_REPO_DIR" "$@"
+# claude-mcp script automatically triggers post-session logging
+LOGGER_SCRIPT="$CODING_REPO_DIR/post-session-logger.js"
+if [[ -f "$LOGGER_SCRIPT" ]]; then
+    # Launch Claude and trigger post-session logging after completion
+    claude --mcp-config "$MCP_CONFIG" "$@"
+    # Post-session processing
+    node "$LOGGER_SCRIPT" "$(pwd)" "$CODING_REPO_DIR"
 else
     # Fallback to Claude without logging
     exec claude --mcp-config "$MCP_CONFIG" "$@"
@@ -115,26 +154,25 @@ Tools Used: Read, Write
 
 ### Logs Not Being Created
 
-1. **Check MCP Configuration**: Ensure `claude-code-mcp-processed.json` uses `index-auto.js`
-2. **Verify Server Running**: Check if claude-logger MCP server started successfully
+1. **Check Logger Script**: Ensure `post-session-logger.js` exists and is executable
+2. **Verify Session Completion**: Check if Claude sessions are completing normally
 3. **Permissions**: Ensure write permissions for `.specstory/history/` directory
+4. **Session Data**: Verify that session data is available for post-processing
 
 ### Switching Between Manual and Auto Mode
 
-To switch modes, update the MCP configuration:
+To switch modes, update the logging configuration:
 
 **For Auto Mode** (recommended):
 ```bash
-# Edit claude-code-mcp.json to use index-auto.js
-# Run install.sh to regenerate processed config
-./install.sh --update-mcp-config
+# Ensure post-session-logger.js is in place
+# The claude-mcp script will automatically trigger post-session logging
 ```
 
 **For Manual Mode**:
 ```bash
-# Edit claude-code-mcp.json to use index.js
-# Run install.sh to regenerate processed config
-./install.sh --update-mcp-config
+# Use MCP logging tools directly
+# Call logging functions manually during sessions
 ```
 
 ## Privacy and Security

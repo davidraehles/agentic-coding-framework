@@ -1,5 +1,7 @@
 # Claude Logger MCP Server Documentation
 
+> **⚠️ NOTE**: While this MCP server is still available for manual logging scenarios, **post-session logging via `post-session-logger.js` is now the primary and fully operational method** for automatic conversation logging. This document is maintained for reference and manual logging use cases.
+
 An MCP (Model Context Protocol) server that provides SpecStory-compatible conversation logging for Claude Code sessions with automatic logging capabilities. The server automatically saves all Claude Code conversations to `.specstory/history/` directory when auto-logging is enabled.
 
 **Enhanced Feature**: The server now includes cross-project logging detection - automatically dual-logs coding project work to both the current project and the coding project's history when relevant keywords are detected.

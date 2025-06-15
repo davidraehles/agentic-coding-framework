@@ -41,7 +41,7 @@ MCP --> UKB: synchronized
 UKB --> Dev: ✅ Knowledge base updated\n📊 Entities: X, Relations: Y
 deactivate UKB
 
-== Interactive Mode ==
+== Interactive Mode (Standard) ==
 
 Dev -> UKB: ukb --interactive
 activate UKB
@@ -75,6 +75,23 @@ Dev --> UKB: file paths
 
 UKB -> Dev: 9. Category (1-8)?
 Dev --> UKB: category selection
+
+== Interactive Mode (AI Assistant - Piped Input) ==
+
+participant "AI Assistant" as AI
+participant "Temp File" as Temp
+
+AI -> Temp: create /tmp/ukb-input.txt
+note right: Problem\nSolution\nRationale\nLearnings\nApplicability\nTechnologies\nReferences\nFiles\nCategory
+
+AI -> UKB: cat /tmp/ukb-input.txt | ukb --interactive
+activate UKB
+
+UKB -> UKB: read stdin (piped input)
+note right: Resolves hanging\nNo interactive prompts
+
+UKB -> UKB: process_piped_responses()
+note right: Parse each line\nValidate format
 
 UKB -> UKB: calculate_significance()
 note right: Interactive: 7-9 range\nBased on category

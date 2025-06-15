@@ -29,13 +29,9 @@ rectangle "Insight Capture Layer" as CAPTURE {
     [ukb --auto] as AUTO
     [ukb --interactive] as INTERACTIVE
     
-    AUTO : Analyzes commits
-    AUTO : Extracts patterns
-    AUTO : Identifies optimizations
+    note right of AUTO : Analyzes commits\nExtracts patterns\nIdentifies optimizations
     
-    INTERACTIVE : Captures thought processes
-    INTERACTIVE : Documents decisions
-    INTERACTIVE : Records learnings
+    note right of INTERACTIVE : Captures thought processes\nDocuments decisions\nRecords learnings
 }
 
 cloud "Temporary Storage" as TEMP {
@@ -53,9 +49,7 @@ rectangle "MCP Memory Layer" as MCP_LAYER {
     
     [Claude Code] as CLAUDE
     
-    CLAUDE : Executes MCP operations
-    CLAUDE : Manages entity lifecycle
-    CLAUDE : Builds knowledge graph
+    note right of CLAUDE : Executes MCP operations\nManages entity lifecycle\nBuilds knowledge graph
 }
 
 database "Persistent Storage" as STORAGE {

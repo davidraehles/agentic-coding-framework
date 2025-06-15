@@ -42,8 +42,8 @@ package "MCP Servers" as MCPServers {
 }
 
 package "Auto-Logging" as AutoLogging {
-    [start-auto-logger.sh] as AutoLogger
-    [I/O Interception] as IOIntercept
+    [post-session-logger.js] as AutoLogger
+    [Session Analysis] as SessionAnalysis
 }
 
 ' Simplified flow connections
@@ -65,6 +65,6 @@ note top of Processing : UKB engine, pattern recognition,\nsignificance scoring,
 note top of Storage : shared-memory.json,\nMCP persistence, documentation
 note top of Visualization : VKB server, interactive graph,\nsearch and filtering
 note top of MCPServers : Browser Access,\nMemory Management
-note top of AutoLogging : I/O stream interception,\nsmart content routing
+note top of AutoLogging : Post-session processing,\nsmart content routing
 
 @enduml

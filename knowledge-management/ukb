@@ -725,6 +725,10 @@ analyze_commits_conservatively() {
             category="architecture"
             significance=9
             should_capture=true
+        elif [[ "$message" =~ ^(feat|refactor):.*agent.*agnostic|^(feat|refactor):.*agnosticity ]]; then
+            category="architecture"
+            significance=9
+            should_capture=true
         elif [[ "$message" =~ ^(perf|feat):.*optimization.*breakthrough|^(perf):.*algorithm.*improvement ]]; then
             category="performance"
             significance=8

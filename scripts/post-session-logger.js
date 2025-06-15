@@ -40,7 +40,12 @@ class PostSessionLogger {
       const conversationContent = await this.extractConversationFromHistory();
       
       if (!conversationContent) {
-        console.log('⚠️  No conversation content found');
+        console.log('⚠️  No conversation content found - marking session as logged to avoid future attempts');
+        // Mark session as logged even if empty to avoid repeat attempts
+        sessionData.needsLogging = false;
+        sessionData.loggedAt = new Date().toISOString();
+        sessionData.logFile = 'No content found';
+        fs.writeFileSync(this.sessionFile, JSON.stringify(sessionData, null, 2));
         return;
       }
 
@@ -68,54 +73,79 @@ class PostSessionLogger {
 
   async extractConversationFromHistory() {
     try {
-      // Try to get the conversation from Claude's recent history
-      // This is a best-effort approach using available information
+      // Check for Claude Code's session history in ~/.claude/conversations
+      const homeDir = require('os').homedir();
+      const claudeHistoryDir = path.join(homeDir, '.claude', 'conversations');
       
-      // Check if there's a temp file or recent activity
-      const tempHistoryPath = `/tmp/claude-history-${this.sessionId}.txt`;
-      if (fs.existsSync(tempHistoryPath)) {
-        return fs.readFileSync(tempHistoryPath, 'utf8');
-      }
-
-      // Alternative: Look for recent .specstory files that might have been created
-      const historyDir = path.join(this.projectPath, '.specstory', 'history');
-      if (fs.existsSync(historyDir)) {
-        const recentFiles = fs.readdirSync(historyDir)
+      if (fs.existsSync(claudeHistoryDir)) {
+        // Look for the most recent conversation file
+        const conversationFiles = fs.readdirSync(claudeHistoryDir)
+          .filter(file => file.endsWith('.json'))
           .map(file => ({
             name: file,
-            path: path.join(historyDir, file),
-            mtime: fs.statSync(path.join(historyDir, file)).mtime
+            path: path.join(claudeHistoryDir, file),
+            mtime: fs.statSync(path.join(claudeHistoryDir, file)).mtime
           }))
-          .sort((a, b) => b.mtime - a.mtime)
-          .slice(0, 3); // Check last 3 files
+          .sort((a, b) => b.mtime - a.mtime);
 
-        for (const file of recentFiles) {
-          const content = fs.readFileSync(file.path, 'utf8');
-          // Check if this file was created during our session
-          const timeDiff = Date.now() - file.mtime.getTime();
-          if (timeDiff < 3600000) { // Within last hour
-            return content;
+        // Get the most recent conversation
+        if (conversationFiles.length > 0) {
+          const recentConversation = conversationFiles[0];
+          const timeDiff = Date.now() - recentConversation.mtime.getTime();
+          
+          // If it was modified within the last 30 minutes, it's likely our session
+          if (timeDiff < 1800000) {
+            const conversationData = JSON.parse(fs.readFileSync(recentConversation.path, 'utf8'));
+            return this.formatConversationFromClaudeHistory(conversationData);
           }
         }
       }
 
-      // Fallback: Create a minimal session record
-      return `# Session ${this.sessionId}
+      // Fallback: Check for temp conversation capture files
+      const tempHistoryPath = `/tmp/claude-conversation-${this.sessionId}.json`;
+      if (fs.existsSync(tempHistoryPath)) {
+        const tempData = JSON.parse(fs.readFileSync(tempHistoryPath, 'utf8'));
+        return this.formatConversationFromTempData(tempData);
+      }
 
-**Note:** This session was logged post-completion. Full conversation history may not be available.
-
-**Session Details:**
-- Session ID: ${this.sessionId}
-- Project Path: ${this.projectPath}
-- Logged at: ${new Date().toISOString()}
-
-**Status:** Session completed successfully but conversation content could not be fully captured.
-This indicates the real-time logging mechanism needs to be active during the session.`;
+      // Last resort: Return null so we skip logging empty sessions
+      console.log('⚠️  No conversation content found - skipping empty session');
+      return null;
 
     } catch (error) {
       console.error('Error extracting conversation:', error);
       return null;
     }
+  }
+
+  formatConversationFromClaudeHistory(conversationData) {
+    let content = '';
+    let exchangeCount = 0;
+
+    if (conversationData.messages && conversationData.messages.length > 0) {
+      conversationData.messages.forEach((message, index) => {
+        if (message.role === 'user') {
+          exchangeCount++;
+          content += `## Exchange ${exchangeCount}\n\n**User:**\n${message.content}\n\n`;
+        } else if (message.role === 'assistant') {
+          content += `**Assistant:**\n${message.content}\n\n---\n\n`;
+        }
+      });
+    }
+
+    return content || null;
+  }
+
+  formatConversationFromTempData(tempData) {
+    let content = '';
+    
+    if (tempData.exchanges && tempData.exchanges.length > 0) {
+      tempData.exchanges.forEach((exchange, index) => {
+        content += `## Exchange ${index + 1}\n\n**User:**\n${exchange.user}\n\n**Assistant:**\n${exchange.assistant}\n\n---\n\n`;
+      });
+    }
+
+    return content || null;
   }
 
   detectCodingContent(content) {
@@ -136,8 +166,13 @@ This indicates the real-time logging mechanism needs to be active during the ses
 
   createLogFile(targetRepo, sessionData, content) {
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
-    const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    // Use local time instead of UTC
+    const date = now.getFullYear() + '-' + 
+                String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(now.getDate()).padStart(2, '0');
+    const time = String(now.getHours()).padStart(2, '0') + '-' + 
+                String(now.getMinutes()).padStart(2, '0') + '-' + 
+                String(now.getSeconds()).padStart(2, '0');
     const suffix = targetRepo === this.codingRepo ? 'coding-session' : 'project-session';
     
     const filename = `${date}_${time}_post-logged-${suffix}.md`;

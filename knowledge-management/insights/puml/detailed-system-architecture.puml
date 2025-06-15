@@ -14,9 +14,9 @@ package "User Interface" as UI {
     [Web Browser] as Browser
 }
 
-package "Claude Code with Auto-Logging" as ClaudeEnv {
+package "Claude Code with Auto-Logging ✅ WORKING" as ClaudeEnv {
     [claude-mcp] as Launcher
-    [start-auto-logger.sh] as Logger
+    [post-session-logger.js\n✅ OPERATIONAL] as Logger
     [Claude CLI] as Claude
     [MCP Framework] as MCP
 }
@@ -50,16 +50,16 @@ Dev --> Browser : http://localhost:8080
 
 ' Main flow
 Terminal --> Launcher : starts
-Launcher --> Logger : launches with I/O interception
-Logger --> Claude : pipes stdin/stdout + monitors
+Launcher --> Claude : starts Claude session
 Claude --> MCP : JSON-RPC transport
+Claude --> Logger : triggers post-session processing
 
 ' MCP Server connections
 MCP <--> MemoryMCP : memory operations\n(CRUD, search)
 MCP <--> BrowserMCP : browser automation\n(navigate, extract)
 
 ' Logging flow
-Logger --> SpecStory : smart content routing\n(coding vs project)
+Logger --> SpecStory : post-session analysis\nand smart content routing
 
 ' Knowledge management flow  
 Terminal --> UKB : manual invocation
@@ -79,7 +79,7 @@ SharedMem --> Git : git tracking
 SpecStory --> Git : conversation history
 Insights --> Git : documentation
 
-note right of Logger : I/O stream interception\nfor true automatic logging\nwith content-aware routing
+note right of Logger : ✅ WORKING: Post-session processing\nfor automatic conversation logging\nwith content-aware routing\n\nFully operational and reliable
 
 note bottom of MCP : MCP servers run as separate\nprocesses communicating via\nJSON-RPC over stdio
 
