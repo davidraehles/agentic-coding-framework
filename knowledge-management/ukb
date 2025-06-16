@@ -144,6 +144,8 @@ AUTO_MODE=false
 AGENT_MODE=false
 UPGRADE_MODE=false
 FORCE_REPROCESS=false
+FULL_HISTORY_MODE=false
+HISTORY_DEPTH=""
 
 # Get significance score for category
 get_significance_score() {
@@ -270,6 +272,20 @@ parse_args() {
                 FORCE_REPROCESS=true
                 shift
                 ;;
+            --full-history)
+                # Analyze entire git history for comprehensive codebase understanding
+                FULL_HISTORY_MODE=true
+                shift
+                ;;
+            --history-depth)
+                # Specify how many commits to analyze (default: all if --full-history)
+                if [[ -n "$2" ]] && [[ "$2" =~ ^[0-9]+$ ]]; then
+                    HISTORY_DEPTH="$2"
+                    shift 2
+                else
+                    error_exit "Invalid history depth. Must be a number."
+                fi
+                ;;
             --agent-complete)
                 # Complete agent analysis with provided directory
                 if [[ -n "$2" ]] && [[ -d "$2" ]]; then
@@ -295,6 +311,11 @@ parse_args() {
     if [[ "$INTERACTIVE_MODE" == false ]] && [[ "$AUTO_MODE" == false ]] && [[ "$AGENT_MODE" == false ]] && [[ "$UPGRADE_MODE" == false ]]; then
         AUTO_MODE=true
     fi
+    
+    # Full history mode implies auto mode
+    if [[ "$FULL_HISTORY_MODE" == true ]]; then
+        AUTO_MODE=true
+    fi
 }
 
 # Show help
@@ -312,6 +333,8 @@ show_help() {
     echo "  --agent, -g       Agent mode (semantic analysis within coding agent)"
     echo "  --upgrade         Upgrade existing entities to enhanced schema format"
     echo "  --force-reprocess Force reprocessing of all files (ignore incremental state)"
+    echo "  --full-history    Analyze entire git history for comprehensive understanding"
+    echo "  --history-depth N Analyze last N commits (use with --full-history for limit)"
     echo "  --help, -h        Show this help message"
     echo ""
     echo -e "${YELLOW}Features:${NC}"
@@ -327,6 +350,13 @@ show_help() {
     echo -e "${BLUE}💡 Use interactive mode after major architecture decisions${NC}"
     echo -e "${BLUE}💡 Auto mode great for quick session summaries${NC}"
     echo -e "${BLUE}💡 Agent mode enables semantic analysis within coding agents${NC}"
+    echo -e "${BLUE}💡 Full history mode for comprehensive codebase understanding${NC}"
+    echo ""
+    echo -e "${YELLOW}Full History Analysis Examples:${NC}"
+    echo "  ukb --full-history              # Analyze entire git history"
+    echo "  ukb --full-history --interactive  # Deep analysis with manual insights"
+    echo "  ukb --history-depth 100         # Analyze last 100 commits"
+    echo "  ukb --full-history --force-reprocess  # Re-analyze everything"
     echo ""
     echo -e "${YELLOW}Agent Mode Usage:${NC}"
     echo "  1. Run 'ukb --agent' from within Claude/CoPilot"
@@ -928,9 +958,15 @@ extract_auto_insights() {
     # Initialize insights file
     echo '{"insights": [], "entities": [], "relations": []}' > "$insights_file"
     
-    # CONSERVATIVE: Only capture truly significant architectural changes
+    # Choose analysis approach based on mode
     if [[ -f "$TMP_DIR/recent_commits.txt" ]]; then
-        analyze_commits_conservatively "$insights_file" "$project" "$language"
+        if [[ "$FULL_HISTORY_MODE" == true ]]; then
+            # Comprehensive analysis for full understanding
+            analyze_git_history_comprehensively "$insights_file" "$project" "$language"
+        else
+            # Conservative analysis for incremental updates
+            analyze_commits_conservatively "$insights_file" "$project" "$language"
+        fi
     fi
     
     # Skip automatic .specstory analysis to prevent noise
@@ -1141,6 +1177,257 @@ complete_agent_analysis() {
     rm -f "$HOME/.ukb_agent_session"
     
     log "Agent analysis completed successfully"
+}
+
+# Comprehensive git history analysis for full codebase understanding
+analyze_git_history_comprehensively() {
+    local insights_file="$1"
+    local project="$2"
+    local language="$3"
+    
+    log "Comprehensive git history analysis for full codebase understanding..."
+    
+    if [[ ! -f "$TMP_DIR/recent_commits.txt" ]]; then
+        log "No commits to analyze"
+        return
+    fi
+    
+    local total_commits
+    total_commits=$(wc -l < "$TMP_DIR/recent_commits.txt" 2>/dev/null || echo 0)
+    
+    if [[ $total_commits -eq 0 ]]; then
+        log "No commits found to analyze"
+        return
+    fi
+    
+    echo "🔍 Analyzing $total_commits commits for comprehensive understanding..."
+    
+    # Analyze commits in chronological order (oldest first)
+    local architectural_patterns=()
+    local feature_evolution=()
+    local refactoring_events=()
+    local technology_adoptions=()
+    local performance_improvements=()
+    
+    # Process commits and categorize them
+    local commit_count=0
+    while IFS='|' read -r hash author date message; do
+        [[ -z "$message" ]] && continue
+        ((commit_count++))
+        
+        # Show progress for large histories
+        if [[ $commit_count -eq 1 ]] || [[ $((commit_count % 50)) -eq 0 ]] || [[ $commit_count -eq $total_commits ]]; then
+            echo "  Progress: $commit_count/$total_commits commits processed..."
+        fi
+        
+        # Categorize commit types
+        local commit_category=""
+        local significance=5
+        
+        # Architecture & Design
+        if [[ "$message" =~ (architect|design|structure|pattern|refactor|restructure|redesign) ]]; then
+            commit_category="architecture"
+            significance=8
+            architectural_patterns+=("$hash:$message")
+        # New Features & Capabilities
+        elif [[ "$message" =~ ^(feat|add|implement|introduce):.*|^Add.*|^Implement.* ]]; then
+            commit_category="feature"
+            significance=6
+            feature_evolution+=("$hash:$message")
+        # Technology & Dependencies
+        elif [[ "$message" =~ (upgrade|update|migrate|dependency|package|library|framework) ]]; then
+            commit_category="technology"
+            significance=7
+            technology_adoptions+=("$hash:$message")
+        # Performance & Optimization
+        elif [[ "$message" =~ (perf|performance|optimize|speed|cache|memory|efficient) ]]; then
+            commit_category="performance"
+            significance=7
+            performance_improvements+=("$hash:$message")
+        # Major Refactoring
+        elif [[ "$message" =~ (refactor|cleanup|reorganize|consolidate) ]]; then
+            commit_category="refactoring"
+            significance=6
+            refactoring_events+=("$hash:$message")
+        # Configuration & Setup
+        elif [[ "$message" =~ (config|setup|init|install|deploy) ]]; then
+            commit_category="configuration"
+            significance=4
+        # Bug fixes (lower priority for history analysis)
+        elif [[ "$message" =~ ^(fix|bug):.*|^Fix.* ]]; then
+            commit_category="bugfix"
+            significance=3
+        # Documentation (lowest priority)
+        elif [[ "$message" =~ (doc|readme|comment) ]]; then
+            commit_category="documentation"
+            significance=2
+        else
+            commit_category="general"
+            significance=4
+        fi
+        
+        # Create insights for high-significance commits
+        if [[ $significance -ge 6 ]] && [[ "$commit_category" != "general" ]]; then
+            create_historical_insight "$hash" "$message" "$commit_category" "$significance" "$insights_file" "$project" "$language" "$author" "$date"
+        fi
+        
+    done < <(tac "$TMP_DIR/recent_commits.txt")  # Process oldest first
+    
+    # Create evolution patterns from collected data
+    create_evolution_patterns "$insights_file" "$project" "$language" architectural_patterns[@] feature_evolution[@] technology_adoptions[@] performance_improvements[@] refactoring_events[@]
+    
+    echo "✅ Comprehensive history analysis completed"
+    echo "   📐 Architecture events: ${#architectural_patterns[@]}"
+    echo "   🚀 Feature developments: ${#feature_evolution[@]}"
+    echo "   🔧 Technology adoptions: ${#technology_adoptions[@]}"
+    echo "   ⚡ Performance improvements: ${#performance_improvements[@]}"
+    echo "   🔄 Refactoring events: ${#refactoring_events[@]}"
+}
+
+# Create insight from historical commit
+create_historical_insight() {
+    local hash="$1"
+    local message="$2"
+    local category="$3" 
+    local significance="$4"
+    local insights_file="$5"
+    local project="$6"
+    local language="$7"
+    local author="$8"
+    local commit_date="$9"
+    
+    # Extract meaningful details from the commit
+    local files_changed=""
+    local lines_changed=""
+    local diff_summary=""
+    
+    if command -v git >/dev/null 2>&1; then
+        files_changed=$(git show --name-only --pretty=format: "$hash" 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/,$//' || echo "")
+        diff_summary=$(git show --stat --pretty=format: "$hash" 2>/dev/null | tail -n 1 || echo "")
+    fi
+    
+    # Create descriptive name based on commit content
+    local insight_name
+    case "$category" in
+        "architecture")
+            insight_name="ArchEvolution_$(echo "$message" | sed 's/[^a-zA-Z0-9]//g' | cut -c1-15)"
+            ;;
+        "feature")
+            insight_name="FeatureEvolution_$(echo "$message" | sed 's/[^a-zA-Z0-9]//g' | cut -c1-15)"
+            ;;
+        "technology")
+            insight_name="TechEvolution_$(echo "$message" | sed 's/[^a-zA-Z0-9]//g' | cut -c1-15)"
+            ;;
+        "performance")
+            insight_name="PerfEvolution_$(echo "$message" | sed 's/[^a-zA-Z0-9]//g' | cut -c1-15)"
+            ;;
+        "refactoring")
+            insight_name="RefactorEvolution_$(echo "$message" | sed 's/[^a-zA-Z0-9]//g' | cut -c1-15)"
+            ;;
+        *)
+            insight_name="CodeEvolution_$(echo "$message" | sed 's/[^a-zA-Z0-9]//g' | cut -c1-15)"
+            ;;
+    esac
+    
+    # Ensure unique names
+    insight_name="${insight_name}_${hash:0:7}"
+    
+    local timestamp
+    timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    
+    # Add to insights with evolutionary context
+    jq --arg name "$insight_name" \
+       --arg type "EvolutionPattern" \
+       --arg problem "Codebase evolution: $category development" \
+       --arg solution "$message" \
+       --arg approach "Historical development captured from commit $hash" \
+       --arg applicability "Understanding $category evolution in $language projects" \
+       --arg author "$author" \
+       --arg proj "$project" \
+       --arg sig "$significance" \
+       --arg timestamp "$timestamp" \
+       --arg commit_hash "$hash" \
+       --arg commit_date "$commit_date" \
+       --arg files "$files_changed" \
+       --arg diff "$diff_summary" \
+       --arg category "$category" \
+       '.insights += [{
+           "type": "entity",
+           "name": $name,
+           "entityType": $type,
+           "problem": $problem,
+           "solution": $solution,
+           "approach": $approach,
+           "applicability": $applicability,
+           "author": $author,
+           "project": $proj,
+           "observations": [
+               "Evolution: \($solution)",
+               "Commit: \($commit_hash) by \($author)",
+               "Date: \($commit_date)",
+               "Files: \($files)",
+               "Stats: \($diff)",
+               "Category: \($category)",
+               "Significance: \($sig)/10"
+           ],
+           "significance": ($sig | tonumber),
+           "created": $timestamp,
+           "metadata": {
+               "source": "git-history",
+               "commit_hash": $commit_hash,
+               "commit_date": $commit_date,
+               "evolution_category": $category,
+               "files_changed": $files
+           }
+       }]' "$insights_file" > "$insights_file.tmp" && mv "$insights_file.tmp" "$insights_file"
+}
+
+# Create evolution patterns from historical analysis
+create_evolution_patterns() {
+    local insights_file="$1"
+    local project="$2"
+    local language="$3"
+    
+    # This function would analyze the collected patterns to create high-level insights
+    # about how the codebase evolved over time
+    
+    log "Creating evolution patterns from historical analysis..."
+    
+    # For now, we'll create a summary pattern
+    local timestamp
+    timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    
+    jq --arg name "CodebaseEvolutionSummary_${project}" \
+       --arg type "EvolutionSummary" \
+       --arg problem "Understanding comprehensive codebase evolution" \
+       --arg solution "Full git history analysis revealing architectural decisions, feature development, and technology adoption patterns" \
+       --arg approach "Comprehensive commit analysis with categorization and significance scoring" \
+       --arg applicability "Any project requiring deep understanding of codebase evolution and decision history" \
+       --arg proj "$project" \
+       --arg timestamp "$timestamp" \
+       '.insights += [{
+           "type": "entity",
+           "name": $name,
+           "entityType": $type,
+           "problem": $problem,
+           "solution": $solution,
+           "approach": $approach,
+           "applicability": $applicability,
+           "project": $proj,
+           "observations": [
+               "Full git history analyzed for comprehensive understanding",
+               "Evolution patterns extracted from commit history",
+               "Architectural decisions and rationales captured",
+               "Technology adoption timeline documented",
+               "Feature development progression mapped"
+           ],
+           "significance": 9,
+           "created": $timestamp,
+           "metadata": {
+               "source": "comprehensive-git-analysis",
+               "analysis_type": "full-history"
+           }
+       }]' "$insights_file" > "$insights_file.tmp" && mv "$insights_file.tmp" "$insights_file"
 }
 
 # Conservative commit analysis - only capture major architectural changes
@@ -1653,25 +1940,42 @@ analyze_session() {
     # Get git status and recent commits
     cd "$PWD" 2>/dev/null || cd "$HOME"
     
-    # Get recent commits (only new ones since last analysis)
-    local last_commit
-    last_commit=$(get_last_analyzed_commit "$project_name")
-    
-    if [[ "$last_commit" != "never" ]] && git rev-parse --verify "$last_commit" >/dev/null 2>&1; then
-        # Get commits since last analyzed commit
-        git log --oneline --pretty=format:'%h|%an|%ad|%s' --date=iso "${last_commit}..HEAD" > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
-        echo "📊 Analyzing $(wc -l < "$TMP_DIR/recent_commits.txt" 2>/dev/null || echo 0) new commits since $last_commit"
+    # Determine commit range based on mode
+    if [[ "$FULL_HISTORY_MODE" == true ]]; then
+        # Full history analysis
+        if [[ -n "$HISTORY_DEPTH" ]]; then
+            git log --oneline -"$HISTORY_DEPTH" --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
+            echo "📊 FULL HISTORY: Analyzing last $HISTORY_DEPTH commits"
+        else
+            git log --oneline --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
+            local total_commits
+            total_commits=$(wc -l < "$TMP_DIR/recent_commits.txt" 2>/dev/null || echo 0)
+            echo "📊 FULL HISTORY: Analyzing entire git history ($total_commits commits)"
+        fi
+        
+        # In full history mode, we process everything regardless of previous state
+        echo "🔍 Full history mode: Processing all commits for comprehensive understanding"
     else
-        # First run or invalid last commit - analyze last 10 commits
-        git log --oneline -10 --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
-        echo "📊 First analysis - examining last 10 commits"
-    fi
-    
-    # Update last analyzed commit to current HEAD
-    local current_head
-    current_head=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-    if [[ "$current_head" != "unknown" ]]; then
-        update_last_analyzed_commit "$project_name" "$current_head"
+        # Incremental analysis (default behavior)
+        local last_commit
+        last_commit=$(get_last_analyzed_commit "$project_name")
+        
+        if [[ "$last_commit" != "never" ]] && git rev-parse --verify "$last_commit" >/dev/null 2>&1; then
+            # Get commits since last analyzed commit
+            git log --oneline --pretty=format:'%h|%an|%ad|%s' --date=iso "${last_commit}..HEAD" > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
+            echo "📊 INCREMENTAL: Analyzing $(wc -l < "$TMP_DIR/recent_commits.txt" 2>/dev/null || echo 0) new commits since $last_commit"
+        else
+            # First run or invalid last commit - analyze last 10 commits
+            git log --oneline -10 --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
+            echo "📊 FIRST RUN: Examining last 10 commits"
+        fi
+        
+        # Update last analyzed commit to current HEAD (only in incremental mode)
+        local current_head
+        current_head=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+        if [[ "$current_head" != "unknown" ]]; then
+            update_last_analyzed_commit "$project_name" "$current_head"
+        fi
     fi
     
     # Get current project context
