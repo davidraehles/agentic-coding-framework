@@ -518,9 +518,16 @@ EOF
     done
     
     # Check if already configured
-    if grep -q "CODING_REPO.*$CLAUDE_REPO" "$SHELL_RC" 2>/dev/null; then
+    if grep -q "CODING_REPO.*$CLAUDE_REPO" "$SHELL_RC" 2>/dev/null && grep -q "PATH.*$CLAUDE_REPO/bin" "$SHELL_RC" 2>/dev/null; then
         info "Shell already configured with correct paths"
     else
+        # Remove any existing Claude configurations to prevent duplicates
+        if [[ -f "$SHELL_RC.bak" ]]; then
+            rm -f "$SHELL_RC.bak"
+        fi
+        # Remove existing Claude sections
+        sed -i.bak '/# Claude Knowledge Management System/,/^$/d' "$SHELL_RC" 2>/dev/null || true
+        
         # Add configuration
         {
             echo ""
@@ -533,7 +540,9 @@ EOF
     
     # Also update .bash_profile on macOS since it's commonly used
     if [[ "$PLATFORM" == "macos" ]] && [[ -f "$HOME/.bash_profile" ]]; then
-        if ! grep -q "CODING_REPO.*$CLAUDE_REPO" "$HOME/.bash_profile" 2>/dev/null; then
+        if ! grep -q "CODING_REPO.*$CLAUDE_REPO" "$HOME/.bash_profile" 2>/dev/null || ! grep -q "PATH.*$CLAUDE_REPO/bin" "$HOME/.bash_profile" 2>/dev/null; then
+            # Remove existing Claude sections from .bash_profile too
+            sed -i.bak '/# Claude Knowledge Management System/,/^$/d' "$HOME/.bash_profile" 2>/dev/null || true
             {
                 echo ""
                 echo "# Claude Knowledge Management System"
