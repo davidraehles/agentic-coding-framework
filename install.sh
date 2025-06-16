@@ -30,11 +30,11 @@ INSTALL_LOG="$CODING_REPO/install.log"
 # Repository URLs - will be set based on CN/VPN detection
 MEMORY_VISUALIZER_REPO_SSH=""
 MEMORY_VISUALIZER_REPO_HTTPS=""
-MEMORY_VISUALIZER_DIR="$CLAUDE_REPO/memory-visualizer"
+MEMORY_VISUALIZER_DIR="$CODING_REPO/memory-visualizer"
 
 BROWSERBASE_REPO_SSH=""
 BROWSERBASE_REPO_HTTPS=""
-BROWSERBASE_DIR="$CLAUDE_REPO/mcp-server-browserbase"
+BROWSERBASE_DIR="$CODING_REPO/mcp-server-browserbase"
 
 # Installation status tracking
 INSIDE_CN=false
@@ -368,7 +368,7 @@ install_memory_visualizer() {
     npm run build || error_exit "Failed to build memory-visualizer"
     
     # Update vkb script to use local memory-visualizer
-    sed -i '' "s|VISUALIZER_DIR=.*|VISUALIZER_DIR=\"$MEMORY_VISUALIZER_DIR\"|" "$CLAUDE_REPO/knowledge-management/vkb"
+    sed -i '' "s|VISUALIZER_DIR=.*|VISUALIZER_DIR=\"$MEMORY_VISUALIZER_DIR\"|" "$CODING_REPO/knowledge-management/vkb"
     
     success "Memory visualizer installed successfully"
 }
@@ -410,7 +410,7 @@ install_browserbase() {
         warning "Browserbase repository not available - skipping stagehand build"
     fi
     
-    cd "$CLAUDE_REPO"
+    cd "$CODING_REPO"
 }
 
 # Install MCP servers
@@ -418,9 +418,9 @@ install_mcp_servers() {
     echo -e "\n${CYAN}🔌 Installing MCP servers...${NC}"
     
     # Install browser-access (Stagehand)
-    if [[ -d "$CLAUDE_REPO/browser-access" ]]; then
+    if [[ -d "$CODING_REPO/browser-access" ]]; then
         info "Installing browser-access MCP server..."
-        cd "$CLAUDE_REPO/browser-access"
+        cd "$CODING_REPO/browser-access"
         npm install || error_exit "Failed to install browser-access dependencies"
         npm run build || error_exit "Failed to build browser-access"
         chmod +x dist/index.js 2>/dev/null || true
@@ -430,9 +430,9 @@ install_mcp_servers() {
     fi
     
     # Install claude-logger MCP server (optional - used for manual logging only)
-    if [[ -d "$CLAUDE_REPO/claude-logger-mcp" ]]; then
+    if [[ -d "$CODING_REPO/claude-logger-mcp" ]]; then
         info "Installing claude-logger MCP server..."
-        cd "$CLAUDE_REPO/claude-logger-mcp"
+        cd "$CODING_REPO/claude-logger-mcp"
         npm install || error_exit "Failed to install claude-logger dependencies"
         if npm run build; then
             success "Claude-logger MCP server installed"
@@ -448,15 +448,15 @@ install_mcp_servers() {
 create_command_wrappers() {
     echo -e "\n${CYAN}🔧 Creating command wrappers...${NC}"
     
-    local bin_dir="$CLAUDE_REPO/bin"
+    local bin_dir="$CODING_REPO/bin"
     mkdir -p "$bin_dir"
     
     # Create ukb wrapper
     cat > "$bin_dir/ukb" << 'EOF'
 #!/bin/bash
 # Universal ukb wrapper
-CLAUDE_REPO="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
-exec "$CLAUDE_REPO/knowledge-management/ukb" "$@"
+CODING_REPO="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
+exec "$CODING_REPO/knowledge-management/ukb" "$@"
 EOF
     chmod +x "$bin_dir/ukb"
     
@@ -464,8 +464,8 @@ EOF
     cat > "$bin_dir/vkb" << 'EOF'
 #!/bin/bash
 # Universal vkb wrapper
-CLAUDE_REPO="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
-exec "$CLAUDE_REPO/knowledge-management/vkb" "$@"
+CODING_REPO="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
+exec "$CODING_REPO/knowledge-management/vkb" "$@"
 EOF
     chmod +x "$bin_dir/vkb"
     
@@ -478,8 +478,8 @@ EOF
 configure_shell_environment() {
     echo -e "\n${CYAN}🐚 Configuring shell environment...${NC}"
     
-    local claude_path_export="export PATH=\"$CLAUDE_REPO/bin:\$PATH\""
-    local claude_repo_export="export CODING_REPO=\"$CLAUDE_REPO\""
+    local claude_path_export="export PATH=\"$CODING_REPO/bin:\$PATH\""
+    local claude_repo_export="export CODING_REPO=\"$CODING_REPO\""
     
     # Clean up old aliases from all shell config files
     local config_files=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.zprofile")
@@ -495,7 +495,7 @@ configure_shell_environment() {
             sed -i.bak '/alias claude-mcp=/d' "$config_file" 2>/dev/null || true
             sed -i.bak '/unalias ukb/d' "$config_file" 2>/dev/null || true
             sed -i.bak '/unalias vkb/d' "$config_file" 2>/dev/null || true
-            # Remove old CLAUDE_REPO/CODING_REPO exports
+            # Remove old CODING_REPO/CLAUDE_REPO exports
             sed -i.bak '/CLAUDE_REPO.*Claude/d' "$config_file" 2>/dev/null || true
             sed -i.bak '/CODING_REPO.*coding/d' "$config_file" 2>/dev/null || true
         fi
@@ -511,14 +511,14 @@ configure_shell_environment() {
             cat > "$wrapper" << EOF
 #!/bin/bash
 # Updated wrapper for $script_name command
-exec $CLAUDE_REPO/knowledge-management/$script_name "\$@"
+exec $CODING_REPO/knowledge-management/$script_name "\$@"
 EOF
             chmod +x "$wrapper"
         fi
     done
     
     # Check if already configured
-    if grep -q "CODING_REPO.*$CLAUDE_REPO" "$SHELL_RC" 2>/dev/null && grep -q "PATH.*$CLAUDE_REPO/bin" "$SHELL_RC" 2>/dev/null; then
+    if grep -q "CODING_REPO.*$CODING_REPO" "$SHELL_RC" 2>/dev/null && grep -q "PATH.*$CODING_REPO/bin" "$SHELL_RC" 2>/dev/null; then
         info "Shell already configured with correct paths"
     else
         # Remove any existing Claude configurations to prevent duplicates
@@ -540,7 +540,7 @@ EOF
     
     # Also update .bash_profile on macOS since it's commonly used
     if [[ "$PLATFORM" == "macos" ]] && [[ -f "$HOME/.bash_profile" ]]; then
-        if ! grep -q "CODING_REPO.*$CLAUDE_REPO" "$HOME/.bash_profile" 2>/dev/null || ! grep -q "PATH.*$CLAUDE_REPO/bin" "$HOME/.bash_profile" 2>/dev/null; then
+        if ! grep -q "CODING_REPO.*$CODING_REPO" "$HOME/.bash_profile" 2>/dev/null || ! grep -q "PATH.*$CODING_REPO/bin" "$HOME/.bash_profile" 2>/dev/null; then
             # Remove existing Claude sections from .bash_profile too
             sed -i.bak '/# Claude Knowledge Management System/,/^$/d' "$HOME/.bash_profile" 2>/dev/null || true
             {
@@ -554,7 +554,8 @@ EOF
     fi
     
     # Create a cleanup script for the current shell session
-    cat > "$CLAUDE_REPO/scripts/cleanup-aliases.sh" << 'EOF'
+    mkdir -p "$CODING_REPO/scripts"
+    cat > "$CODING_REPO/scripts/cleanup-aliases.sh" << 'EOF'
 #!/bin/bash
 # Cleanup aliases from current shell session
 unalias ukb 2>/dev/null || true
@@ -564,10 +565,10 @@ unset -f ukb 2>/dev/null || true
 unset -f vkb 2>/dev/null || true
 unset -f claude-mcp 2>/dev/null || true
 EOF
-    chmod +x "$CLAUDE_REPO/scripts/cleanup-aliases.sh"
+    chmod +x "$CODING_REPO/scripts/cleanup-aliases.sh"
     
     success "Shell environment configured and old aliases removed"
-    info "If you still see old aliases, run: source $CLAUDE_REPO/scripts/cleanup-aliases.sh"
+    info "If you still see old aliases, run: source $CODING_REPO/scripts/cleanup-aliases.sh"
 }
 
 # Setup MCP configuration
@@ -575,16 +576,16 @@ setup_mcp_config() {
     echo -e "\n${CYAN}⚙️  Setting up MCP configuration...${NC}"
     
     # Check if template file exists
-    if [[ ! -f "$CLAUDE_REPO/claude-code-mcp.json" ]]; then
+    if [[ ! -f "$CODING_REPO/claude-code-mcp.json" ]]; then
         warning "claude-code-mcp.json template not found, skipping MCP configuration..."
         return
     fi
     
     # Check if .env file exists and source it
-    if [[ -f "$CLAUDE_REPO/.env" ]]; then
+    if [[ -f "$CODING_REPO/.env" ]]; then
         info "Loading environment variables from .env file..."
         set -a
-        source "$CLAUDE_REPO/.env"
+        source "$CODING_REPO/.env"
         set +a
     else
         warning ".env file not found. Using empty API keys - please configure them later."
@@ -594,15 +595,15 @@ setup_mcp_config() {
     
     # Replace placeholders in the template
     local temp_file=$(mktemp)
-    cp "$CLAUDE_REPO/claude-code-mcp.json" "$temp_file"
+    cp "$CODING_REPO/claude-code-mcp.json" "$temp_file"
     
-    # Replace environment variables - use the actual CLAUDE_REPO path
-    sed -i.bak "s|{{CLAUDE_PROJECT_PATH}}|$CLAUDE_REPO|g" "$temp_file"
+    # Replace environment variables - use the actual CODING_REPO path
+    sed -i.bak "s|{{CLAUDE_PROJECT_PATH}}|$CODING_REPO|g" "$temp_file"
     sed -i.bak "s|{{LOCAL_CDP_URL}}|${LOCAL_CDP_URL:-ws://localhost:9222}|g" "$temp_file"
     sed -i.bak "s|{{ANTHROPIC_API_KEY}}|${ANTHROPIC_API_KEY:-}|g" "$temp_file"
     
     # Save the processed version locally
-    cp "$temp_file" "$CLAUDE_REPO/claude-code-mcp-processed.json"
+    cp "$temp_file" "$CODING_REPO/claude-code-mcp-processed.json"
     info "Processed configuration saved to: claude-code-mcp-processed.json"
     
     # Copy to user's Claude configuration directory
@@ -640,9 +641,9 @@ setup_mcp_config() {
 initialize_shared_memory() {
     echo -e "\n${CYAN}📝 Initializing shared memory...${NC}"
     
-    if [[ ! -f "$CLAUDE_REPO/shared-memory.json" ]]; then
+    if [[ ! -f "$CODING_REPO/shared-memory.json" ]]; then
         info "Creating initial shared-memory.json..."
-        cat > "$CLAUDE_REPO/shared-memory.json" << 'EOF'
+        cat > "$CODING_REPO/shared-memory.json" << 'EOF'
 {
   "entities": [],
   "relations": [],
@@ -661,7 +662,7 @@ EOF
     fi
     
     # Ensure proper permissions
-    chmod 644 "$CLAUDE_REPO/shared-memory.json"
+    chmod 644 "$CODING_REPO/shared-memory.json"
 }
 
 # Create example configuration files
@@ -669,7 +670,7 @@ create_example_configs() {
     echo -e "\n${CYAN}📄 Creating example configuration files...${NC}"
     
     # Create .env.example for MCP servers
-    cat > "$CLAUDE_REPO/.env.example" << 'EOF'
+    cat > "$CODING_REPO/.env.example" << 'EOF'
 # Claude Knowledge Management System - Environment Variables
 
 # For browser-access MCP server (optional)
@@ -685,7 +686,7 @@ CLAUDE_PROJECT_PATH=/path/to/coding/repo
 # No specific environment variables required
 
 # Custom paths (optional)
-# CLAUDE_REPO=/path/to/coding/repo
+# CODING_REPO=/path/to/coding/repo
 # MEMORY_VISUALIZER_DIR=/path/to/memory-visualizer
 EOF
     
@@ -699,14 +700,14 @@ verify_installation() {
     local errors=0
     
     # Check ukb and vkb commands
-    if [[ -x "$CLAUDE_REPO/bin/ukb" ]]; then
+    if [[ -x "$CODING_REPO/bin/ukb" ]]; then
         success "ukb command is available"
     else
         error_exit "ukb command not found or not executable"
         ((errors++))
     fi
     
-    if [[ -x "$CLAUDE_REPO/bin/vkb" ]]; then
+    if [[ -x "$CODING_REPO/bin/vkb" ]]; then
         success "vkb command is available"
     else
         error_exit "vkb command not found or not executable"
@@ -722,13 +723,13 @@ verify_installation() {
     fi
     
     # Check MCP servers
-    if [[ -f "$CLAUDE_REPO/browser-access/dist/index.js" ]]; then
+    if [[ -f "$CODING_REPO/browser-access/dist/index.js" ]]; then
         success "Browser-access MCP server is built"
     else
         warning "Browser-access MCP server not built"
     fi
     
-    if [[ -f "$CLAUDE_REPO/claude-logger-mcp/dist/index.js" ]]; then
+    if [[ -f "$CODING_REPO/claude-logger-mcp/dist/index.js" ]]; then
         success "Claude-logger MCP server is built"
     else
         warning "Claude-logger MCP server not built"
@@ -900,7 +901,7 @@ main() {
     # Initialize log
     echo "Installation started at $(date)" > "$INSTALL_LOG"
     log "Platform: $(uname -s)"
-    log "Claude repo: $CLAUDE_REPO"
+    log "Coding repo: $CODING_REPO"
     
     # Detect platform
     detect_platform
@@ -939,7 +940,7 @@ echo "  coding           # Use best available agent"
 echo "  coding --copilot # Force CoPilot"
 echo "  coding --claude  # Force Claude Code"
 EOF
-    chmod +x "$CLAUDE_REPO/.activate"
+    chmod +x "$CODING_REPO/.activate"
     
     # Installation status report
     show_installation_status
