@@ -75,7 +75,8 @@
       "Bash(git restore:*)",
       "Bash(true)",
       "Bash(gh:*)",
-      "Bash(code:*)"
+      "Bash(code:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }
