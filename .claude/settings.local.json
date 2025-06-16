@@ -74,7 +74,8 @@
       "Bash(vkb start:*)",
       "Bash(git restore:*)",
       "Bash(true)",
-      "Bash(gh:*)"
+      "Bash(gh:*)",
+      "Bash(code:*)"
     ],
     "deny": []
   }

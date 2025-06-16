@@ -170,9 +170,9 @@ class KMChatParticipant {
             
             // Provide helpful commands
             response.markdown('**Available commands:**\n');
-            response.markdown('- `@km ukb <pattern description>` - Update knowledge base\n');
-            response.markdown('- `@km vkb` - View knowledge graph\n');
-            response.markdown('- `@km search <query>` - Search knowledge base\n');
+            response.markdown('- `@KM ukb <pattern description>` - Update knowledge base\n');
+            response.markdown('- `@KM vkb` - View knowledge graph\n');
+            response.markdown('- `@KM search <query>` - Search knowledge base\n');
             
         } catch (error) {
             response.markdown(`❌ Error: ${error.message}\n`);
