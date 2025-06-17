@@ -107,21 +107,203 @@ cd ~/coding
 vkb  # View existing team knowledge
 ```
 
-## Verification
+## ✅ Installation Verification
 
-Test your installation:
-
+### Step 1: Basic Command Test
 ```bash
 # Test commands are available
 ukb --version
 vkb --version
 
-# Test knowledge base
-ukb "Problem: Testing installation, Solution: Installation successful"
-vkb  # Should open browser to localhost:8080
+# Expected output:
+# ukb version 1.0.0
+# vkb version 1.0.0
+```
 
+### Step 2: Knowledge Base Test
+```bash
+# Test knowledge base creation and update
+ukb "Problem: Testing installation, Solution: Installation successful, Technologies: testing"
+
+# Expected output:
+# ✅ Knowledge base updated successfully!
+# Entity: InstallationTestPattern
+# Significance: 5/10
+```
+
+### Step 3: Visualization Test
+```bash
+# Test knowledge graph viewer
+vkb
+
+# Expected behavior:
+# - Opens browser to http://localhost:8080
+# - Shows interactive knowledge graph
+# - Displays the test pattern you just created
+```
+
+### Step 4: Git Integration Test
+```bash
 # Test git integration
-git status  # Should show shared-memory.json changes
+git status
+
+# Expected output should include:
+# modified: shared-memory.json
+```
+
+### Step 5: Full System Test
+```bash
+# Test auto-analysis mode
+cd /path/to/any/git/repo
+git log --oneline -5  # Should show recent commits
+ukb  # Should analyze recent commits
+
+# Expected output:
+# 🔍 Analyzing git commits since last run...
+# Found X transferable insights
+```
+
+## 🔧 Troubleshooting Failed Installations
+
+### Commands Not Found
+```bash
+# Check if shell was reloaded
+echo $PATH | grep coding
+
+# If missing, reload shell
+source ~/.bashrc  # or ~/.zshrc on macOS
+
+# Or start new terminal session
+```
+
+### Permission Errors
+```bash
+# Make scripts executable
+cd ~/coding
+chmod +x install.sh
+chmod +x bin/*
+chmod +x knowledge-management/*
+
+# Run installer again
+./install.sh
+```
+
+### Missing Dependencies
+```bash
+# Check Node.js
+node --version  # Should be v16+ 
+npm --version
+
+# Check Python
+python3 --version  # Should be 3.8+
+
+# Check jq
+jq --version
+
+# Check git
+git --version
+```
+
+### UKB/VKB Commands Fail
+```bash
+# Check environment variables
+echo $CODING_TOOLS_PATH
+echo $CODING_REPO
+
+# If missing, run installer again
+./install.sh --update-shell-config
+
+# Check shared-memory.json exists
+ls -la shared-memory.json
+
+# If missing, initialize
+ukb --init
+```
+
+### Knowledge Graph Viewer Issues
+```bash
+# Check if memory-visualizer was cloned
+ls -la memory-visualizer/
+
+# If missing, clone manually
+git clone https://github.com/fwornle/memory-visualizer
+cd memory-visualizer && npm install && npm run build
+
+# Test viewer launch
+vkb --debug
+```
+
+### Git Integration Problems
+```bash
+# Check if in git repository
+git status
+
+# If not, initialize
+git init
+git add .
+git commit -m "Initial commit"
+
+# Test ukb again
+ukb "Problem: Git test, Solution: Git working"
+```
+
+### Network/Proxy Issues
+```bash
+# Test external connectivity
+curl -I https://github.com
+curl -I https://npmjs.org
+
+# If behind proxy, configure
+git config --global http.proxy http://proxy:8080
+npm config set proxy http://proxy:8080
+
+# See network setup guide for details
+```
+
+## 🚨 Fixing Corrupt Installations
+
+### Complete Reset
+```bash
+# Remove all installed components
+rm -rf ~/.coding-tools/
+rm -rf memory-visualizer/
+rm -rf mcp-server-browserbase/
+
+# Remove shell configuration
+# Edit ~/.bashrc or ~/.zshrc and remove lines containing:
+# - CODING_TOOLS_PATH
+# - coding tools path addition
+
+# Reinstall from scratch
+./install.sh
+source ~/.bashrc  # or ~/.zshrc
+```
+
+### Selective Reset
+```bash
+# Reset only shell configuration
+./install.sh --update-shell-config
+source ~/.bashrc
+
+# Reset only MCP servers
+./install.sh --update-mcp-config
+
+# Reset only memory visualizer
+rm -rf memory-visualizer/
+./install.sh --update-memory-visualizer
+```
+
+### Verify Complete Installation
+```bash
+# Run complete verification suite
+./scripts/verify-installation.sh
+
+# Manual verification checklist:
+echo "✓ Commands available:" && ukb --version && vkb --version
+echo "✓ Knowledge base works:" && ukb "test" && echo "OK"
+echo "✓ Git integration:" && git status | grep "shared-memory.json" && echo "OK"
+echo "✓ Viewer launches:" && timeout 10 vkb && echo "OK"
+echo "✓ Environment:" && echo $CODING_TOOLS_PATH && echo "OK"
 ```
 
 ## Next Steps

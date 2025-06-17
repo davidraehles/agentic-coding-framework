@@ -28,6 +28,20 @@ This repository provides intelligent coding tools that work seamlessly with both
 
 ![Agent-Agnostic Architecture](docs/imag/agent-agnostic-architecture.png)
 
+## 📚 Documentation
+
+For comprehensive documentation, installation guides, architecture details, and usage examples:
+
+**→ [Complete Documentation](docs/README.md)**
+
+### Quick Documentation Links
+
+- **[Installation Guide](docs/installation/quick-start.md)** - Get started in 30 seconds
+- **[UKB User Guide](docs/ukb/user-guide.md)** - Knowledge management workflows  
+- **[VSCode Integration](docs/integrations/vscode-extension.md)** - GitHub Copilot chat integration
+- **[System Architecture](docs/architecture/system-overview.md)** - How it all works
+- **[Troubleshooting](docs/installation/network-setup.md)** - Common issues and solutions
+
 ## 🤖 Supported AI Agents
 
 | Agent | Capabilities | Implementation | Status |
