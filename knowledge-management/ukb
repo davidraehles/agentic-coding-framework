@@ -1961,16 +1961,16 @@ analyze_session() {
         # Full history analysis
         if [[ -n "$HISTORY_DEPTH" ]]; then
             git log --oneline -"$HISTORY_DEPTH" --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
-            echo "📊 FULL HISTORY: Analyzing last $HISTORY_DEPTH commits"
+            echo "📊 FULL HISTORY: Analyzing last $HISTORY_DEPTH commits" >&2
         else
             git log --oneline --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
             local total_commits
             total_commits=$(wc -l < "$TMP_DIR/recent_commits.txt" 2>/dev/null || echo 0)
-            echo "📊 FULL HISTORY: Analyzing entire git history ($total_commits commits)"
+            echo "📊 FULL HISTORY: Analyzing entire git history ($total_commits commits)" >&2
         fi
         
         # In full history mode, we process everything regardless of previous state
-        echo "🔍 Full history mode: Processing all commits for comprehensive understanding"
+        echo "🔍 Full history mode: Processing all commits for comprehensive understanding" >&2
     else
         # Incremental analysis (default behavior)
         local last_commit
@@ -1979,11 +1979,11 @@ analyze_session() {
         if [[ "$last_commit" != "never" ]] && git rev-parse --verify "$last_commit" >/dev/null 2>&1; then
             # Get commits since last analyzed commit
             git log --oneline --pretty=format:'%h|%an|%ad|%s' --date=iso "${last_commit}..HEAD" > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
-            echo "📊 INCREMENTAL: Analyzing $(wc -l < "$TMP_DIR/recent_commits.txt" 2>/dev/null || echo 0) new commits since $last_commit"
+            echo "📊 INCREMENTAL: Analyzing $(wc -l < "$TMP_DIR/recent_commits.txt" 2>/dev/null || echo 0) new commits since $last_commit" >&2
         else
             # First run or invalid last commit - analyze last 10 commits
             git log --oneline -10 --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
-            echo "📊 FIRST RUN: Examining last 10 commits"
+            echo "📊 FIRST RUN: Examining last 10 commits" >&2
         fi
         
         # Update last analyzed commit to current HEAD (only in incremental mode)
