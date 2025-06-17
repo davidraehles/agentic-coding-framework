@@ -6,7 +6,58 @@ This document describes the fallback services that provide feature parity for Gi
 
 The fallback services system implements the same feature set as Claude Code's MCP servers using pure JavaScript solutions, ensuring no agent lock-in and consistent functionality across different AI coding assistants.
 
-## Architecture Overview
+## Simplified Overview
+
+### High-Level Architecture
+
+```mermaid
+graph LR
+    subgraph "User Interface"
+        USER[User]
+        CLI[coding CLI]
+    end
+    
+    subgraph "Claude Code Path"
+        CLAUDE[Claude Code]
+        MCP[MCP Servers]
+    end
+    
+    subgraph "CoPilot Path"  
+        COPILOT[GitHub CoPilot]
+        FALLBACK[Fallback Services]
+    end
+    
+    subgraph "Shared Knowledge"
+        MEMORY[shared-memory.json]
+        HISTORY[.specstory/history]
+    end
+    
+    USER --> CLI
+    CLI --> CLAUDE
+    CLI --> COPILOT
+    
+    CLAUDE --> MCP
+    COPILOT --> FALLBACK
+    
+    MCP --> MEMORY
+    FALLBACK --> MEMORY
+    
+    MCP --> HISTORY
+    FALLBACK --> HISTORY
+    
+    style USER fill:#f9f,stroke:#333,stroke-width:2px
+    style MEMORY fill:#9f9,stroke:#333,stroke-width:2px
+    style HISTORY fill:#9f9,stroke:#333,stroke-width:2px
+```
+
+### Key Concepts
+
+1. **Agent Selection**: The system automatically detects and uses the best available agent
+2. **Feature Parity**: Both paths provide identical functionality
+3. **Shared Storage**: Knowledge persists across agents via shared files
+4. **Transparent Switching**: Users can switch agents without losing context
+
+## Detailed Architecture
 
 ```mermaid
 graph TB
@@ -21,7 +72,7 @@ graph TB
     subgraph "CoPilot (Fallbacks)"
         CP[GitHub CoPilot]
         FS[Fallback Services]
-        GMS[Graphology Memory]
+        GMS[Graphology In-Memory]
         PBS[Playwright Browser]
         SLS[Specstory/File Logger]
     end
@@ -35,8 +86,13 @@ graph TB
     
     subgraph "Persistent Storage"
         SM[shared-memory.json]
-        GM[memory.json]
+        GM[.coding-tools/memory.json]
         SH[.specstory/history/]
+    end
+    
+    subgraph "Sync Mechanism"
+        SYNC[Auto-Sync Service]
+        TIMER[30s Timer]
     end
     
     C --> MCP
@@ -62,11 +118,50 @@ graph TB
     
     MMS <--> SM
     GMS <--> GM
+    GMS --> SYNC
+    SYNC --> SM
+    TIMER --> SYNC
     LMS --> SH
     SLS --> SH
     
-    GM <--> SM
+    style SYNC fill:#ff9,stroke:#333,stroke-width:2px
+    style SM fill:#9f9,stroke:#333,stroke-width:2px
 ```
+
+## Detailed Architecture Diagrams
+
+### Agent-Agnostic Architecture Overview
+
+![Agent-Agnostic Architecture](puml/Agent-Agnostic%20Architecture.png)
+
+This diagram shows the complete flow from agent detection to service implementation, highlighting how:
+
+- Claude Code uses MCP servers for all operations
+- CoPilot uses fallback services (Graphology, Playwright, File/Specstory logging)
+- Both paths provide identical functionality through unified adapters
+
+### Graphology Memory Architecture
+
+![Graphology Memory Architecture](puml/Graphology%20Memory%20Architecture.png)
+
+This detailed view shows the Graphology memory service architecture, including:
+
+- In-memory graph operations for high performance
+- Automatic synchronization with shared-memory.json
+- Periodic and immediate sync strategies
+- Cross-agent compatibility layer
+
+### Fallback Services Detailed Architecture
+
+![Fallback Services Detailed Architecture](puml/Fallback%20Services%20Detailed%20Architecture.png)
+
+This comprehensive diagram illustrates the complete fallback services ecosystem:
+
+- All service components and their interactions
+- HTTP server and WebSocket real-time communication
+- Multi-modal logging with Specstory integration
+- Natural language action parsing for browser automation
+- Health monitoring and service lifecycle management
 
 ## Memory Fallback Service (Graphology)
 
@@ -80,15 +175,15 @@ After evaluating multiple graph database options, **Graphology** was chosen for 
 - ✅ **Persistent** - JSON serialization/deserialization
 - ✅ **Compatible** - Can import/export MCP memory format
 
-### Architecture
+### Memory Service Architecture
 
 ```mermaid
 graph TB
     subgraph "Memory Fallback Service"
-        GR[Graphology Graph]
-        JSON[JSON Persistence]
+        GR[Graphology In-Memory Graph]
+        SYNC[Sync Manager]
         SEARCH[Search Engine]
-        IMPORT[MCP Import/Export]
+        PERSIST[Persistence Layer]
     end
     
     subgraph "Graph Operations"
@@ -98,10 +193,11 @@ graph TB
         TRAVERSAL[Graph Traversal]
     end
     
-    subgraph "Storage"
-        MEM_FILE[memory.json]
+    subgraph "Storage & Sync"
+        MEM_FILE[.coding-tools/memory.json]
         SHARED[shared-memory.json]
-        BACKUP[Backups]
+        TIMER[30s Sync Timer]
+        ONSAVE[On-Save Sync]
     end
     
     GR --> NODES
@@ -109,13 +205,20 @@ graph TB
     GR --> QUERY
     GR --> TRAVERSAL
     
-    NODES --> JSON
-    EDGES --> JSON
+    NODES --> SYNC
+    EDGES --> SYNC
+    SYNC --> PERSIST
+    
+    PERSIST <--> MEM_FILE
+    SYNC --> SHARED
+    TIMER --> SYNC
+    ONSAVE --> SYNC
+    
     QUERY --> SEARCH
     
-    JSON <--> MEM_FILE
-    IMPORT <--> SHARED
-    JSON --> BACKUP
+    style GR fill:#99f,stroke:#333,stroke-width:2px
+    style SYNC fill:#ff9,stroke:#333,stroke-width:2px
+    style SHARED fill:#9f9,stroke:#333,stroke-width:2px
 ```
 
 ### Implementation
@@ -125,6 +228,18 @@ class MemoryFallbackService {
   constructor(config) {
     this.graph = new Graph({ multi: true });
     this.dbPath = config.dbPath || '.coding-tools/memory.json';
+    this.sharedMemoryPath = config.sharedMemoryPath || 'shared-memory.json';
+    this.syncInterval = null;
+  }
+
+  async initialize() {
+    // Load from shared-memory.json first (source of truth)
+    await this.loadFromSharedMemory();
+    
+    // Start auto-sync every 30 seconds
+    this.syncInterval = setInterval(() => {
+      this.syncToSharedMemory().catch(console.error);
+    }, 30000);
   }
 
   async createEntities(entities) {
@@ -135,20 +250,70 @@ class MemoryFallbackService {
         created: new Date().toISOString()
       });
     }
+    
+    // Save to local storage
     await this.saveGraph();
+    
+    // Sync to shared-memory.json immediately
+    await this.syncToSharedMemory();
   }
 
-  async searchNodes(query) {
-    const results = [];
-    this.graph.forEachNode((node, attributes) => {
-      if (this.matchesQuery(attributes, query)) {
-        results.push(this.formatNode(node, attributes));
+  async syncToSharedMemory() {
+    // Export graph to shared-memory.json format
+    const entities = this.graph.mapNodes((node, attrs) => ({
+      name: attrs.name,
+      entityType: attrs.entityType,
+      observations: attrs.observations || [],
+      significance: attrs.significance || 5,
+      metadata: {
+        created_at: attrs.created,
+        last_updated: attrs.lastUpdated || new Date().toISOString()
       }
-    });
-    return results;
+    }));
+    
+    const relations = this.graph.mapEdges((edge, attrs, source, target) => ({
+      from: this.graph.getNodeAttribute(source, 'name'),
+      to: this.graph.getNodeAttribute(target, 'name'),
+      relationType: attrs.relationType
+    }));
+    
+    // Write to shared-memory.json
+    const sharedMemory = {
+      entities,
+      relations,
+      metadata: {
+        last_updated: new Date().toISOString(),
+        total_entities: entities.length,
+        total_relations: relations.length
+      }
+    };
+    
+    await fs.writeFile(this.sharedMemoryPath, JSON.stringify(sharedMemory, null, 2));
   }
 }
 ```
+
+### Synchronization Strategy
+
+The memory fallback service maintains consistency between the in-memory Graphology graph and the shared-memory.json file:
+
+1. **On Startup**:
+   - Loads entities and relations from shared-memory.json
+   - Initializes the Graphology graph with this data
+   - Starts the auto-sync timer
+
+2. **On Modification**:
+   - Updates the in-memory Graphology graph immediately
+   - Saves to local memory.json for fast recovery
+   - Syncs to shared-memory.json for cross-agent compatibility
+
+3. **Periodic Sync**:
+   - Every 30 seconds, exports the entire graph to shared-memory.json
+   - Ensures eventual consistency even if immediate syncs fail
+
+4. **On Shutdown**:
+   - Final sync to ensure all changes are persisted
+   - Clears the sync timer
 
 ### Performance Characteristics
 
@@ -158,11 +323,12 @@ class MemoryFallbackService {
 | **Add Edge** | O(1) | ~0.1ms |
 | **Search** | O(n) | ~1ms/1000 nodes |
 | **Traversal** | O(V+E) | ~5ms/1000 nodes |
-| **Persistence** | O(V+E) | ~10ms/1000 nodes |
+| **Local Save** | O(V+E) | ~10ms/1000 nodes |
+| **Shared Sync** | O(V+E) | ~20ms/1000 nodes |
 
 ## Browser Fallback Service (Playwright)
 
-### Architecture
+### Browser Service Architecture
 
 ```mermaid
 graph TB
@@ -638,4 +804,40 @@ describe('Service Integration', () => {
 });
 ```
 
+## Architecture Benefits
+
+### Cross-Agent Compatibility
+
+The fallback services architecture provides several key benefits:
+
+1. **Unified Knowledge Base**:
+   - Both Claude Code and CoPilot share the same shared-memory.json
+   - Knowledge captured in one agent is immediately available to the other
+   - Teams can collaborate regardless of their preferred agent
+
+2. **Performance Optimization**:
+   - Graphology provides fast in-memory graph operations for CoPilot
+   - Sync mechanism ensures data persistence without blocking operations
+   - Local caching reduces latency for frequent queries
+
+3. **Graceful Degradation**:
+   - If one service fails, others continue to operate
+   - Multiple sync mechanisms ensure data is never lost
+   - Fallback options for every critical feature
+
+4. **Developer Experience**:
+   - Same commands (ukb, vkb) work identically across agents
+   - Transparent switching between agents
+   - No lock-in to a specific AI coding assistant
+
+### Future Enhancements
+
+The architecture is designed to support future enhancements:
+
+- **Additional Agents**: Easy to add support for new AI coding assistants
+- **Advanced Graph Features**: Can leverage Graphology's rich algorithm library
+- **Real-time Collaboration**: WebSocket support for live knowledge sharing
+- **Cloud Sync**: Optional cloud backup for distributed teams
+
 This fallback services architecture ensures that GitHub CoPilot users have access to the same powerful features as Claude Code users, while maintaining performance, reliability, and compatibility across the agent-agnostic ecosystem.
+

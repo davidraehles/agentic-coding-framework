@@ -1,55 +1,142 @@
-# Documentation Directory
+# Documentation Index
 
-This directory contains comprehensive documentation for the Coding Knowledge Management System.
+Welcome to the Coding Knowledge Management System documentation. This system provides intelligent knowledge capture, sharing, and visualization for development teams.
 
-## Installation & Setup
+## 🚀 Getting Started
 
-- **[team-knowledge-setup.md](team-knowledge-setup.md)** - Quick start guide for team collaboration
-- **[installation-guide.md](installation-guide.md)** - Detailed platform-specific installation instructions  
-- **[claude-mcp-setup.md](claude-mcp-setup.md)** - MCP server configuration guide
-- **[agent-agnostic-implementation.md](agent-agnostic-implementation.md)** - Agent-agnostic architecture for Claude Code and GitHub CoPilot
+**New to the system?** Start here:
 
-## System Documentation
+1. **[Quick Start Installation](installation/quick-start.md)** - Get up and running in 30 seconds
+2. **[UKB User Guide](ukb/user-guide.md)** - Learn knowledge management basics
+3. **[System Overview](architecture/system-overview.md)** - Understand how it all works
 
-- **[documentation.md](documentation.md)** - Comprehensive system documentation
-- **[vscode-extension-bridge.md](vscode-extension-bridge.md)** - VSCode Extension integration for ukb/vkb commands in Copilot chat
-- **[mcp-memory-server-architecture.md](mcp-memory-server-architecture.md)** - MCP memory server architecture and cross-session knowledge access
-- **[automatic-conversation-logging.md](automatic-conversation-logging.md)** - How conversations are automatically logged
-- **[cross-project-knowledge-system.md](cross-project-knowledge-system.md)** - Knowledge sharing across projects
-- **[enhanced-knowledge-workflow.md](enhanced-knowledge-workflow.md)** - Enhanced workflow with VSCode integration and multiple interaction modes
-- **[portable-knowledge-references.md](portable-knowledge-references.md)** - Avoiding hardcoded paths for team compatibility
+## 📁 Documentation Structure
 
-## UKB (Update Knowledge Base) Documentation
+### 🔧 Installation & Setup
+Setting up the system on your machine or team.
 
-- **[ukb-comprehensive-guide.md](ukb-comprehensive-guide.md)** - Complete UKB system documentation with architecture and features
-- **[enhanced-ukb-guide.md](enhanced-ukb-guide.md)** - Enhanced UKB with agent-powered semantic analysis and cross-session learning
-- **[ukb-use-cases.md](ukb-use-cases.md)** - Detailed use cases and workflow examples
-- **[ukb-complete-project-analysis.md](ukb-complete-project-analysis.md)** - Step-by-step guide for comprehensive project analysis
-- **[ukb-diagrams-reference.md](ukb-diagrams-reference.md)** - Visual documentation with architecture and workflow diagrams
+- **[Quick Start](installation/quick-start.md)** - Basic installation for individuals and teams
+- **[Network Setup](installation/network-setup.md)** - Corporate networks, proxies, firewalls
+- **[MCP Configuration](installation/mcp-configuration.md)** - Claude Code integration setup
 
-## Network & Installation
+### 🏗️ System Architecture
+Understanding how the system works internally.
 
-- **[installation-architecture.md](installation-architecture.md)** - Network detection and repository strategies
-- **[network-troubleshooting.md](network-troubleshooting.md)** - Common network issues and solutions
+- **[System Overview](architecture/system-overview.md)** - High-level architecture and components
+- **[Knowledge Flow](architecture/knowledge-flow.md)** - How information moves through the system
+- **[Memory Systems](architecture/memory-systems.md)** - MCP memory server and Graphology integration
+- **[Agent Detection](architecture/agent-detection.md)** - Multi-agent support and routing
+- **[Fallback Services](architecture/fallback-services.md)** - Non-Claude agent support
 
-## Visual Documentation
+### 📚 Knowledge Management (UKB)
+Core knowledge capture and management workflows.
 
-- **[imag/](imag/)** - System architecture and workflow diagrams (PNG)
-- **[puml/](puml/)** - PlantUML source files for diagrams, including VSCode integration diagrams
-- **[diagrams/](diagrams/)** - Additional diagrams including Mermaid integration flows
+- **[User Guide](ukb/user-guide.md)** - Complete UKB usage documentation
+- **[Use Cases](ukb/ukb-use-cases.md)** - Detailed workflow examples and scenarios
+- **[Diagrams Reference](ukb/diagrams.md)** - Visual documentation and architecture
 
-## Organization
+### 📝 Conversation Logging
+Automatic capture and organization of AI interactions.
 
-Documentation files are organized by topic:
+- **[Automatic Logging](logging/automatic-logging.md)** - Post-session conversation capture
+- **[MCP Logger](logging/mcp-logger.md)** - Technical implementation details
+- **[Specstory Integration](logging/specstory-integration.md)** - VSCode extension integration
 
-### Core System
-- Installation and setup guides
-- System architecture documentation
-- Feature-specific guides
+### 🔌 Tool Integrations
+Connecting with IDEs and development tools.
 
-### Technical Details
-- Network configuration
-- Troubleshooting guides
-- Architecture diagrams
+- **[VSCode Extension](integrations/vscode-extension.md)** - GitHub Copilot chat integration
+- **[API Reference](integrations/api-reference.md)** - Agent adapter APIs
 
-All documentation is written in Markdown for easy reading and maintenance across platforms.
+### 📖 Reference Materials
+Supporting documentation and troubleshooting.
+
+- **[Portable Paths](reference/portable-paths.md)** - Avoiding hardcoded file paths
+- **[Graph Databases](reference/graph-databases.md)** - Database comparison and selection
+
+## 🎯 Quick Navigation by Use Case
+
+### "I want to start using this system"
+→ [Quick Start Installation](installation/quick-start.md) → [UKB User Guide](ukb/user-guide.md)
+
+### "I need to set this up for my team"
+→ [Quick Start Installation](installation/quick-start.md) → [Network Setup](installation/network-setup.md)
+
+### "I want to use this with Claude Code"
+→ [MCP Configuration](installation/mcp-configuration.md) → [System Overview](architecture/system-overview.md)
+
+### "I want to integrate with VSCode/Copilot"
+→ [VSCode Extension](integrations/vscode-extension.md) → [Automatic Logging](logging/automatic-logging.md)
+
+### "I want to understand how it works internally"
+→ [System Overview](architecture/system-overview.md) → [Knowledge Flow](architecture/knowledge-flow.md)
+
+### "I have questions about knowledge management workflows"
+→ [UKB User Guide](ukb/user-guide.md) → [Use Cases](ukb/ukb-use-cases.md)
+
+### "I need to troubleshoot network/installation issues"
+→ [Network Setup](installation/network-setup.md) → [MCP Configuration](installation/mcp-configuration.md)
+
+## 🔍 Key Concepts
+
+### Knowledge Management
+- **UKB (Update Knowledge Base)**: Captures insights from development activities
+- **VKB (View Knowledge Base)**: Interactive visualization of knowledge graphs
+- **Shared Memory**: Git-tracked knowledge base for team collaboration
+- **Transferable Patterns**: Reusable solutions extracted from code and conversations
+
+### Multi-Agent Support
+- **Claude Code**: Primary agent with MCP memory server integration
+- **Fallback Services**: Graphology-based services for other agents (Copilot, etc.)
+- **Agent Detection**: Automatic routing based on runtime environment
+- **Cross-Agent Sync**: Knowledge sharing between different AI tools
+
+### Conversation Logging
+- **Post-Session Capture**: Automatic logging after AI sessions complete
+- **Smart Routing**: Content-aware organization into project directories
+- **Cross-Project Detection**: Identifies knowledge management work regardless of location
+- **Specstory Integration**: VSCode extension for conversation management
+
+## 🛠️ Common Commands
+
+```bash
+# Knowledge management
+ukb                    # Update knowledge base (auto-analysis)
+ukb --interactive      # Manual insight capture
+vkb                    # View knowledge graph in browser
+
+# System management
+./install.sh           # Install or update system
+claude-mcp            # Start Claude with MCP integration
+coding --copilot      # Start fallback services for Copilot
+
+# Diagnostics
+ukb --verify          # Check knowledge base integrity
+ukb search "pattern"  # Search existing knowledge
+```
+
+## 📞 Support
+
+### Common Issues
+- **Installation problems**: See [Network Setup](installation/network-setup.md)
+- **MCP configuration**: See [MCP Configuration](installation/mcp-configuration.md)
+- **Knowledge management workflows**: See [UKB User Guide](ukb/user-guide.md)
+- **VSCode integration**: See [VSCode Extension](integrations/vscode-extension.md)
+
+### Getting Help
+1. Check the specific documentation section for your issue
+2. Enable debug mode: `DEBUG=1 <command>`
+3. Review log files in `.specstory/history/` and `~/.coding-tools/logs/`
+4. Search existing knowledge: `ukb search "your problem"`
+
+## 🔄 Recent Updates
+
+This documentation has been reorganized for better navigation and reduced duplication. Key improvements:
+
+- **Consolidated installation guides** into focused quick-start and network setup
+- **Merged UKB documentation** to eliminate overlapping content
+- **Streamlined logging documentation** with unified automatic logging guide
+- **Added clear navigation paths** for different user types and use cases
+- **Organized files into logical folders** by functional area
+
+For the previous documentation structure, see git history. All content has been preserved and enhanced.

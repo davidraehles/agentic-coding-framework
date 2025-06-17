@@ -48,7 +48,7 @@ alt Claude Code Selected
 else CoPilot Selected
     Registry -> CoPilot: Select CoPilot adapter
     CoPilot -> Fallback: Initialize fallbacks
-    Fallback -> Memory: Graphology DB
+    Fallback -> Memory: Graphology In-Memory + Sync
     Fallback -> Browser: Playwright
     Fallback -> Logger: File/Specstory
 end
@@ -59,7 +59,7 @@ Registry -> Claude: Forward to selected adapter
 alt Using Claude
     Claude -> MCP: MCP memory operation
 else Using CoPilot  
-    CoPilot -> Fallback: Graphology query
+    CoPilot -> Fallback: Graphology query + auto-sync
 end
 
 note over CLI,Fallback
