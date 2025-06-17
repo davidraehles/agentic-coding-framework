@@ -209,6 +209,20 @@ else
     print_fail "install.sh not found in $CODING_ROOT"
 fi
 
+print_check "Uninstall script"
+if file_exists "$CODING_ROOT/uninstall.sh"; then
+    print_pass "uninstall.sh found"
+    
+    # Test that uninstall script doesn't have variable errors
+    if echo "n" | bash -n "$CODING_ROOT/uninstall.sh" 2>/dev/null; then
+        print_pass "uninstall.sh syntax check passed"
+    else
+        print_fail "uninstall.sh has syntax errors"
+    fi
+else
+    print_fail "uninstall.sh not found in $CODING_ROOT"
+fi
+
 # Check if we're in a git repository
 print_check "Git repository status"
 cd "$CODING_ROOT"

@@ -316,6 +316,23 @@ echo "✓ Viewer launches:" && timeout 10 vkb && echo "OK"
 echo "✓ Environment:" && echo $CODING_TOOLS_PATH && echo "OK"
 ```
 
+## Uninstall
+
+If you need to remove the coding tools system:
+
+```bash
+# Remove all installed components (preserves your knowledge data)
+./uninstall.sh
+
+# This will:
+# ✓ Remove shell configuration (PATH, environment variables)
+# ✓ Remove installed binaries and dependencies
+# ✓ Clean up temporary files and logs
+# ✓ PRESERVE shared-memory.json (your knowledge base)
+```
+
+**Note:** Your knowledge data in `shared-memory.json` is always preserved during uninstall.
+
 ## Next Steps
 
 - **[Network Setup](network-setup.md)** - Configure for corporate networks

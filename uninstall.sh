@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Knowledge Management System - Uninstall Script
+# Coding Tools System - Uninstall Script
 # Removes installations but preserves data
 
 set -euo pipefail
@@ -13,8 +13,8 @@ NC='\033[0m' # No Color
 
 CODING_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo -e "${YELLOW}🗑️  Claude Knowledge Management System - Uninstaller${NC}"
-echo -e "${YELLOW}===================================================${NC}"
+echo -e "${YELLOW}🗑️  Coding Tools System - Uninstaller${NC}"
+echo -e "${YELLOW}=========================================${NC}"
 echo ""
 echo -e "${RED}⚠️  WARNING: This will remove installed components${NC}"
 echo -e "${GREEN}✅ Your knowledge data (shared-memory.json) will be preserved${NC}"
@@ -30,43 +30,63 @@ echo -e "\n${BLUE}🔧 Removing shell configuration...${NC}"
 # Remove from common shell configs
 for rc_file in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile"; do
     if [[ -f "$rc_file" ]]; then
+        # Remove old Claude Knowledge Management System entries
         sed -i '/# Claude Knowledge Management System/,+3d' "$rc_file" 2>/dev/null || true
+        # Remove new Coding Tools entries
+        sed -i '/# Coding Tools - Start/,/# Coding Tools - End/d' "$rc_file" 2>/dev/null || true
+        # Remove any CODING_TOOLS_PATH or CODING_REPO entries
+        sed -i '/CODING_TOOLS_PATH/d' "$rc_file" 2>/dev/null || true
+        sed -i '/CODING_REPO/d' "$rc_file" 2>/dev/null || true
+        # Remove any PATH additions for coding tools
+        sed -i '/knowledge-management.*coding/d' "$rc_file" 2>/dev/null || true
         echo "  Cleaned $rc_file"
     fi
 done
 
 echo -e "\n${BLUE}🗑️  Removing installed components...${NC}"
 # Remove bin directory
-if [[ -d "$CLAUDE_REPO/bin" ]]; then
-    rm -rf "$CLAUDE_REPO/bin"
+if [[ -d "$CODING_REPO/bin" ]]; then
+    rm -rf "$CODING_REPO/bin"
     echo "  Removed bin directory"
 fi
 
 # Remove memory-visualizer (if installed by us)
-if [[ -d "$CLAUDE_REPO/memory-visualizer" ]]; then
-    rm -rf "$CLAUDE_REPO/memory-visualizer"
+if [[ -d "$CODING_REPO/memory-visualizer" ]]; then
+    rm -rf "$CODING_REPO/memory-visualizer"
     echo "  Removed memory-visualizer"
 fi
 
+# Remove mcp-server-browserbase (if installed by us)
+if [[ -d "$CODING_REPO/mcp-server-browserbase" ]]; then
+    rm -rf "$CODING_REPO/mcp-server-browserbase"
+    echo "  Removed mcp-server-browserbase"
+fi
+
 # Clean up node_modules in MCP servers
-for dir in "browser-access" "claude-logger-mcp"; do
-    if [[ -d "$CLAUDE_REPO/$dir/node_modules" ]]; then
-        rm -rf "$CLAUDE_REPO/$dir/node_modules"
+for dir in "browser-access" "claude-logger-mcp" "mcp-memory-server"; do
+    if [[ -d "$CODING_REPO/$dir/node_modules" ]]; then
+        rm -rf "$CODING_REPO/$dir/node_modules"
         echo "  Removed $dir/node_modules"
     fi
-    if [[ -d "$CLAUDE_REPO/$dir/dist" ]]; then
-        rm -rf "$CLAUDE_REPO/$dir/dist"
+    if [[ -d "$CODING_REPO/$dir/dist" ]]; then
+        rm -rf "$CODING_REPO/$dir/dist"
         echo "  Removed $dir/dist"
     fi
 done
 
+# Remove .coding-tools directory
+if [[ -d "$HOME/.coding-tools" ]]; then
+    rm -rf "$HOME/.coding-tools"
+    echo "  Removed ~/.coding-tools"
+fi
+
 # Remove logs
-rm -f "$CLAUDE_REPO/install.log" 2>/dev/null || true
+rm -f "$CODING_REPO/install.log" 2>/dev/null || true
 rm -f /tmp/ukb-*.log 2>/dev/null || true
 rm -f /tmp/vkb-server.* 2>/dev/null || true
 
 echo -e "\n${GREEN}✅ Uninstall completed!${NC}"
 echo -e "${GREEN}📊 Your knowledge data has been preserved in:${NC}"
-echo "   $CLAUDE_REPO/shared-memory.json"
+echo "   $CODING_REPO/shared-memory.json"
 echo ""
 echo "To reinstall, run: ./install.sh"
