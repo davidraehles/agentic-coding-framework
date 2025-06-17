@@ -76,7 +76,10 @@
       "Bash(true)",
       "Bash(gh:*)",
       "Bash(code:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(bash:*)",
+      "Bash(./scripts/test-coding.sh:*)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }
