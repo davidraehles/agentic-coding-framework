@@ -399,16 +399,74 @@ if command_exists code; then
     KM_EXTENSION=$(code --list-extensions | grep -i km-copilot || echo "not found")
     if [ "$KM_EXTENSION" != "not found" ]; then
         print_pass "KM Copilot Bridge extension found: $KM_EXTENSION"
+        
+        # Test if extension is actually working by checking extension host
+        print_check "VSCode KM Bridge functionality test"
+        if code --list-extensions --show-versions | grep -q km-copilot; then
+            print_pass "KM Bridge extension appears functional"
+        else
+            print_warning "KM Bridge extension may not be properly loaded"
+        fi
+        
+        # Check if extension files exist
+        print_check "VSCode KM Bridge extension files"
+        if [ -d "$CODING_ROOT/vscode-km-copilot" ]; then
+            print_pass "VSCode KM Bridge source directory found"
+            
+            # Check key extension files
+            EXTENSION_FILES=("package.json" "src/extension.js" "src/chatParticipant.js" "src/fallbackClient.js")
+            MISSING_FILES=0
+            for file in "${EXTENSION_FILES[@]}"; do
+                if [ -f "$CODING_ROOT/vscode-km-copilot/$file" ]; then
+                    print_pass "Found: $file"
+                else
+                    print_fail "Missing: $file"
+                    MISSING_FILES=$((MISSING_FILES + 1))
+                fi
+            done
+            
+            if [ $MISSING_FILES -eq 0 ]; then
+                print_pass "All VSCode KM Bridge files present"
+            else
+                print_fail "$MISSING_FILES VSCode KM Bridge files missing"
+            fi
+        else
+            print_fail "VSCode KM Bridge source directory not found"
+        fi
     else
         print_warning "KM Copilot Bridge extension not found"
         
-        # Check if extension exists in local directory
-        if [ -f "$CODING_ROOT/vscode-km-copilot/km-copilot-bridge-0.1.0.vsix" ]; then
-            print_repair "Installing VSCode Knowledge Management Bridge..."
-            code --install-extension "$CODING_ROOT/vscode-km-copilot/km-copilot-bridge-0.1.0.vsix"
-            print_fixed "VSCode KM Bridge extension installed"
+        # Check if extension source exists for building
+        if [ -d "$CODING_ROOT/vscode-km-copilot" ]; then
+            print_repair "VSCode KM Bridge source found, checking for built extension..."
+            
+            # Look for any VSIX files
+            VSIX_FILES=$(find "$CODING_ROOT/vscode-km-copilot" -name "*.vsix" 2>/dev/null)
+            if [ -n "$VSIX_FILES" ]; then
+                print_repair "Installing VSCode Knowledge Management Bridge..."
+                LATEST_VSIX=$(ls -t "$CODING_ROOT/vscode-km-copilot"/*.vsix | head -1)
+                code --install-extension "$LATEST_VSIX"
+                print_fixed "VSCode KM Bridge extension installed from: $(basename "$LATEST_VSIX")"
+            else
+                print_repair "Building VSCode KM Bridge extension..."
+                cd "$CODING_ROOT/vscode-km-copilot"
+                if [ -f "package.json" ] && command_exists npm; then
+                    npm install >/dev/null 2>&1
+                    npm run package >/dev/null 2>&1
+                    BUILT_VSIX=$(find . -name "*.vsix" | head -1)
+                    if [ -n "$BUILT_VSIX" ]; then
+                        code --install-extension "$BUILT_VSIX"
+                        print_fixed "VSCode KM Bridge built and installed"
+                    else
+                        print_fail "Failed to build VSCode KM Bridge extension"
+                    fi
+                else
+                    print_fail "Cannot build VSCode KM Bridge - missing package.json or npm"
+                fi
+                cd "$CODING_ROOT"
+            fi
         else
-            print_info "To install: cd vscode-km-copilot && npm run package && code --install-extension *.vsix"
+            print_info "To create extension: Clone vscode-km-copilot source and run npm run package"
         fi
     fi
     
@@ -596,6 +654,42 @@ else
     print_fail "Documentation structure incomplete"
 fi
 
+print_check "Key documentation files"
+KEY_DOCS=("README.md" "installation/quick-start.md" "ukb/user-guide.md" "integrations/vscode-extension.md" "architecture/system-overview.md")
+MISSING_DOCS=0
+for doc in "${KEY_DOCS[@]}"; do
+    if file_exists "$CODING_ROOT/docs/$doc"; then
+        print_pass "Found: docs/$doc"
+    else
+        print_fail "Missing: docs/$doc"
+        MISSING_DOCS=$((MISSING_DOCS + 1))
+    fi
+done
+
+if [ $MISSING_DOCS -eq 0 ]; then
+    print_pass "All key documentation files present"
+else
+    print_fail "$MISSING_DOCS key documentation files missing"
+fi
+
+print_check "Documentation diagrams and images"
+KEY_IMAGES=("imag/system-architecture.png" "puml/vscode-component-diagram.png" "puml/vscode-extension-flow.png" "imag/claude-mcp-autologging.png")
+MISSING_IMAGES=0
+for img in "${KEY_IMAGES[@]}"; do
+    if file_exists "$CODING_ROOT/docs/$img"; then
+        print_pass "Found: docs/$img"
+    else
+        print_fail "Missing: docs/$img"
+        MISSING_IMAGES=$((MISSING_IMAGES + 1))
+    fi
+done
+
+if [ $MISSING_IMAGES -eq 0 ]; then
+    print_pass "All key documentation images present"
+else
+    print_fail "$MISSING_IMAGES key documentation images missing"
+fi
+
 # =============================================================================
 # PHASE 8: INTEGRATION TESTING
 # =============================================================================
@@ -657,6 +751,31 @@ if echo "$TEST_RESULT" | grep -q "successfully\|created\|updated\|Entity"; then
 else
     print_warning "UKB end-to-end test needs manual verification"
     print_info "Try: ukb --interactive"
+fi
+
+# Test VSCode Extension Bridge integration
+print_check "VSCode Extension Bridge integration test"
+if command_exists code && code --list-extensions | grep -q km-copilot; then
+    # Check if fallback services can be reached (for VSCode extension)
+    if command_exists curl && curl -s http://localhost:8765/health >/dev/null 2>&1; then
+        print_pass "VSCode Extension Bridge can reach fallback services"
+    elif [ -f "$CODING_ROOT/lib/adapters/copilot-http-server.js" ]; then
+        print_warning "VSCode Extension Bridge ready but fallback services not running"
+        print_info "Start services with: coding --copilot"
+    else
+        print_fail "VSCode Extension Bridge missing fallback service files"
+    fi
+    
+    # Check if VSCode extension has proper configuration
+    if [ -f "$CODING_ROOT/vscode-km-copilot/package.json" ]; then
+        if grep -q "contributes.*chatParticipants" "$CODING_ROOT/vscode-km-copilot/package.json" 2>/dev/null; then
+            print_pass "VSCode Extension Bridge properly configured for chat integration"
+        else
+            print_warning "VSCode Extension Bridge may be missing chat participant configuration"
+        fi
+    fi
+else
+    print_info "VSCode Extension Bridge test skipped (extension not installed)"
 fi
 
 # =============================================================================

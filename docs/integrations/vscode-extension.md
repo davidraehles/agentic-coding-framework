@@ -14,7 +14,7 @@ The VSCode Extension Bridge integrates seamlessly with the existing knowledge ma
 
 ### Component Architecture
 
-![VSCode Component Diagram](puml/vscode-component-diagram.png)
+![VSCode Component Diagram](../puml/vscode-component-diagram.png)
 
 The extension consists of several key components:
 - **Extension Main**: Entry point and lifecycle management
@@ -25,7 +25,7 @@ The extension consists of several key components:
 
 ### Integration Flow
 
-![VSCode Extension Flow](puml/vscode-extension-flow.png)
+![VSCode Extension Flow](../puml/vscode-extension-flow.png)
 
 The extension follows a comprehensive flow for handling commands:
 
