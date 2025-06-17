@@ -156,6 +156,18 @@ export const TimelineVisualization = () => {
 - [Async Thunk Intent Pattern](./AsyncThunkIntentPattern.md)
 - [State Persistence Pattern](./StatePersistencePattern.md)
 
+
+
+## Pattern Consolidation
+
+This pattern consolidates several implementation aspects that were previously documented separately:
+
+- **Redux Store Configuration**: Middleware setup, serialization handling, and type integration
+- **Async Thunk Intent Pattern**: Implementation of the Intent layer through async thunks
+- **State Persistence**: Automatic state persistence and hydration mechanisms
+
+These are now documented as implementation details of the overall MVI+Redux architecture rather than separate patterns.
+
 ## References
 - [Redux Toolkit Documentation](https://redux-toolkit.js.org/)
 - [MVI Architecture Pattern](https://hannesdorfmann.com/android/model-view-intent/)
