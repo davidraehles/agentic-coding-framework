@@ -400,14 +400,6 @@ if command_exists code; then
     if [ "$KM_EXTENSION" != "not found" ]; then
         print_pass "KM Copilot Bridge extension found: $KM_EXTENSION"
         
-        # Test if extension is actually working by checking extension host
-        print_check "VSCode KM Bridge functionality test"
-        if code --list-extensions --show-versions | grep -q km-copilot; then
-            print_pass "KM Bridge extension appears functional"
-        else
-            print_warning "KM Bridge extension may not be properly loaded"
-        fi
-        
         # Check if extension files exist
         print_check "VSCode KM Bridge extension files"
         if [ -d "$CODING_ROOT/vscode-km-copilot" ]; then
@@ -432,6 +424,151 @@ if command_exists code; then
             fi
         else
             print_fail "VSCode KM Bridge source directory not found"
+        fi
+        
+        # COMPREHENSIVE FUNCTIONALITY TESTS
+        print_check "VSCode KM Bridge functionality test"
+        
+        # Test 1: Check if fallback services are required and running
+        print_check "Fallback services status"
+        FALLBACK_PORT=8765
+        if lsof -i :$FALLBACK_PORT >/dev/null 2>&1 || netstat -an 2>/dev/null | grep -q ":$FALLBACK_PORT.*LISTEN"; then
+            print_pass "Fallback services running on port $FALLBACK_PORT"
+            SERVICES_RUNNING=true
+        else
+            print_warning "Fallback services not running - extension will show warnings"
+            print_info "Start with: coding --copilot"
+            SERVICES_RUNNING=false
+        fi
+        
+        # Test 2: Validate extension configuration
+        print_check "Extension configuration validation"
+        if [ -f "$CODING_ROOT/vscode-km-copilot/package.json" ]; then
+            # Check if chat participant is properly configured
+            if grep -q '"chatParticipants"' "$CODING_ROOT/vscode-km-copilot/package.json" && \
+               grep -q '"id": "km-assistant"' "$CODING_ROOT/vscode-km-copilot/package.json"; then
+                print_pass "Chat participant configuration valid"
+            else
+                print_fail "Chat participant not properly configured in package.json"
+            fi
+            
+            # Check extension activation events
+            if grep -q '"onStartupFinished"' "$CODING_ROOT/vscode-km-copilot/package.json"; then
+                print_pass "Extension activation events configured"
+            else
+                print_warning "Extension may not activate automatically"
+            fi
+        else
+            print_fail "Cannot validate configuration - package.json missing"
+        fi
+        
+        # Test 3: Check extension source code integrity
+        print_check "Extension source code validation"
+        EXTENSION_ERRORS=0
+        
+        # Check if extension.js has proper chat participant registration
+        if [ -f "$CODING_ROOT/vscode-km-copilot/src/extension.js" ]; then
+            if grep -q "vscode.chat.createChatParticipant" "$CODING_ROOT/vscode-km-copilot/src/extension.js"; then
+                print_pass "Chat participant registration code found"
+            else
+                print_fail "Chat participant registration missing in extension.js"
+                EXTENSION_ERRORS=$((EXTENSION_ERRORS + 1))
+            fi
+            
+            # Check if proper icon path is used
+            if grep -q "km-icon.svg" "$CODING_ROOT/vscode-km-copilot/src/extension.js"; then
+                print_pass "Extension icon path correctly configured"
+            elif grep -q "km-icon.png" "$CODING_ROOT/vscode-km-copilot/src/extension.js"; then
+                print_warning "Extension using PNG icon - SVG recommended"
+            else
+                print_warning "Extension icon path not found"
+            fi
+        else
+            print_fail "extension.js source file missing"
+            EXTENSION_ERRORS=$((EXTENSION_ERRORS + 1))
+        fi
+        
+        # Check if chatParticipant.js has proper request handling
+        if [ -f "$CODING_ROOT/vscode-km-copilot/src/chatParticipant.js" ]; then
+            if grep -q "handleRequest" "$CODING_ROOT/vscode-km-copilot/src/chatParticipant.js" && \
+               grep -q "vkb\|ukb" "$CODING_ROOT/vscode-km-copilot/src/chatParticipant.js"; then
+                print_pass "Chat participant request handling implemented"
+            else
+                print_fail "Chat participant request handling incomplete"
+                EXTENSION_ERRORS=$((EXTENSION_ERRORS + 1))
+            fi
+        else
+            print_fail "chatParticipant.js source file missing"
+            EXTENSION_ERRORS=$((EXTENSION_ERRORS + 1))
+        fi
+        
+        # Test 4: Extension build validation
+        print_check "Extension build validation"
+        if [ -f "$CODING_ROOT/vscode-km-copilot/package.json" ]; then
+            cd "$CODING_ROOT/vscode-km-copilot"
+            
+            # Check if node_modules exists (dependencies installed)
+            if [ -d "node_modules" ]; then
+                print_pass "Extension dependencies installed"
+            else
+                print_warning "Extension dependencies not installed"
+                print_info "Run: cd vscode-km-copilot && npm install"
+            fi
+            
+            # Check if VSIX file exists (extension built)
+            VSIX_FILES=$(find . -name "*.vsix" 2>/dev/null)
+            if [ -n "$VSIX_FILES" ]; then
+                LATEST_VSIX=$(ls -t *.vsix 2>/dev/null | head -1)
+                print_pass "Extension built: $LATEST_VSIX"
+            else
+                print_warning "Extension not built as VSIX package"
+                print_info "Run: cd vscode-km-copilot && npm run package"
+            fi
+            
+            cd "$CODING_ROOT"
+        fi
+        
+        # Test 5: Runtime functionality test (if services are running)
+        if [ "$SERVICES_RUNNING" = true ]; then
+            print_check "Runtime functionality test"
+            
+            # Test fallback service connectivity
+            if command_exists curl; then
+                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$FALLBACK_PORT/health" 2>/dev/null || echo "000")
+                if [ "$HTTP_STATUS" = "200" ]; then
+                    print_pass "Fallback service HTTP endpoint responsive"
+                    
+                    # Test knowledge base endpoints
+                    STATS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$FALLBACK_PORT/api/knowledge/stats" 2>/dev/null || echo "000")
+                    if [ "$STATS_STATUS" = "200" ]; then
+                        print_pass "Knowledge stats endpoint functional"
+                    else
+                        print_warning "Knowledge stats endpoint not responding (status: $STATS_STATUS)"
+                    fi
+                    
+                    # Test search endpoint  
+                    SEARCH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$FALLBACK_PORT/api/knowledge/search?q=test" 2>/dev/null || echo "000")
+                    if [ "$SEARCH_STATUS" = "200" ]; then
+                        print_pass "Knowledge search endpoint functional"
+                    else
+                        print_warning "Knowledge search endpoint not responding (status: $SEARCH_STATUS)"
+                    fi
+                else
+                    print_fail "Fallback service not responding (status: $HTTP_STATUS)"
+                fi
+            else
+                print_warning "curl not available - cannot test HTTP endpoints"
+            fi
+        fi
+        
+        # Final assessment
+        if [ $EXTENSION_ERRORS -eq 0 ] && [ "$SERVICES_RUNNING" = true ]; then
+            print_pass "VSCode KM Bridge extension fully functional"
+        elif [ $EXTENSION_ERRORS -eq 0 ] && [ "$SERVICES_RUNNING" = false ]; then
+            print_warning "VSCode KM Bridge extension ready but fallback services not running"
+            print_info "Start services with: coding --copilot"
+        else
+            print_fail "VSCode KM Bridge extension has configuration issues"
         fi
     else
         print_warning "KM Copilot Bridge extension not found"

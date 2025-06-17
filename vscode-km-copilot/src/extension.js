@@ -33,7 +33,7 @@ async function activate(context) {
         await chatParticipant.handleRequest(request, context, response, token);
     });
     
-    participant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'km-icon.png');
+    participant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'km-icon.svg');
     context.subscriptions.push(participant);
     
     // Register commands

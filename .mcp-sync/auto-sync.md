@@ -56,15 +56,15 @@ console.log(`✅ MCP Memory loaded: ${graphState.nodes?.length || 0} entities, $
 **Relations to sync:** 28
 
 **Key Patterns Available:**
-- ConditionalLoggingPattern (significance: null)
-- ViewportCullingPattern (significance: null)
-- ReduxStateManagementPattern (significance: null)
-- KnowledgePersistencePattern (significance: null)
-- NetworkAwareInstallationPattern (significance: null)
-- StateDrivenAnimationPipelinePattern (significance: null)
-- ClaudeCodeStartupPattern (significance: null)
-- StrategyBasedModularRoutingPattern (significance: null)
-- MCPMemoryLoggingIntegrationPattern (significance: null)
-- UKBComprehensiveAnalysisPattern (significance: null)
+- ConditionalLoggingPattern (significance: 5)
+- ViewportCullingPattern (significance: 5)
+- ReduxStateManagementPattern (significance: 5)
+- KnowledgePersistencePattern (significance: 5)
+- NetworkAwareInstallationPattern (significance: 5)
+- StateDrivenAnimationPipelinePattern (significance: 5)
+- ClaudeCodeStartupPattern (significance: 5)
+- StrategyBasedModularRoutingPattern (significance: 5)
+- MCPMemoryLoggingIntegrationPattern (significance: 5)
+- UKBComprehensiveAnalysisPattern (significance: 5)
 
-**Sync prepared at:** Mon Jun 16 17:53:09 CEST 2025
+**Sync prepared at:** Tue Jun 17 13:39:38 CEST 2025
