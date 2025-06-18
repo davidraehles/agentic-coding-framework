@@ -344,6 +344,15 @@ parse_args() {
                 list_relations_in_kb
                 exit 0
                 ;;
+            --rename-entity)
+                # Rename entity: old_name,new_name
+                if [[ -n "$2" ]]; then
+                    rename_entity_in_kb "$2"
+                    exit 0
+                else
+                    error_exit "Must specify entity rename as: old_name,new_name"
+                fi
+                ;;
             --add-relations)
                 # Add multiple relations (space-separated)
                 shift
@@ -400,6 +409,7 @@ show_help() {
     echo "  --remove-relation R Remove relation (format: from,to,relationType)"
     echo "  --add-relations R1 R2... Add multiple relations (space-separated)"
     echo "  --list-relations  List all relations in knowledge base"
+    echo "  --rename-entity O,N Rename entity (format: old_name,new_name)"
     echo "  --help, -h        Show this help message"
     echo ""
     echo -e "${YELLOW}Features:${NC}"
@@ -3045,6 +3055,105 @@ remove_entity_from_kb() {
     echo -e "${CYAN}📊 Updated counts: $total_entities entities, $total_relations relations${NC}"
 }
 
+# Rename entity in knowledge base
+rename_entity_in_kb() {
+    local rename_spec="$1"
+    local shared_memory="../coding/shared-memory.json"
+    
+    # Find shared-memory.json
+    for path in "$shared_memory" "shared-memory.json" "../shared-memory.json"; do
+        if [[ -f "$path" ]]; then
+            shared_memory="$path"
+            break
+        fi
+    done
+    
+    if [[ ! -f "$shared_memory" ]]; then
+        echo -e "${RED}❌ shared-memory.json not found${NC}"
+        return 1
+    fi
+    
+    # Parse rename: old_name,new_name
+    IFS=',' read -ra RENAME_PARTS <<< "$rename_spec"
+    if [[ ${#RENAME_PARTS[@]} -ne 2 ]]; then
+        echo -e "${RED}❌ Invalid rename format. Use: old_name,new_name${NC}"
+        return 1
+    fi
+    
+    local old_name="${RENAME_PARTS[0]}"
+    local new_name="${RENAME_PARTS[1]}"
+    
+    # Check if old entity exists
+    if ! jq -e --arg name "$old_name" '.entities[] | select(.name == $name)' "$shared_memory" >/dev/null; then
+        echo -e "${RED}❌ Entity '$old_name' not found in knowledge base${NC}"
+        return 1
+    fi
+    
+    # Check if new name already exists
+    if jq -e --arg name "$new_name" '.entities[] | select(.name == $name)' "$shared_memory" >/dev/null; then
+        echo -e "${RED}❌ Entity '$new_name' already exists in knowledge base${NC}"
+        return 1
+    fi
+    
+    echo -e "${CYAN}🔄 Renaming entity: $old_name → $new_name${NC}"
+    
+    # Create backup
+    cp "$shared_memory" "${shared_memory}.backup"
+    
+    # Rename entity and update all relations
+    jq --arg old_name "$old_name" --arg new_name "$new_name" --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+        # Rename the entity
+        .entities = (.entities | map(
+            if .name == $old_name then 
+                .name = $new_name 
+            else 
+                . 
+            end
+        )) |
+        # Update relations that reference this entity
+        .relations = (.relations | map(
+            if .from == $old_name then 
+                .from = $new_name 
+            else 
+                . 
+            end |
+            if .to == $old_name then 
+                .to = $new_name 
+            else 
+                . 
+            end
+        )) |
+        # Update metadata
+        .metadata.last_updated = $timestamp |
+        .metadata.last_mode = "entity_rename"
+    ' "$shared_memory" > "${shared_memory}.tmp" && mv "${shared_memory}.tmp" "$shared_memory"
+    
+    echo -e "${GREEN}✅ Successfully renamed entity: $old_name → $new_name${NC}"
+    
+    # Rename markdown file if it exists
+    local insights_dir="../coding/knowledge-management/insights"
+    local old_md_file="${insights_dir}/${old_name}.md"
+    local new_md_file="${insights_dir}/${new_name}.md"
+    
+    if [[ -f "$old_md_file" ]]; then
+        mv "$old_md_file" "$new_md_file"
+        echo -e "${GREEN}✅ Renamed markdown file: $old_name.md → $new_name.md${NC}"
+    fi
+    
+    # Sync to visualizer
+    local dist_memory="../coding/memory-visualizer/dist/memory.json"
+    if [[ -f "$dist_memory" ]]; then
+        cp "$shared_memory" "$dist_memory"
+        echo -e "${GREEN}✅ Synced to visualizer${NC}"
+    fi
+    
+    # Show updated counts
+    local total_entities total_relations
+    total_entities=$(jq '.entities | length' "$shared_memory")
+    total_relations=$(jq '.relations | length' "$shared_memory")
+    echo -e "${CYAN}📊 Updated counts: $total_entities entities, $total_relations relations${NC}"
+}
+
 # List all relations in knowledge base
 list_relations_in_kb() {
     local shared_memory="../coding/shared-memory.json"
@@ -3103,15 +3212,51 @@ add_relation_to_kb() {
     local to_entity="${RELATION_PARTS[1]}"
     local relation_type="${RELATION_PARTS[2]}"
     
-    # Validate entities exist
+    # Auto-create Project entities if they don't exist (convenience for project setup)
+    local entities_created=false
+    
     if ! jq -e --arg name "$from_entity" '.entities[] | select(.name == $name)' "$shared_memory" >/dev/null; then
-        echo -e "${RED}❌ Entity '$from_entity' not found in knowledge base${NC}"
-        return 1
+        # Auto-create as Project if name looks like a project (capitalized, no Pattern suffix)
+        if [[ "$from_entity" =~ ^[A-Z][a-zA-Z]*$ ]] && [[ ! "$from_entity" =~ Pattern$ ]]; then
+            echo -e "${YELLOW}🏗️  Auto-creating Project entity: $from_entity${NC}"
+            jq --arg name "$from_entity" --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+                .entities += [{
+                    "name": $name,
+                    "entityType": "Project",
+                    "observations": ["Software project: " + $name],
+                    "significance": 8,
+                    "created": $timestamp
+                }] |
+                .metadata.total_entities = (.entities | length) |
+                .metadata.last_updated = $timestamp
+            ' "$shared_memory" > "${shared_memory}.tmp" && mv "${shared_memory}.tmp" "$shared_memory"
+            entities_created=true
+        else
+            echo -e "${RED}❌ Entity '$from_entity' not found in knowledge base${NC}"
+            return 1
+        fi
     fi
     
     if ! jq -e --arg name "$to_entity" '.entities[] | select(.name == $name)' "$shared_memory" >/dev/null; then
-        echo -e "${RED}❌ Entity '$to_entity' not found in knowledge base${NC}"
-        return 1
+        # Auto-create as Project if name looks like a project (capitalized, no Pattern suffix)
+        if [[ "$to_entity" =~ ^[A-Z][a-zA-Z]*$ ]] && [[ ! "$to_entity" =~ Pattern$ ]]; then
+            echo -e "${YELLOW}🏗️  Auto-creating Project entity: $to_entity${NC}"
+            jq --arg name "$to_entity" --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+                .entities += [{
+                    "name": $name,
+                    "entityType": "Project",
+                    "observations": ["Software project: " + $name],
+                    "significance": 8,
+                    "created": $timestamp
+                }] |
+                .metadata.total_entities = (.entities | length) |
+                .metadata.last_updated = $timestamp
+            ' "$shared_memory" > "${shared_memory}.tmp" && mv "${shared_memory}.tmp" "$shared_memory"
+            entities_created=true
+        else
+            echo -e "${RED}❌ Entity '$to_entity' not found in knowledge base${NC}"
+            return 1
+        fi
     fi
     
     # Check if relation already exists
