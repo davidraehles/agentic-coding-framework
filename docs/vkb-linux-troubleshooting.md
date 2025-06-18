@@ -50,6 +50,9 @@ touch /tmp/test-file && rm /tmp/test-file
 
 #### Run with Debug Output
 ```bash
+# Run vkb in foreground mode (shows server output directly)
+vkb fg
+
 # Run vkb with bash debugging
 bash -x $(which vkb) start
 

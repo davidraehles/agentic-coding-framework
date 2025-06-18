@@ -202,6 +202,7 @@ if [[ $ISSUES -eq 0 ]]; then
     echo "✅ All checks passed! VKB should work correctly."
     echo
     echo "Try running: vkb start"
+    echo "For debugging, try: vkb fg  (runs in foreground with visible output)"
 else
     echo
     echo "⚠️  Found $ISSUES issue(s) that need to be fixed."

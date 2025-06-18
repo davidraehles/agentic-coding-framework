@@ -204,6 +204,7 @@ prepare_memory_data() {
 
 # Start visualization server
 start_server() {
+    local foreground_mode="${1:-false}"
     echo -e "${BLUE}🚀 Starting visualization server...${NC}"
     
     # Check for Python 3
@@ -214,43 +215,52 @@ start_server() {
     # Change to visualizer directory
     cd "$VISUALIZER_DIR"
     
-    # Start HTTP server in background
-    {
-        python3 -m http.server "$SERVER_PORT" --directory dist 2>&1 | \
-        while IFS= read -r line; do
-            echo "$(date '+%Y-%m-%d %H:%M:%S') $line"
+    if [[ "$foreground_mode" == "true" ]]; then
+        # Start HTTP server in foreground for debugging
+        echo -e "${YELLOW}🔍 Running in foreground mode (press Ctrl+C to stop)${NC}"
+        echo -e "${GREEN}🔗 URL: http://localhost:$SERVER_PORT${NC}"
+        echo -e "${BLUE}📊 Server output:${NC}"
+        echo "----------------------------------------"
+        exec python3 -m http.server "$SERVER_PORT" --directory dist
+    else
+        # Start HTTP server in background
+        {
+            python3 -m http.server "$SERVER_PORT" --directory dist 2>&1 | \
+            while IFS= read -r line; do
+                echo "$(date '+%Y-%m-%d %H:%M:%S') $line"
+            done
+        } > "$LOG_FILE" 2>&1 &
+        
+        local server_pid=$!
+        echo "$server_pid" > "$PID_FILE"
+        
+        # Wait a moment and check if server started successfully
+        sleep 2
+        if ! kill -0 "$server_pid" 2>/dev/null; then
+            rm -f "$PID_FILE"
+            error_exit "Failed to start visualization server. Check $LOG_FILE for details."
+        fi
+        
+        # Verify server is responding
+        local max_attempts=10
+        local attempt=1
+        while (( attempt <= max_attempts )); do
+            if curl -s "http://localhost:$SERVER_PORT" >/dev/null 2>&1; then
+                break
+            fi
+            if (( attempt == max_attempts )); then
+                stop_server
+                error_exit "Server failed to respond after $max_attempts attempts"
+            fi
+            sleep 1
+            ((attempt++))
         done
-    } > "$LOG_FILE" 2>&1 &
-    
-    local server_pid=$!
-    echo "$server_pid" > "$PID_FILE"
-    
-    # Wait a moment and check if server started successfully
-    sleep 2
-    if ! kill -0 "$server_pid" 2>/dev/null; then
-        rm -f "$PID_FILE"
-        error_exit "Failed to start visualization server. Check $LOG_FILE for details."
+        
+        echo -e "${GREEN}✅ Visualization server started successfully!${NC}"
+        echo -e "${GREEN}🌐 Server PID: $server_pid${NC}"
+        echo -e "${GREEN}🔗 URL: http://localhost:$SERVER_PORT${NC}"
+        echo -e "${GREEN}📄 Logs: $LOG_FILE${NC}"
     fi
-    
-    # Verify server is responding
-    local max_attempts=10
-    local attempt=1
-    while (( attempt <= max_attempts )); do
-        if curl -s "http://localhost:$SERVER_PORT" >/dev/null 2>&1; then
-            break
-        fi
-        if (( attempt == max_attempts )); then
-            stop_server
-            error_exit "Server failed to respond after $max_attempts attempts"
-        fi
-        sleep 1
-        ((attempt++))
-    done
-    
-    echo -e "${GREEN}✅ Visualization server started successfully!${NC}"
-    echo -e "${GREEN}🌐 Server PID: $server_pid${NC}"
-    echo -e "${GREEN}🔗 URL: http://localhost:$SERVER_PORT${NC}"
-    echo -e "${GREEN}📄 Logs: $LOG_FILE${NC}"
 }
 
 # Open browser (optional)
@@ -333,6 +343,21 @@ main() {
             
             echo -e "${BLUE}💡 Server running in background. Use 'vkb stop' to stop it.${NC}"
             ;;
+        "fg"|"foreground")
+            echo -e "${BLUE}🔍 VKB - View Knowledge Base v2.0 (Foreground Mode)${NC}"
+            echo -e "${BLUE}=====================================${NC}"
+            
+            if is_server_running; then
+                echo -e "${YELLOW}⚠️  Server already running in background${NC}"
+                echo -e "${YELLOW}Please stop it first with 'vkb stop'${NC}"
+                return 1
+            fi
+            
+            # Prepare data and start server in foreground
+            prepare_memory_data
+            open_browser
+            start_server true  # Pass true for foreground mode
+            ;;
         "stop")
             echo -e "${BLUE}🛑 Stopping visualization server...${NC}"
             stop_server
@@ -358,13 +383,18 @@ main() {
             fi
             ;;
         "help"|"--help"|"-h"|*)
-            echo "Usage: $0 [start|stop|restart|status|logs|help]"
-            echo "  start   - Start visualization server (default)"
-            echo "  stop    - Stop visualization server"
-            echo "  restart - Restart visualization server"
-            echo "  status  - Show server status"
-            echo "  logs    - Show recent server logs"
-            echo "  help    - Show this help message"
+            echo "Usage: $0 [start|fg|stop|restart|status|logs|help]"
+            echo "  start      - Start visualization server in background (default)"  
+            echo "  fg         - Start visualization server in foreground (for debugging)"
+            echo "  foreground - Same as 'fg'"
+            echo "  stop       - Stop visualization server"
+            echo "  restart    - Restart visualization server"
+            echo "  status     - Show server status"
+            echo "  logs       - Show recent server logs"
+            echo "  help       - Show this help message"
+            echo ""
+            echo "Foreground mode is useful for debugging as it shows server output directly."
+            echo "Press Ctrl+C to stop the server when running in foreground mode."
             echo ""
             echo "Requirements:"
             echo "  - jq (JSON processor)"
