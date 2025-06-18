@@ -137,6 +137,10 @@ coding --copilot      # Start fallback services for Copilot
 # Diagnostics
 ukb --verify          # Check knowledge base integrity
 ukb search "pattern"  # Search existing knowledge
+
+# Maintenance
+clean-knowledge-base  # Remove duplicates and garbage patterns
+fix-knowledge-base    # Repair corrupted knowledge base
 ```
 
 ## 📞 Support
@@ -147,6 +151,7 @@ ukb search "pattern"  # Search existing knowledge
 - **MCP configuration**: See [MCP Configuration](installation/mcp-configuration.md)
 - **Knowledge management workflows**: See [UKB User Guide](ukb/user-guide.md)
 - **VSCode integration**: See [VSCode Extension](integrations/vscode-extension.md)
+- **Database corruption/bloat**: See [Knowledge Base Troubleshooting](troubleshooting-knowledge-base.md)
 
 ### Getting Help
 

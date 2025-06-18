@@ -18,11 +18,17 @@ The memory service was creating duplicate relations due to improper deduplicatio
 # Quick fix - run the repair tool
 fix-knowledge-base
 
-# Manual fix - run cleanup script
-node scripts/cleanup-shared-memory.js
+# Comprehensive cleanup - removes garbage and duplicates
+clean-knowledge-base
+
+# Manual fix - individual cleanup scripts
+node scripts/cleanup-shared-memory.js      # Deduplicate relations
+node scripts/remove-garbage-patterns.js    # Remove auto-discovered patterns
+node scripts/deduplicate-observations.js   # Deduplicate observations
 
 # Check if fixed
 jq '.relations | length' shared-memory.json
+jq '.entities | length' shared-memory.json
 ```
 
 **Prevention:**
@@ -72,7 +78,60 @@ tail -f /tmp/copilot-server.log | grep "Synced"
 - Sync messages appear every 30+ seconds, not constantly
 - No duplicate relations detected
 
-### 5. Recovery Commands
+### 5. Duplicate Observations Issue
+
+**Symptoms:**
+- Entities have hundreds/thousands of duplicate observations
+- File size becomes massive (>1MB for small knowledge base)
+- Same observation content repeated with different timestamps
+- Example: Entity has 720 observations but only 10 unique ones
+
+**Cause:**
+Background sync processes were adding identical observations with new timestamps on each sync operation.
+
+**Solution:**
+```bash
+# Check for duplicates
+jq '[.entities[] | select(.observations and (.observations | length) > (.observations | unique | length)) | {name: .name, obs_count: (.observations | length), unique_count: (.observations | unique | length)}]' shared-memory.json
+
+# Fix duplicates
+node scripts/deduplicate-observations.js
+
+# Or use comprehensive cleanup
+clean-knowledge-base
+```
+
+**Results:**
+- Typical reduction: 7,000+ observations → 130 observations (98% reduction)
+- File size: 1.5MB → 44KB
+- Preserves all unique content, removes timestamp duplicates
+
+**Prevention:**
+- Kill background processes: `pkill -f "browser-access\|memory-fallback"`
+- Ensure only one memory service runs at a time
+- Use `clean-knowledge-base` periodically for maintenance
+
+### 6. Background Process Cleanup
+
+**Symptoms:**
+- Multiple `browser-access` or `memory-fallback` processes running
+- Continuous duplicate creation despite fixes
+- High CPU usage from background services
+
+**Solution:**
+```bash
+# Check for rogue processes
+ps aux | grep -E "(browser-access|memory-fallback|copilot-http)" | grep -v grep
+
+# Kill all background processes
+pkill -f "browser-access/dist/index.js"
+pkill -f "memory-fallback"
+
+# Restart clean
+vkb restart
+```
+
+### 7. Recovery Commands
 
 **Complete Reset (Nuclear Option):**
 ```bash

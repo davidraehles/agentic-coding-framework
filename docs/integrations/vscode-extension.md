@@ -36,6 +36,10 @@ The extension follows a comprehensive flow for handling commands:
 5. **Response Handling**: Results are displayed in the Copilot chat interface
 6. **Real-time Updates**: WebSocket connections provide live service status updates
 
+## Testing the Integration
+
+For a detailed testing guide with step-by-step instructions, see [VSCode Testing Guide](vscode-testing-guide.md).
+
 ## Features
 
 ### Chat Participant Integration
