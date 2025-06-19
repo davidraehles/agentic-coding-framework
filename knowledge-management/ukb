@@ -7,6 +7,19 @@ set -euo pipefail
 # Incremental processing state management
 PROCESSING_STATE_FILE="$HOME/.ukb-processing-state.json"
 
+# Atomic file sync function to prevent partial reads
+atomic_sync_to_visualizer() {
+    local source_file="$1"
+    local dist_memory="../coding/memory-visualizer/dist/memory.json"
+    
+    if [[ -f "$dist_memory" ]]; then
+        # Copy to temp file first, then move atomically
+        cp "$source_file" "${dist_memory}.tmp" && \
+        mv -f "${dist_memory}.tmp" "$dist_memory"
+        echo -e "${GREEN}✅ Synced to visualizer${NC}"
+    fi
+}
+
 # Initialize or load processing state
 init_processing_state() {
     local project="$1"
@@ -3115,11 +3128,7 @@ remove_entity_from_kb() {
     fi
     
     # Sync to visualizer
-    local dist_memory="../coding/memory-visualizer/dist/memory.json"
-    if [[ -f "$dist_memory" ]]; then
-        cp "$shared_memory" "$dist_memory"
-        echo -e "${GREEN}✅ Synced to visualizer${NC}"
-    fi
+    atomic_sync_to_visualizer "$shared_memory"
     
     # Show updated counts
     local total_entities total_relations
@@ -3214,11 +3223,7 @@ rename_entity_in_kb() {
     fi
     
     # Sync to visualizer
-    local dist_memory="../coding/memory-visualizer/dist/memory.json"
-    if [[ -f "$dist_memory" ]]; then
-        cp "$shared_memory" "$dist_memory"
-        echo -e "${GREEN}✅ Synced to visualizer${NC}"
-    fi
+    atomic_sync_to_visualizer "$shared_memory"
     
     # Show updated counts
     local total_entities total_relations
@@ -3305,11 +3310,7 @@ add_entity_to_kb() {
     echo -e "${GREEN}✅ Successfully added entity: $entity_name${NC}"
     
     # Sync to visualizer
-    local dist_memory="../coding/memory-visualizer/dist/memory.json"
-    if [[ -f "$dist_memory" ]]; then
-        cp "$shared_memory" "$dist_memory"
-        echo -e "${GREEN}✅ Synced to visualizer${NC}"
-    fi
+    atomic_sync_to_visualizer "$shared_memory"
     
     # Show updated counts
     local total_entities total_relations
@@ -3454,11 +3455,7 @@ add_relation_to_kb() {
     echo -e "${GREEN}✅ Added relation: $from_entity --$relation_type--> $to_entity${NC}"
     
     # Sync to visualizer
-    local dist_memory="../coding/memory-visualizer/dist/memory.json"
-    if [[ -f "$dist_memory" ]]; then
-        cp "$shared_memory" "$dist_memory"
-        echo -e "${GREEN}✅ Synced to visualizer${NC}"
-    fi
+    atomic_sync_to_visualizer "$shared_memory"
     
     # Show updated count
     local total_relations
@@ -3516,11 +3513,7 @@ remove_relation_from_kb() {
     echo -e "${GREEN}✅ Removed relation: $from_entity --$relation_type--> $to_entity${NC}"
     
     # Sync to visualizer
-    local dist_memory="../coding/memory-visualizer/dist/memory.json"
-    if [[ -f "$dist_memory" ]]; then
-        cp "$shared_memory" "$dist_memory"
-        echo -e "${GREEN}✅ Synced to visualizer${NC}"
-    fi
+    atomic_sync_to_visualizer "$shared_memory"
     
     # Show updated count
     local total_relations

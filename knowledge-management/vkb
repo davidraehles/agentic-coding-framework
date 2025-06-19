@@ -120,13 +120,14 @@ is_server_running() {
 
 # Stop existing server
 stop_server() {
+    # First, try to stop using PID file
     if [[ -f "$PID_FILE" ]]; then
         local pid
         pid=$(cat "$PID_FILE")
         if kill -0 "$pid" 2>/dev/null; then
             echo -e "${YELLOW}Stopping existing server (PID: $pid)...${NC}"
             kill "$pid" 2>/dev/null || true
-            sleep 2
+            sleep 1
             # Force kill if still running
             if kill -0 "$pid" 2>/dev/null; then
                 kill -9 "$pid" 2>/dev/null || true
@@ -135,23 +136,48 @@ stop_server() {
         rm -f "$PID_FILE"
     fi
     
-    # Kill any process listening on our port
-    local port_pid=""
-    if command -v lsof >/dev/null 2>&1; then
-        port_pid=$(lsof -i ":$SERVER_PORT" -sTCP:LISTEN -t 2>/dev/null || true)
-    elif command -v ss >/dev/null 2>&1; then
-        # Extract PID from ss output (Linux) - only listening ports
-        port_pid=$(ss -tlnp 2>/dev/null | grep ":$SERVER_PORT " | grep -o 'pid=[0-9]*' | cut -d= -f2 || true)
-    elif command -v netstat >/dev/null 2>&1; then
-        # Try to extract PID from netstat (may require root) - only listening ports
-        port_pid=$(netstat -tlnp 2>/dev/null | grep ":$SERVER_PORT " | awk '{print $7}' | cut -d'/' -f1 | grep -E '^[0-9]+$' || true)
-    fi
-    if [[ -n "$port_pid" ]]; then
-        echo -e "${YELLOW}Killing process using port $SERVER_PORT (PID: $port_pid)...${NC}"
-        kill "$port_pid" 2>/dev/null || true
+    # Kill ALL processes listening on our port (handle multiple instances)
+    local max_attempts=5
+    local attempt=1
+    
+    while [[ $attempt -le $max_attempts ]]; do
+        local port_pids=""
+        if command -v lsof >/dev/null 2>&1; then
+            # Get all PIDs using the port
+            port_pids=$(lsof -ti:$SERVER_PORT 2>/dev/null || true)
+        fi
+        
+        if [[ -z "$port_pids" ]]; then
+            # Port is free
+            break
+        fi
+        
+        echo -e "${YELLOW}Attempt $attempt/$max_attempts: Killing processes using port $SERVER_PORT (PIDs: $(echo $port_pids | tr '\n' ' '))...${NC}"
+        
+        # Kill all processes
+        for pid in $port_pids; do
+            kill "$pid" 2>/dev/null || true
+        done
+        
         sleep 1
-        if kill -0 "$port_pid" 2>/dev/null; then
-            kill -9 "$port_pid" 2>/dev/null || true
+        
+        # Force kill if still running
+        for pid in $port_pids; do
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+        done
+        
+        # Wait for OS to release the port
+        sleep 2
+        
+        attempt=$((attempt + 1))
+    done
+    
+    # Final check
+    if command -v lsof >/dev/null 2>&1; then
+        if lsof -i:$SERVER_PORT >/dev/null 2>&1; then
+            echo -e "${RED}⚠️  Warning: Port $SERVER_PORT may still be in use${NC}"
         fi
     fi
 }
@@ -198,6 +224,8 @@ prepare_memory_data() {
     
     # Convert from our format to NDJSON format expected by visualizer
     # Also deduplicate entities to prevent orphans and convert observations to simple strings
+    # Use atomic write to prevent partial reads
+    local temp_file="${memory_dist}.tmp"
     {
         # Deduplicate entities by name (keep the latest one), add type field, and convert observations
         jq -r '.entities | group_by(.name) | map(max_by(.created // "2000-01-01")) | .[] | 
@@ -209,7 +237,7 @@ prepare_memory_data() {
         else . end) |
         . + {"type": "entity"} | @json' "$SHARED_MEMORY" 2>/dev/null || true
         jq -r '.relations[] | @json' "$SHARED_MEMORY" 2>/dev/null || true
-    } > "$memory_dist"
+    } > "$temp_file" && mv -f "$temp_file" "$memory_dist"
     
     echo -e "${GREEN}✓ Memory data prepared${NC}"
     local entity_count relation_count
