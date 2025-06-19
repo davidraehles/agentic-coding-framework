@@ -91,7 +91,14 @@
       "Bash(./bin/vkb:*)",
       "Bash(sed:*)",
       "Bash(touch:*)",
-      "Bash(./knowledge-management/vkb help:*)"
+      "Bash(./knowledge-management/vkb help:*)",
+      "Bash(do plantuml -tpng \"$puml\")",
+      "Bash(./bin/ukb-cli.js status:*)",
+      "Bash(./cli.js status)",
+      "Bash(./cli.js insight --interactive)",
+      "Bash(./cli.js entity add:*)",
+      "Bash(./cli.js relation:*)",
+      "Bash(./cli.js entity list)"
     ],
     "deny": []
   }

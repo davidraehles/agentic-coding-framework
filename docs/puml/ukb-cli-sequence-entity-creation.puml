@@ -1,0 +1,130 @@
+@startuml ukb-cli-sequence-entity-creation
+!theme plain
+title Entity Creation Sequence Diagram
+
+actor User
+participant "CLI" as CLI
+participant "CommandRouter" as Router
+participant "KnowledgeAPI" as API
+participant "EntityManager" as EM
+participant "ValidationService" as VS
+participant "FileStorageAdapter" as Storage
+database "shared-memory.json" as DB
+
+== Interactive Entity Creation ==
+
+User -> CLI: ukb entity add --interactive
+activate CLI
+
+CLI -> Router: route command
+activate Router
+
+Router -> API: getEntityManager()
+activate API
+API --> Router: entityManager
+deactivate API
+
+Router -> CLI: start interactive prompt
+deactivate Router
+
+CLI -> User: Prompt for entity name
+User --> CLI: "ReactHooksPattern"
+
+CLI -> User: Select entity type
+User --> CLI: "TechnicalPattern"
+
+CLI -> User: Enter significance (1-10)
+User --> CLI: "8"
+
+CLI -> User: Add observation? (optional)
+User --> CLI: "Reusable state logic extraction"
+
+CLI -> API: entities.create(entityData)
+activate API
+
+API -> EM: create(entityData)
+activate EM
+
+EM -> VS: validateEntity(entityData)
+activate VS
+
+VS -> VS: check name format
+VS -> VS: check entity type
+VS -> VS: check significance range
+VS -> VS: validate observations
+
+alt Valid Data
+  VS --> EM: {valid: true}
+  deactivate VS
+  
+  EM -> EM: generate UUID
+  EM -> EM: add timestamps
+  EM -> EM: normalize observations
+  
+  EM -> Storage: addEntity(entity)
+  activate Storage
+  
+  Storage -> Storage: check for duplicates
+  
+  alt No Duplicate
+    Storage -> Storage: add to entities array
+    Storage -> DB: write JSON
+    activate DB
+    DB --> Storage: success
+    deactivate DB
+    
+    Storage --> EM: success
+    deactivate Storage
+    
+    EM -> EM: log creation
+    EM --> API: entity object
+    deactivate EM
+    
+    API --> CLI: entity object
+    deactivate API
+    
+    CLI -> CLI: format output
+    CLI -> User: ✅ Created entity: ReactHooksPattern
+    
+  else Duplicate Found
+    Storage --> EM: DuplicateError
+    EM --> API: throw Error
+    API --> CLI: Error
+    CLI -> User: ❌ Entity already exists
+  end
+  
+else Invalid Data
+  VS --> EM: {valid: false, errors: [...]}
+  EM --> API: ValidationError
+  API --> CLI: ValidationError
+  CLI -> User: ❌ Validation failed: [errors]
+end
+
+deactivate CLI
+
+== Non-Interactive Entity Creation ==
+
+User -> CLI: ukb entity add -n "ReduxPattern" -t "ArchitecturePattern" -s 9
+activate CLI
+
+CLI -> Router: route command with options
+activate Router
+
+Router -> API: entities.create({name, type, significance})
+activate API
+
+note over API, Storage
+  Same validation and storage flow as above
+  but without interactive prompts
+end note
+
+API --> Router: entity object
+deactivate API
+
+Router --> CLI: entity object
+deactivate Router
+
+CLI -> User: ✅ Created entity: ReduxPattern
+deactivate CLI
+
+@enduml

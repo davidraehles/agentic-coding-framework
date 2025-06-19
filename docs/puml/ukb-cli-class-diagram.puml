@@ -1,0 +1,211 @@
+@startuml ukb-cli-class-diagram
+!theme plain
+title UKB-CLI Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor<<interface>> LightBlue
+  BackgroundColor<<abstract>> LightGray
+  BackgroundColor<<service>> LightGreen
+  BackgroundColor<<util>> LightYellow
+}
+
+interface IStorage <<interface>> {
+  + initialize(): Promise<void>
+  + getEntities(): Promise<Entity[]>
+  + getRelations(): Promise<Relation[]>
+  + addEntity(entity: Entity): Promise<void>
+  + updateEntity(id: string, entity: Entity): Promise<void>
+  + removeEntity(id: string): Promise<Entity>
+  + addRelation(relation: Relation): Promise<void>
+  + updateRelation(id: string, relation: Relation): Promise<void>
+  + removeRelation(id: string): Promise<Relation>
+  + close(): Promise<void>
+}
+
+class KnowledgeAPI <<service>> {
+  - config: ConfigManager
+  - logger: Logger
+  - storage: IStorage
+  - validation: ValidationService
+  + entities: EntityManager
+  + relations: RelationManager
+  + insights: InsightProcessor
+  --
+  + constructor(options: ConfigOptions)
+  + initialize(): Promise<void>
+  + getStatus(): Promise<Status>
+  + close(): Promise<void>
+}
+
+class EntityManager <<service>> {
+  - storage: IStorage
+  - validation: ValidationService
+  - logger: Logger
+  --
+  + create(data: EntityData): Promise<Entity>
+  + findByName(name: string): Promise<Entity>
+  + findById(id: string): Promise<Entity>
+  + getAll(filters: FilterOptions): Promise<Entity[]>
+  + update(id: string, updates: Partial<Entity>): Promise<Entity>
+  + delete(id: string): Promise<boolean>
+  + addObservation(id: string, obs: Observation): Promise<void>
+  + removeObservation(id: string, index: number): Promise<void>
+  + rename(oldName: string, newName: string): Promise<Entity>
+  + search(query: string): Promise<Entity[]>
+  + count(): Promise<number>
+}
+
+class RelationManager <<service>> {
+  - storage: IStorage
+  - validation: ValidationService
+  - logger: Logger
+  --
+  + create(data: RelationData): Promise<Relation>
+  + findRelation(from: string, to: string, type?: string): Promise<Relation>
+  + findById(id: string): Promise<Relation>
+  + getAll(filters: FilterOptions): Promise<Relation[]>
+  + getForEntity(entity: string, direction: Direction): Promise<Relation[]>
+  + update(id: string, updates: Partial<Relation>): Promise<Relation>
+  + delete(id: string): Promise<boolean>
+  + getConnectedEntities(entity: string, depth: number): Promise<Connection[]>
+  + findPath(from: string, to: string): Promise<string[]>
+  + getClusters(minSize: number): Promise<string[][]>
+  + updateEntityReferences(oldName: string, newName: string): Promise<number>
+}
+
+class InsightProcessor <<service>> {
+  - entities: EntityManager
+  - relations: RelationManager
+  - logger: Logger
+  --
+  + processInsight(data: InsightData): Promise<ProcessResult>
+  + processBatch(insights: InsightData[]): Promise<BatchResult>
+  + extractPatterns(options: PatternOptions): Promise<Pattern[]>
+  + analyzeConversation(text: string, context: Context): Promise<Insight[]>
+  + analyzeCodeChanges(diff: string, commit: CommitInfo): Promise<Insight[]>
+  + generateRecommendations(context: Context): Promise<Recommendation[]>
+}
+
+class ValidationService <<util>> {
+  - entitySchema: Schema
+  - relationSchema: Schema
+  - observationSchema: Schema
+  --
+  + validateEntity(data: any): Promise<ValidationResult>
+  + validateRelation(data: any): Promise<ValidationResult>
+  + validateObservation(data: any): Promise<ValidationResult>
+  + validateEntityName(name: string): ValidationResult
+  + validateRelationType(type: string): ValidationResult
+  + validateSignificance(value: number): ValidationResult
+  + validateUrl(url: string): ValidationResult
+  + {static} ENTITY_TYPES: string[]
+  + {static} RELATION_TYPES: string[]
+}
+
+class FileStorageAdapter <<service>> {
+  - config: StorageConfig
+  - logger: Logger
+  - filePath: string
+  - data: StorageData
+  --
+  + initialize(): Promise<void>
+  + getInfo(): StorageInfo
+  + createBackup(): Promise<string>
+  + restoreFromBackup(path: string): Promise<void>
+  + exportData(): Promise<ExportData>
+  + importData(data: ImportData, merge: boolean): Promise<void>
+  + getStatistics(): Promise<Statistics>
+}
+
+class ConfigManager <<util>> {
+  - options: ConfigOptions
+  - config: Configuration
+  - configPaths: ConfigPaths
+  --
+  + get(key: string, defaultValue?: any): any
+  + set(key: string, value: any): void
+  + save(path?: string): Promise<void>
+  + getAll(): Configuration
+  + reset(): void
+  + validate(): ValidationResult
+  + {static} getPlatformInfo(): PlatformInfo
+  + {static} getEnvironmentInfo(): EnvironmentInfo
+}
+
+class Logger <<util>> {
+  - config: LoggerConfig
+  - levels: LogLevels
+  - colors: ColorMap
+  --
+  + error(message: string, meta?: object): void
+  + warn(message: string, meta?: object): void
+  + info(message: string, meta?: object): void
+  + debug(message: string, meta?: object): void
+  + trace(message: string, meta?: object): void
+  + child(context: object): Logger
+  + setLevel(level: string): void
+  + time(label: string): Timer
+  + logMemoryUsage(label: string): void
+  + logOperation(op: string, status: string, meta?: object): void
+}
+
+' Entity and Relation types
+class Entity {
+  + id: string
+  + name: string
+  + entityType: string
+  + observations: Observation[]
+  + significance: number
+  + created: string
+  + updated: string
+  + metadata: object
+}
+
+class Relation {
+  + id: string
+  + from: string
+  + to: string
+  + relationType: string
+  + significance: number
+  + created: string
+  + metadata: object
+}
+
+class Observation {
+  + type: string
+  + content: string
+  + date: string
+  + tags?: string[]
+  + metadata?: object
+}
+
+' Relationships
+KnowledgeAPI --> ConfigManager : uses
+KnowledgeAPI --> Logger : uses
+KnowledgeAPI --> IStorage : uses
+KnowledgeAPI --> ValidationService : uses
+KnowledgeAPI --> EntityManager : manages
+KnowledgeAPI --> RelationManager : manages
+KnowledgeAPI --> InsightProcessor : manages
+
+EntityManager --> IStorage : uses
+EntityManager --> ValidationService : uses
+EntityManager --> Logger : uses
+EntityManager ..> Entity : manages
+
+RelationManager --> IStorage : uses
+RelationManager --> ValidationService : uses
+RelationManager --> Logger : uses
+RelationManager ..> Relation : manages
+
+InsightProcessor --> EntityManager : uses
+InsightProcessor --> RelationManager : uses
+InsightProcessor --> Logger : uses
+
+FileStorageAdapter ..|> IStorage : implements
+FileStorageAdapter --> Logger : uses
+
+Entity --> Observation : contains
+
+@enduml

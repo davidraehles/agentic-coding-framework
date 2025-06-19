@@ -1,0 +1,125 @@
+@startuml ukb-cli-data-flow
+!theme plain
+title UKB-CLI Data Flow Architecture
+
+skinparam activityShape rectangle
+skinparam activity {
+  BackgroundColor<<input>> LightBlue
+  BackgroundColor<<process>> LightGreen
+  BackgroundColor<<storage>> LightYellow
+  BackgroundColor<<output>> LightPink
+}
+
+|Input Sources|
+start
+:CLI Commands;<<input>>
+note right
+  ukb entity add
+  ukb relation create
+  ukb insight process
+end note
+
+:Git Commits;<<input>>
+note right
+  Analyze commit messages
+  Extract patterns from diffs
+  (Future feature)
+end note
+
+:Conversation Logs;<<input>>
+note right
+  Claude sessions
+  Copilot interactions
+  Chat transcripts
+end note
+
+:Code Changes;<<input>>
+note right
+  File modifications
+  Architecture changes
+  Pattern implementations
+end note
+
+|Validation Layer|
+:Schema Validation;<<process>>
+note right
+  Joi validation
+  Type checking
+  Constraint verification
+end note
+
+if (Valid?) then (yes)
+  |Processing Pipeline|
+  :Data Normalization;<<process>>
+  note left
+    Convert to standard format
+    Add timestamps
+    Generate IDs
+  end note
+  
+  :Pattern Extraction;<<process>>
+  note right
+    Problem-Solution pairs
+    Technical patterns
+    Architectural changes
+  end note
+  
+  :Significance Calculation;<<process>>
+  note left
+    1-10 scoring
+    Context weighting
+    Relationship analysis
+  end note
+  
+  :Entity/Relation Creation;<<process>>
+  
+  |Storage Layer|
+  :Persistence;<<storage>>
+  note right
+    FileStorageAdapter
+    JSON serialization
+    Atomic writes
+  end note
+  
+  :Indexing;<<storage>>
+  note left
+    Name-based lookup
+    Type categorization
+    Significance ranking
+  end note
+  
+  |Synchronization|
+  :MCP Memory Sync;<<output>>
+  note right
+    Export to MCP format
+    Bidirectional sync
+    (When enabled)
+  end note
+  
+  :Visualizer Update;<<output>>
+  note left
+    NDJSON conversion
+    Real-time updates
+    Graph visualization
+  end note
+  
+  :Response Formatting;<<output>>
+  
+  |Output|
+  :CLI Response;<<output>>
+  :API Result;<<output>>
+  :Logs;<<output>>
+  
+  stop
+  
+else (no)
+  :Error Response;<<output>>
+  note right
+    Validation errors
+    User-friendly messages
+    Suggested fixes
+  end note
+  stop
+endif
+
+@enduml

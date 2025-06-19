@@ -1,0 +1,109 @@
+@startuml ukb-cli-architecture
+!theme plain
+title UKB-CLI System Architecture
+
+skinparam componentStyle rectangle
+skinparam component {
+  BackgroundColor<<api>> LightBlue
+  BackgroundColor<<core>> LightGreen
+  BackgroundColor<<storage>> LightYellow
+  BackgroundColor<<cli>> LightPink
+  BackgroundColor<<util>> LightGray
+}
+
+package "UKB-CLI System" {
+  
+  package "CLI Layer" <<cli>> {
+    [ukb-cli.js] as CLI
+    [Command Router] as Router
+    [Interactive Mode] as Interactive
+    [Output Formatter] as Formatter
+  }
+  
+  package "API Layer" <<api>> {
+    [KnowledgeAPI] as API
+    note right of API
+      Main orchestrator
+      Manages lifecycle
+      Coordinates operations
+    end note
+  }
+  
+  package "Core Services" <<core>> {
+    [EntityManager] as Entities
+    [RelationManager] as Relations
+    [InsightProcessor] as Insights
+    [ValidationService] as Validation
+    
+    note bottom of Entities
+      CRUD operations
+      Search & filter
+      Significance ranking
+    end note
+    
+    note bottom of Relations
+      Graph operations
+      Path finding
+      Cluster detection
+    end note
+  }
+  
+  package "Storage Adapters" <<storage>> {
+    [FileStorageAdapter] as FileStorage
+    [Future: GraphDB] as GraphDB #line.dashed
+    [Future: CloudStorage] as CloudStorage #line.dashed
+    
+    interface "Storage Interface" as IStorage
+  }
+  
+  package "Utilities" <<util>> {
+    [ConfigManager] as Config
+    [Logger] as Logger
+    
+    note right of Config
+      Layered configuration
+      Environment overrides
+      Cross-platform paths
+    end note
+  }
+  
+  package "External Systems" {
+    database "shared-memory.json" as JSONFile
+    cloud "MCP Memory" as MCP #line.dashed
+    component "Memory Visualizer" as Visualizer #line.dashed
+  }
+}
+
+' Relationships
+CLI --> Router : commands
+Router --> API : operations
+Interactive --> API : guided workflows
+Formatter <-- API : results
+
+API --> Entities : entity ops
+API --> Relations : relation ops
+API --> Insights : processing
+API --> Config : configuration
+API --> Logger : logging
+
+Entities --> Validation : validate
+Relations --> Validation : validate
+Insights --> Entities : create/update
+Insights --> Relations : create/update
+
+Entities --> IStorage : persist
+Relations --> IStorage : persist
+IStorage <|.. FileStorage : implements
+IStorage <|.. GraphDB : implements
+IStorage <|.. CloudStorage : implements
+
+FileStorage --> JSONFile : read/write
+API ..> MCP : sync
+API ..> Visualizer : export
+
+' User interaction
+actor User
+User --> CLI : commands
+User --> Interactive : prompts
+
+@enduml

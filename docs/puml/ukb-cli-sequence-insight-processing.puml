@@ -1,0 +1,174 @@
+@startuml ukb-cli-sequence-insight-processing
+!theme plain
+title Insight Processing Sequence Diagram
+
+actor User
+participant "CLI" as CLI
+participant "KnowledgeAPI" as API
+participant "InsightProcessor" as IP
+participant "EntityManager" as EM
+participant "RelationManager" as RM
+participant "ValidationService" as VS
+participant "FileStorageAdapter" as Storage
+
+== Interactive Insight Processing ==
+
+User -> CLI: ukb insight --interactive
+activate CLI
+
+CLI -> User: Select insight type
+User --> CLI: "Problem-Solution"
+
+CLI -> User: Describe the problem
+User --> CLI: "Complex state management in React"
+
+CLI -> User: Describe the solution  
+User --> CLI: "Implement Redux with typed hooks"
+
+CLI -> API: insights.processInsight(insightData)
+activate API
+
+API -> IP: processInsight(insightData)
+activate IP
+
+IP -> IP: validateInsightData()
+IP -> IP: extractEntities(insightData)
+
+note right of IP
+  Creates 2 entities:
+  1. Problem entity
+  2. Solution entity
+end note
+
+IP -> IP: generateEntityNames()
+IP -> IP: calculateSignificance()
+
+== Entity Creation Loop ==
+
+loop for each entity
+  IP -> EM: create(entityData)
+  activate EM
+  
+  EM -> VS: validateEntity(entityData)
+  activate VS
+  VS --> EM: validation result
+  deactivate VS
+  
+  alt Entity Exists
+    EM -> EM: findByName(entityName)
+    EM -> EM: addObservation(observation)
+    EM --> IP: updated entity
+  else New Entity
+    EM -> Storage: addEntity(entity)
+    activate Storage
+    Storage --> EM: success
+    deactivate Storage
+    EM --> IP: new entity
+  end
+  
+  deactivate EM
+end
+
+== Relation Creation ==
+
+IP -> IP: extractRelations(insightData, entities)
+
+IP -> RM: create({from: "Solution", to: "Problem", type: "solves"})
+activate RM
+
+RM -> VS: validateRelation(relationData)
+activate VS
+VS --> RM: validation result
+deactivate VS
+
+RM -> Storage: addRelation(relation)
+activate Storage
+Storage --> RM: success
+deactivate Storage
+
+RM --> IP: relation object
+deactivate RM
+
+IP -> IP: compile results
+
+IP --> API: {entities: [...], relations: [...], significance: 8}
+deactivate IP
+
+API --> CLI: processing result
+deactivate API
+
+CLI -> CLI: format output
+CLI -> User: ✅ Insight processed:\n  2 entities created\n  1 relation created\n  Significance: 8/10
+
+deactivate CLI
+
+== Batch Processing ==
+
+User -> CLI: ukb process-insights insights.json
+activate CLI
+
+CLI -> CLI: read JSON file
+
+CLI -> API: insights.processBatch(insightArray)
+activate API
+
+API -> IP: processBatch(insights)
+activate IP
+
+loop for each insight
+  IP -> IP: processInsight(insight)
+  note right: Same flow as above
+  
+  alt Success
+    IP -> IP: add to results
+  else Error
+    IP -> IP: add to errors
+  end
+end
+
+IP --> API: {results: [...], errors: [...], processed: N, failed: M}
+deactivate IP
+
+API --> CLI: batch result
+deactivate API
+
+CLI -> User: ✅ Processed N insights, M failed
+
+deactivate CLI
+
+== Pattern Extraction ==
+
+User -> CLI: ukb insight patterns --min-significance 8
+activate CLI
+
+CLI -> API: insights.extractPatterns({minSignificance: 8})
+activate API
+
+API -> IP: extractPatterns(options)
+activate IP
+
+IP -> EM: getHighSignificance(8)
+activate EM
+EM --> IP: high significance entities
+deactivate EM
+
+IP -> RM: getAll({minSignificance: 8})
+activate RM
+RM --> IP: high significance relations
+deactivate RM
+
+IP -> IP: findPatterns(entities, relations)
+IP -> IP: rankPatterns(patterns)
+
+IP --> API: ranked patterns
+deactivate IP
+
+API --> CLI: patterns
+deactivate API
+
+CLI -> CLI: format pattern output
+CLI -> User: Found N patterns:\n  1. Pattern A (significance: 9)\n  2. Pattern B (significance: 8)
+
+deactivate CLI
+
+@enduml
