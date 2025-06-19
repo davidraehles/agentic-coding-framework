@@ -2902,8 +2902,13 @@ analyze_session() {
     # Get git status and recent commits
     cd "$PWD" 2>/dev/null || cd "$HOME"
     
+    # Skip git analysis in interactive mode
+    if [[ "$INTERACTIVE_MODE" == true ]]; then
+        # In interactive mode, we don't analyze git commits
+        touch "$TMP_DIR/recent_commits.txt"  # Create empty file
+        log "Interactive mode: Skipping git analysis"
     # Determine commit range based on mode
-    if [[ "$FULL_HISTORY_MODE" == true ]]; then
+    elif [[ "$FULL_HISTORY_MODE" == true ]]; then
         # Full history analysis
         if [[ -n "$HISTORY_DEPTH" ]]; then
             git log --oneline -"$HISTORY_DEPTH" --pretty=format:'%h|%an|%ad|%s' --date=iso > "$TMP_DIR/recent_commits.txt" 2>/dev/null || true
@@ -2932,11 +2937,13 @@ analyze_session() {
             echo "📊 FIRST RUN: Examining last 10 commits" >&2
         fi
         
-        # Update last analyzed commit to current HEAD (only in incremental mode)
-        local current_head
-        current_head=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-        if [[ "$current_head" != "unknown" ]]; then
-            update_last_analyzed_commit "$project_name" "$current_head"
+        # Update last analyzed commit to current HEAD (only in incremental mode, not in interactive mode)
+        if [[ "$INTERACTIVE_MODE" != true ]]; then
+            local current_head
+            current_head=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+            if [[ "$current_head" != "unknown" ]]; then
+                update_last_analyzed_commit "$project_name" "$current_head"
+            fi
         fi
     fi
     
@@ -3025,7 +3032,7 @@ remove_entity_from_kb() {
     echo -e "${CYAN}🗑️  Removing entity: $entity_name${NC}"
     
     # Create backup
-    cp "$shared_memory" "${shared_memory}.backup"
+    # Backup removed - rely on git for version control
     
     # Remove entity and its relations
     jq --arg name "$entity_name" --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
@@ -3108,7 +3115,7 @@ rename_entity_in_kb() {
     echo -e "${CYAN}🔄 Renaming entity: $old_name → $new_name${NC}"
     
     # Create backup
-    cp "$shared_memory" "${shared_memory}.backup"
+    # Backup removed - rely on git for version control
     
     # Rename entity and update all relations
     jq --arg old_name "$old_name" --arg new_name "$new_name" --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
@@ -3202,7 +3209,7 @@ add_entity_to_kb() {
     echo -e "${CYAN}➕ Adding entity: $entity_name${NC}"
     
     # Create backup
-    cp "$shared_memory" "${shared_memory}.backup"
+    # Backup removed - rely on git for version control
     
     # Convert observations to JSON array
     IFS=';' read -ra OBS_ARRAY <<< "$observations_str"
