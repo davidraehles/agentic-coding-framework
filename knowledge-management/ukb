@@ -295,6 +295,7 @@ validate_url() {
 # Validate and filter URLs
 validate_urls() {
     local urls_input="$1"
+    local quiet_mode="${2:-false}"  # Second parameter for quiet mode
     local valid_urls=()
     
     if [[ -z "$urls_input" ]]; then
@@ -302,7 +303,10 @@ validate_urls() {
         return
     fi
     
-    echo -e "${BLUE}🔗 Validating reference URLs...${NC}"
+    # Only show colored output if not in quiet mode
+    if [[ "$quiet_mode" != "true" ]]; then
+        echo -e "${BLUE}🔗 Validating reference URLs...${NC}" >&2
+    fi
     
     # Split URLs by comma and validate each
     IFS=',' read -ra urls <<< "$urls_input"
@@ -311,17 +315,23 @@ validate_urls() {
         url=$(echo "$url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         
         if [[ -n "$url" ]]; then
-            echo -n "  Validating $url... "
+            if [[ "$quiet_mode" != "true" ]]; then
+                echo -n "  Validating $url... " >&2
+            fi
             if validate_url "$url"; then
                 valid_urls+=("$url")
-                echo -e "${GREEN}✓${NC}"
+                if [[ "$quiet_mode" != "true" ]]; then
+                    echo -e "${GREEN}✓${NC}" >&2
+                fi
             else
-                echo -e "${RED}✗ (invalid/unreachable)${NC}"
+                if [[ "$quiet_mode" != "true" ]]; then
+                    echo -e "${RED}✗ (invalid/unreachable)${NC}" >&2
+                fi
             fi
         fi
     done
     
-    # Return comma-separated valid URLs
+    # Return comma-separated valid URLs (to stdout, not stderr)
     if [[ ${#valid_urls[@]} -gt 0 ]]; then
         printf "%s," "${valid_urls[@]}" | sed 's/,$//'
     else
@@ -1034,7 +1044,7 @@ capture_interactive_insight() {
     # Validate URLs if provided
     local validated_references=""
     if [[ -n "$references_input" ]]; then
-        validated_references=$(validate_urls "$references_input")
+        validated_references=$(validate_urls "$references_input" "true")  # Use quiet mode
         if [[ -z "$validated_references" ]]; then
             echo -e "${YELLOW}⚠️  No valid URLs found, continuing without references${NC}"
         fi

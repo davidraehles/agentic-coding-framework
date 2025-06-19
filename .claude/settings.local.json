@@ -98,7 +98,8 @@
       "Bash(./cli.js insight --interactive)",
       "Bash(./cli.js entity add:*)",
       "Bash(./cli.js relation:*)",
-      "Bash(./cli.js entity list)"
+      "Bash(./cli.js entity list)",
+      "Bash(./bin/ukb:*)"
     ],
     "deny": []
   }
