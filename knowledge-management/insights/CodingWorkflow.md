@@ -173,7 +173,7 @@ vkb help                     # Show all commands
 
 ## Development Workflow Sequence
 
-![CodingWorkflow Sequence Diagram](./images/CodingWorkflowSequence.png)
+![CodingWorkflow Sequence Diagram](./images/coding-workflow-sequence.png)
 
 The sequence diagram above illustrates the complete development workflow from session start through knowledge capture and sharing. Key phases include:
 
@@ -184,7 +184,7 @@ The sequence diagram above illustrates the complete development workflow from se
 
 ## Knowledge Management Architecture
 
-![Knowledge Management Architecture](./images/KnowledgeArchitecture.png)
+![Knowledge Management Architecture](./images/knowledge-architecture.png)
 
 The architecture diagram shows the three-layer knowledge management system:
 
