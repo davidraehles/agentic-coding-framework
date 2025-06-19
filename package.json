@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Unified coding tools that work with both Claude Code (MCP) and GitHub CoPilot (fallbacks)",
   "main": "lib/agent-registry.js",
+  "type": "module",
   "bin": {
     "coding": "./bin/coding"
   },

@@ -1,0 +1,29 @@
+{
+  "entities": [
+    {
+      "name": "TestEntity",
+      "entityType": "TransferablePattern",
+      "observations": ["Test observation for compatibility testing"],
+      "significance": 5,
+      "metadata": {
+        "created_at": "2025-06-19T00:00:00Z",
+        "last_updated": "2025-06-19T00:00:00Z"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "from": "CodingKnowledge",
+      "to": "TestEntity",
+      "relationType": "contains"
+    }
+  ],
+  "metadata": {
+    "version": "2.0.0",
+    "created": "2025-06-19T00:00:00Z",
+    "last_updated": "2025-06-19T00:00:00Z",
+    "total_entities": 1,
+    "total_relations": 1,
+    "schema_version": "2.0.0"
+  }
+}
