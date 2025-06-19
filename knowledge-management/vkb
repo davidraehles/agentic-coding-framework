@@ -320,6 +320,52 @@ start_server() {
     fi
 }
 
+# Clear Chrome cache for localhost:8080
+clear_chrome_cache() {
+    echo -e "${BLUE}🗑️  Clearing Chrome cache for localhost:8080...${NC}"
+    
+    # macOS Chrome cache clearing
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try to close Chrome first (optional)
+        osascript -e 'tell application "Google Chrome" to quit' 2>/dev/null || true
+        sleep 1
+        
+        # Clear Chrome cache directories
+        local cache_dirs=(
+            "$HOME/Library/Caches/Google/Chrome/Default/Cache"
+            "$HOME/Library/Caches/Google/Chrome/Default/Code Cache"
+            "$HOME/Library/Application Support/Google/Chrome/Default/Local Storage"
+            "$HOME/Library/Application Support/Google/Chrome/Default/Session Storage"
+        )
+        
+        for cache_dir in "${cache_dirs[@]}"; do
+            if [[ -d "$cache_dir" ]]; then
+                echo -e "${YELLOW}   Clearing: $(basename "$cache_dir")${NC}"
+                rm -rf "$cache_dir"/* 2>/dev/null || true
+            fi
+        done
+        
+        echo -e "${GREEN}✅ Chrome cache cleared${NC}"
+    else
+        # Linux Chrome cache clearing
+        local chrome_config_dir="$HOME/.config/google-chrome/Default"
+        local cache_dirs=(
+            "$chrome_config_dir/Cache"
+            "$chrome_config_dir/Code Cache"
+            "$HOME/.cache/google-chrome/Default"
+        )
+        
+        for cache_dir in "${cache_dirs[@]}"; do
+            if [[ -d "$cache_dir" ]]; then
+                echo -e "${YELLOW}   Clearing: $(basename "$cache_dir")${NC}"
+                rm -rf "$cache_dir"/* 2>/dev/null || true
+            fi
+        done
+        
+        echo -e "${GREEN}✅ Chrome cache cleared${NC}"
+    fi
+}
+
 # Open browser (optional)
 open_browser() {
     if command -v open >/dev/null 2>&1; then
@@ -372,6 +418,15 @@ check_dependencies() {
 # Main execution
 main() {
     local command="${1:-start}"
+    local clear_cache=false
+    
+    # Check for cache clearing flag
+    if [[ "${2:-}" == "--with-cache-clear" ]] || [[ "$1" == "--with-cache-clear" ]]; then
+        clear_cache=true
+        if [[ "$1" == "--with-cache-clear" ]]; then
+            command="start"
+        fi
+    fi
     
     # Check dependencies before running any command
     if [[ "$command" != "help" ]] && [[ "$command" != "--help" ]] && [[ "$command" != "-h" ]]; then
@@ -382,6 +437,11 @@ main() {
         "start"|"")
             echo -e "${BLUE}🔍 VKB - View Knowledge Base v2.0${NC}"
             echo -e "${BLUE}=====================================${NC}"
+            
+            # Clear cache if requested
+            if [[ "$clear_cache" == "true" ]]; then
+                clear_chrome_cache
+            fi
             
             if is_server_running; then
                 echo -e "${YELLOW}⚠️  Server already running${NC}"
@@ -425,10 +485,21 @@ main() {
         "restart")
             echo -e "${BLUE}🔄 Restarting visualization server...${NC}"
             stop_server
+            
+            # Clear cache if requested
+            if [[ "$clear_cache" == "true" ]]; then
+                clear_chrome_cache
+            fi
+            
             prepare_memory_data
             start_server
             open_browser
             echo -e "${GREEN}✅ Server restarted${NC}"
+            ;;
+        "--clear-cache"|"clear-cache")
+            echo -e "${BLUE}🗑️  Clearing Chrome cache only...${NC}"
+            clear_chrome_cache
+            echo -e "${GREEN}✅ Cache cleared. Run 'vkb start' to view updated knowledge base.${NC}"
             ;;
         "status")
             show_status
@@ -470,7 +541,7 @@ main() {
             fi
             ;;
         "help"|"--help"|"-h"|*)
-            echo "Usage: $0 [start|fg|stop|restart|status|logs|port|help]"
+            echo "Usage: $0 [start|fg|stop|restart|status|logs|port|clear-cache|help] [--with-cache-clear]"
             echo "  start      - Start visualization server in background (default)"  
             echo "  fg         - Start visualization server in foreground (for debugging)"
             echo "  foreground - Same as 'fg'"
@@ -479,7 +550,16 @@ main() {
             echo "  status     - Show server status"
             echo "  logs       - Show recent server logs"
             echo "  port       - Check what's using port 8080"
+            echo "  clear-cache - Clear Chrome cache for localhost:8080 (helps with stale data)"
             echo "  help       - Show this help message"
+            echo ""
+            echo "Options:"
+            echo "  --with-cache-clear - Clear Chrome cache before starting/restarting server"
+            echo ""
+            echo "Examples:"
+            echo "  $0 start --with-cache-clear  # Start server and clear cache"
+            echo "  $0 restart --with-cache-clear # Restart server and clear cache"
+            echo "  $0 clear-cache               # Clear cache only"
             echo ""
             echo "Foreground mode is useful for debugging as it shows server output directly."
             echo "Press Ctrl+C to stop the server when running in foreground mode."
