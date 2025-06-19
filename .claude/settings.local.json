@@ -87,7 +87,10 @@
       "Bash(then echo \"MISSING TOC: $(basename \"$file\")\")",
       "Bash(then echo \"STILL MISSING TOC: $(basename \"$file\")\")",
       "Bash(bin/ukb:*)",
-      "Bash(bin/vkb:*)"
+      "Bash(bin/vkb:*)",
+      "Bash(./bin/vkb:*)",
+      "Bash(sed:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }

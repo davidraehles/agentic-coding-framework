@@ -30,6 +30,10 @@
 
 ### Architecture Overview
 
+![Redux MVI Architecture](images/redux-mvi-architecture.png)
+
+*Model-View-Intent architecture pattern showing the separation of concerns between UI components, intent layers, and Redux store.*
+
 ```mermaid
 graph TB
     subgraph "Intent Layer"
