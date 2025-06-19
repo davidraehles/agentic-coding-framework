@@ -171,6 +171,12 @@ vkb port                     # Check what's using port 8080
 vkb help                     # Show all commands
 ```
 
+### Cache Management
+```bash
+vkb clear-cache              # Clear visualization cache for fresh data loading
+vkb --with-cache-clear       # Start server with cache clearing for debugging
+```
+
 ## Development Workflow Sequence
 
 ![CodingWorkflow Sequence Diagram](./images/coding-workflow-sequence.png)
@@ -337,6 +343,22 @@ lsof -i:8080
 #### Parsing Errors in Visualization
 - **Fixed**: Atomic file updates and automatic NDJSON conversion prevent this
 - **If still occurs**: Hard refresh browser (Cmd+Shift+R)
+- **Alternative**: Use `vkb clear-cache` to clear visualization cache and reload fresh data
+
+#### Cache-Related Issues
+```bash
+# Problem: Visualization shows stale or outdated data
+# Solution: Clear cache and restart
+vkb clear-cache
+vkb restart
+
+# Problem: Need fresh start for debugging visualization
+# Solution: Start with cache clearing
+vkb --with-cache-clear
+
+# Check cache status
+vkb status                   # Shows cache information if available
+```
 
 ## File Structure
 

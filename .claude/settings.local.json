@@ -90,7 +90,8 @@
       "Bash(bin/vkb:*)",
       "Bash(./bin/vkb:*)",
       "Bash(sed:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(./knowledge-management/vkb help:*)"
     ],
     "deny": []
   }
