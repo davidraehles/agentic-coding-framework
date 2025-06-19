@@ -222,22 +222,25 @@ prepare_memory_data() {
         echo -e "${GREEN}✓ Found $insight_count insight files${NC}"
     fi
     
-    # Convert from our format to NDJSON format expected by visualizer
-    # Also deduplicate entities to prevent orphans and convert observations to simple strings
-    # Use atomic write to prevent partial reads
-    local temp_file="${memory_dist}.tmp"
-    {
-        # Deduplicate entities by name (keep the latest one), add type field, and convert observations
-        jq -r '.entities | group_by(.name) | map(max_by(.created // "2000-01-01")) | .[] | 
-        (if .observations and (.observations | type == "array") and (.observations | length > 0) and (.observations[0] | type == "object") then
-          .observations = (.observations | map(if type == "object" then .content else . end))
-        else . end) |
-        (if .legacy_observations and (.legacy_observations | length > 0) then
-          .observations = .legacy_observations
-        else . end) |
-        . + {"type": "entity"} | @json' "$SHARED_MEMORY" 2>/dev/null || true
-        jq -r '.relations[] | @json' "$SHARED_MEMORY" 2>/dev/null || true
-    } > "$temp_file" && mv -f "$temp_file" "$memory_dist"
+    # Check if ukb has already generated the NDJSON file
+    if [[ -f "$memory_dist" ]]; then
+        echo -e "${GREEN}✓ Using existing NDJSON data (managed by ukb)${NC}"
+    else
+        # Fallback: Convert from shared-memory.json if ukb hasn't run yet
+        local temp_file="${memory_dist}.tmp"
+        {
+            # Convert to NDJSON format expected by visualizer
+            jq -r '.entities | group_by(.name) | map(max_by(.created // "2000-01-01")) | .[] | 
+            (if .observations and (.observations | type == "array") and (.observations | length > 0) and (.observations[0] | type == "object") then
+              .observations = (.observations | map(if type == "object" then .content else . end))
+            else . end) |
+            (if .legacy_observations and (.legacy_observations | length > 0) then
+              .observations = .legacy_observations
+            else . end) |
+            . + {"type": "entity"} | @json' "$SHARED_MEMORY" 2>/dev/null || true
+            jq -r '.relations[] | @json' "$SHARED_MEMORY" 2>/dev/null || true
+        } > "$temp_file" && mv -f "$temp_file" "$memory_dist"
+    fi
     
     echo -e "${GREEN}✓ Memory data prepared${NC}"
     local entity_count relation_count

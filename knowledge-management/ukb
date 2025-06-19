@@ -7,16 +7,35 @@ set -euo pipefail
 # Incremental processing state management
 PROCESSING_STATE_FILE="$HOME/.ukb-processing-state.json"
 
-# Atomic file sync function to prevent partial reads
+# Atomic file sync function with NDJSON conversion for visualizer
 atomic_sync_to_visualizer() {
     local source_file="$1"
     local dist_memory="../coding/memory-visualizer/dist/memory.json"
     
-    if [[ -f "$dist_memory" ]]; then
-        # Copy to temp file first, then move atomically
-        cp "$source_file" "${dist_memory}.tmp" && \
-        mv -f "${dist_memory}.tmp" "$dist_memory"
+    # Check if visualizer directory exists
+    if [[ ! -d "$(dirname "$dist_memory")" ]]; then
+        return 0  # Skip if visualizer not available
+    fi
+    
+    # Convert to NDJSON format expected by visualizer
+    local temp_file="${dist_memory}.tmp"
+    {
+        # Deduplicate entities by name (keep the latest one), add type field, and convert observations
+        jq -r '.entities | group_by(.name) | map(max_by(.created // "2000-01-01")) | .[] | 
+        (if .observations and (.observations | type == "array") and (.observations | length > 0) and (.observations[0] | type == "object") then
+          .observations = (.observations | map(if type == "object" then .content else . end))
+        else . end) |
+        (if .legacy_observations and (.legacy_observations | length > 0) then
+          .observations = .legacy_observations
+        else . end) |
+        . + {"type": "entity"} | @json' "$source_file" 2>/dev/null || true
+        jq -r '.relations[] | @json' "$source_file" 2>/dev/null || true
+    } > "$temp_file" && mv -f "$temp_file" "$dist_memory"
+    
+    if [[ $? -eq 0 ]]; then
         echo -e "${GREEN}✅ Synced to visualizer${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Failed to sync to visualizer${NC}"
     fi
 }
 
