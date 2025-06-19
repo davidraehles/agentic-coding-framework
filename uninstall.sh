@@ -57,13 +57,13 @@ if [[ -d "$CODING_REPO/memory-visualizer" ]]; then
 fi
 
 # Remove mcp-server-browserbase (if installed by us)
-if [[ -d "$CODING_REPO/mcp-server-browserbase" ]]; then
-    rm -rf "$CODING_REPO/mcp-server-browserbase"
+if [[ -d "$CODING_REPO/integrations/mcp-server-browserbase" ]]; then
+    rm -rf "$CODING_REPO/integrations/mcp-server-browserbase"
     echo "  Removed mcp-server-browserbase"
 fi
 
 # Clean up node_modules in MCP servers
-for dir in "browser-access" "claude-logger-mcp" "mcp-memory-server"; do
+for dir in "integrations/browser-access" "integrations/claude-logger-mcp" "mcp-memory-server"; do
     if [[ -d "$CODING_REPO/$dir/node_modules" ]]; then
         rm -rf "$CODING_REPO/$dir/node_modules"
         echo "  Removed $dir/node_modules"

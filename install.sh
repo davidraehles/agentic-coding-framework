@@ -422,9 +422,9 @@ install_mcp_servers() {
     echo -e "\n${CYAN}🔌 Installing MCP servers...${NC}"
     
     # Install browser-access (Stagehand)
-    if [[ -d "$CODING_REPO/browser-access" ]]; then
+    if [[ -d "$CODING_REPO/integrations/browser-access" ]]; then
         info "Installing browser-access MCP server..."
-        cd "$CODING_REPO/browser-access"
+        cd "$CODING_REPO/integrations/browser-access"
         npm install || error_exit "Failed to install browser-access dependencies"
         npm run build || error_exit "Failed to build browser-access"
         chmod +x dist/index.js 2>/dev/null || true
@@ -434,9 +434,9 @@ install_mcp_servers() {
     fi
     
     # Install claude-logger MCP server (optional - used for manual logging only)
-    if [[ -d "$CODING_REPO/claude-logger-mcp" ]]; then
+    if [[ -d "$CODING_REPO/integrations/claude-logger-mcp" ]]; then
         info "Installing claude-logger MCP server..."
-        cd "$CODING_REPO/claude-logger-mcp"
+        cd "$CODING_REPO/integrations/claude-logger-mcp"
         npm install || error_exit "Failed to install claude-logger dependencies"
         if npm run build; then
             success "Claude-logger MCP server installed"
@@ -444,7 +444,7 @@ install_mcp_servers() {
             warning "Claude-logger build failed - continuing without it (automatic logging uses I/O interception)"
         fi
     else
-        warning "claude-logger-mcp directory not found, skipping..."
+        warning "integrations/claude-logger-mcp directory not found, skipping..."
     fi
 }
 

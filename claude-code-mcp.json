@@ -9,7 +9,7 @@
     },
     "browser-access": {
       "command": "node",
-      "args": ["{{CLAUDE_PROJECT_PATH}}/browser-access/dist/index.js"],
+      "args": ["{{CLAUDE_PROJECT_PATH}}/integrations/browser-access/dist/index.js"],
       "env": {
         "LOCAL_CDP_URL": "{{LOCAL_CDP_URL}}",
         "ANTHROPIC_API_KEY": "{{ANTHROPIC_API_KEY}}"
