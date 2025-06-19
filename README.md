@@ -27,6 +27,10 @@ This repository provides intelligent coding tools that work seamlessly with both
 
 ![Knowledge Visualization Details](docs/imag/viewer-details.png)
 
+## Viewer Implementation Details
+
+![Knowledge Visualization Implementation Details](docs/imag/viewer-details-impl.png)
+
 ## Agent-Agnostic Architecture
 
 ![Agent-Agnostic Architecture](docs/imag/agent-agnostic-architecture.png)
