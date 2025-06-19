@@ -116,6 +116,10 @@ ukb --list-entities           # Show all entities
 ukb --remove-entity EntityName
 ukb --remove-entities Entity1,Entity2,Entity3
 ukb --rename-entity OldName,NewName
+
+# Manage specific observations
+ukb --add-observation "EntityName|New observation to add"
+ukb --remove-observation "EntityName|Observation content to remove"
 ```
 
 ### Relation Management
@@ -236,6 +240,15 @@ vkb
 # - Search for specific patterns
 # - Navigate between connected concepts
 # - View detailed insight documentation
+```
+
+### 5. Cleaning Up Duplicate or Broken Links
+```bash
+# Scenario: Found duplicate or broken observation in entity
+ukb --remove-observation "MCPMemoryLoggingIntegrationPattern|Details: http://localhost:8080/knowledge-management/insights/mcpmemoryloggingintegration.md"
+
+# This removes specific observation content while preserving entity and other observations
+# Useful for fixing broken URLs or removing duplicate entries
 ```
 
 ## Pattern Compliance Rules
