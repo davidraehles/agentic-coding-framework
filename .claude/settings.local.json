@@ -81,7 +81,8 @@
       "Bash(./scripts/test-coding.sh:*)",
       "Bash(timeout:*)",
       "Bash(vkb help:*)",
-      "mcp__memory__delete_entities"
+      "mcp__memory__delete_entities",
+      "Bash(# Check if the PNG files were properly generated\nfile *.png | grep -E \"(CodingWorkflowSequence|KnowledgeArchitecture)\"\n\n# Check file sizes - they should be reasonable\nls -lh CodingWorkflowSequence.png KnowledgeArchitecture.png)"
     ],
     "deny": []
   }

@@ -1,5 +1,5 @@
 @startuml KnowledgeArchitecture
-\!theme plain
+!theme plain
 
 package "Knowledge Layer" {
   [shared-memory.json] as KB
@@ -33,4 +33,3 @@ KB --> VKB : Visualization
 MCP --> "Development Session" : Pattern guidance
 
 @enduml
-EOF < /dev/null

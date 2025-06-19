@@ -1,5 +1,5 @@
 @startuml CodingWorkflowSequence
-\!theme plain
+!theme plain
 
 participant Developer
 participant MCP as "MCP Memory"
@@ -38,4 +38,3 @@ UKB -> VKB: Update visualization
 Developer -> Git: Push to remote
 note right: Knowledge base\ntravels with code
 @enduml
-EOF < /dev/null

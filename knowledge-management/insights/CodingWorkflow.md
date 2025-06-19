@@ -323,25 +323,20 @@ git push origin main
 - Visualization server enables collaborative exploration
 - Standardized patterns ensure consistent code quality
 
-## Metrics and Benefits
+## Benefits
 
-### Quantified Improvements
-- **70% faster onboarding** for new team members
-- **90% reduction** in architectural inconsistencies  
+### Practical Improvements
 - **Cross-session knowledge retention** for AI assistants
 - **Comprehensive technical debt** assessment capability
-
-### Knowledge Capture Scale
-- Handles repositories with **10,000+ commits**
-- **90% time savings** on subsequent analysis runs
 - **Real-time visualization** of knowledge connections
 - **Structured insight capture** with significance ranking
+- **Consistent code quality** through pattern enforcement
 
 ## References
 
-- [ConditionalLoggingPattern](./ConditionalLoggingPattern.md) - Advanced logging system
-- [ReduxStateManagementPattern](./ReduxStateManagementPattern.md) - State management approach
-- [KnowledgePersistencePattern](./KnowledgePersistencePattern.md) - Cross-session knowledge retention
+- [ConditionalLoggingPattern](knowledge-management/insights/ConditionalLoggingPattern.md) - Advanced logging system
+- [ReduxStateManagementPattern](knowledge-management/insights/ReduxStateManagementPattern.md) - State management approach
+- [KnowledgePersistencePattern](knowledge-management/insights/KnowledgePersistencePattern.md) - Cross-session knowledge retention
 
 ---
 
