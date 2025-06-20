@@ -44,11 +44,40 @@ For comprehensive documentation, installation guides, architecture details, and 
 ### Quick Documentation Links
 
 - **[Installation Guide](docs/installation/quick-start.md)** - Get started in 30 seconds
+- **[Multi-Team Setup](docs/multi-team-setup.md)** - 🏢 Team-based knowledge isolation
 - **[UKB-CLI User Guide](docs/ukb/user-guide.md)** - Modern knowledge management workflows 
 - **[UkbCli Technical Architecture](knowledge-management/insights/UkbCli.md)** - Complete technical documentation with diagrams
 - **[VSCode Integration](docs/integrations/vscode-extension.md)** - GitHub Copilot chat integration
 - **[System Architecture](docs/architecture/system-overview.md)** - How it all works
 - **[Troubleshooting](docs/installation/network-setup.md)** - Common issues and solutions
+
+## 🏢 Multi-Team Knowledge Management
+
+The system supports team-based knowledge isolation while maintaining shared cross-team patterns:
+
+| Team | Focus | Technologies | Knowledge File |
+|------|-------|-------------|----------------|
+| **fw** | Frontend Web | React, TypeScript, CSS, HTML | `shared-memory-fw.json` |
+| **resi** | Resilience | C++, Systems, Performance | `shared-memory-resi.json` |
+| **raas** | RaaS | Java, DevOps, Microservices | `shared-memory-raas.json` |
+| **coding** | Cross-team | Architecture, Patterns | `shared-memory-coding.json` |
+
+```bash
+# Set your team during installation or manually
+export CODING_TEAM=fw
+
+# Team-specific knowledge management
+ukb --interactive    # Saves to your team's knowledge base
+vkb                  # Visualize your team's knowledge
+```
+
+**Key Features:**
+- ✅ Team knowledge isolation prevents pattern pollution
+- ✅ Shared cross-team patterns in `shared-memory-coding.json`
+- ✅ Automatic entity categorization by technology/keywords
+- ✅ Migration tools for existing knowledge bases
+
+**→ [Complete Multi-Team Guide](docs/multi-team-setup.md)**
 
 ## 🤖 Supported AI Agents
 
