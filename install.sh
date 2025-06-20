@@ -809,6 +809,19 @@ install_node_dependencies() {
         warning "Failed to install Playwright browsers. Browser automation may not work."
         INSTALLATION_WARNINGS+=("Playwright browsers not installed")
     fi
+    
+    # Install vkb-server dependencies
+    info "Installing vkb-server dependencies..."
+    if [ -d "$CODING_REPO/lib/vkb-server" ]; then
+        cd "$CODING_REPO/lib/vkb-server"
+        if npm install; then
+            success "✓ vkb-server dependencies installed"
+        else
+            warning "Failed to install vkb-server dependencies"
+            INSTALLATION_WARNINGS+=("vkb-server dependencies failed")
+        fi
+        cd "$CODING_REPO"
+    fi
 }
 
 # Create unified launcher
