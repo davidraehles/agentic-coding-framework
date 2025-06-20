@@ -32,56 +32,8 @@ echo ""
 colored_log "${BLUE}🚀 Starting GitHub CoPilot with Knowledge Management Integration${NC}"
 colored_log "${CYAN}📋 Initializing fallback services...${NC}"
 
-# Create a service manager script
+# Use existing service manager script
 SERVICE_SCRIPT="$PROJECT_DIR/lib/start-fallback-services.js"
-
-if [ ! -f "$SERVICE_SCRIPT" ]; then
-  colored_log "${CYAN}🔧 Creating fallback services manager...${NC}"
-  cat > "$SERVICE_SCRIPT" << 'EOF'
-#!/usr/bin/env node
-
-const { CoPilotAdapter } = require('./adapters/copilot');
-
-async function startServices() {
-  try {
-    console.log('Initializing CoPilot fallback services...');
-    
-    const adapter = new CoPilotAdapter();
-    await adapter.initialize();
-    
-    console.log('✓ All fallback services started successfully');
-    console.log('Services running in background...');
-    
-    // Keep the process alive
-    process.on('SIGINT', async () => {
-      console.log('\nShutting down fallback services...');
-      await adapter.cleanup();
-      process.exit(0);
-    });
-    
-    process.on('SIGTERM', async () => {
-      console.log('\nShutting down fallback services...');
-      await adapter.cleanup();
-      process.exit(0);
-    });
-    
-    // Keep alive
-    setInterval(() => {}, 1000);
-    
-  } catch (error) {
-    console.error('Failed to start fallback services:', error.message);
-    process.exit(1);
-  }
-}
-
-if (require.main === module) {
-  startServices();
-}
-
-module.exports = { startServices };
-EOF
-  chmod +x "$SERVICE_SCRIPT"
-fi
 
 # Start the services in background
 node "$SERVICE_SCRIPT" &
@@ -112,7 +64,7 @@ if [[ "$1" == "--service-only" ]]; then
   cat > "$PROJECT_DIR/lib/start-http-server.js" << 'EOF'
 #!/usr/bin/env node
 
-const { CopilotHTTPServer } = require('./adapters/copilot-http-server');
+import { CopilotHTTPServer } from './adapters/copilot-http-server.js';
 
 async function startHTTPServer() {
   try {
