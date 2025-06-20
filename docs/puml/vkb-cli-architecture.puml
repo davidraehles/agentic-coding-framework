@@ -1,0 +1,62 @@
+@startuml vkb-cli-architecture
+!theme amiga
+title VKB-CLI Architecture
+
+package "Command Layer" {
+  [vkb (bash wrapper)] as vkb
+  [vkb-cli.js] as vkbcli
+}
+
+package "VKB Server Module (lib/vkb-server)" {
+  [index.js\n(VKBServer class)] as index
+  [cli.js\n(Commander CLI)] as cli
+  [server-manager.js] as servermgr
+  [data-processor.js] as dataproc
+  [utils/logging.js] as logging
+}
+
+package "External Dependencies" {
+  [Python 3\nHTTP Server] as python
+  [memory-visualizer\n(React App)] as visualizer
+  [shared-memory.json] as sharedmem
+  [knowledge-management/] as km
+}
+
+package "Node.js Dependencies" {
+  [commander] as commander
+  [chalk] as chalk
+  [node-fetch] as fetch
+}
+
+' Command flow
+vkb --> vkbcli : delegates all commands
+vkbcli --> cli : spawns CLI process
+
+' CLI routing
+cli --> index : server operations
+
+' VKBServer operations
+index --> servermgr : start/stop/status
+index --> dataproc : prepare data
+index --> logging : log messages
+
+' Server management
+servermgr --> python : spawn/kill process
+servermgr --> fetch : health checks
+
+' Data processing
+dataproc --> sharedmem : read/convert
+dataproc --> km : create symlink
+dataproc --> visualizer : write NDJSON
+
+' External deps
+cli --> commander : CLI framework
+logging --> chalk : colored output
+servermgr --> fetch : HTTP requests
+
+note right of vkb : Minimal wrapper\n~130 lines\n(was 579 lines)
+note right of index : Core API\nProgrammatic access
+note right of servermgr : Process lifecycle\nPort management
+note right of dataproc : NDJSON conversion\nData preparation
+
+@enduml

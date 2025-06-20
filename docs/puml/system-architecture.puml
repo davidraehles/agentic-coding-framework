@@ -6,6 +6,8 @@ package "Knowledge Capture Layer" {
   [Git Repository] as git
   [Conversation Logs] as logs
   [UKB Command] as ukb
+  [UKB-CLI (Node.js)] as ukbcli
+  [Knowledge API] as kapi
   [Commit Analysis] as analysis
   [Semantic Analysis] as semantic
 }
@@ -17,6 +19,8 @@ package "Data Storage Layer" {
 
 package "Visualization Layer" {
   [VKB Command] as vkb
+  [VKB-CLI (Node.js)] as vkbcli
+  [VKB Server Manager] as vkbserver
   [HTTP Server] as server
   [Memory Visualizer] as visualizer
   [Web Browser] as browser
@@ -29,13 +33,17 @@ package "MCP Integration" {
 
 git --> analysis : Commit data
 logs --> semantic : Conversation data
-analysis --> ukb : Extracted insights
-semantic --> ukb : Pattern insights
-ukb --> storage : Knowledge graph updates
+analysis --> ukbcli : Extracted insights
+semantic --> ukbcli : Pattern insights
+ukb --> ukbcli : Delegates to
+ukbcli --> kapi : Uses API
+kapi --> storage : Knowledge graph updates
 storage --> backups : Automated backups
 
-storage --> vkb : Read memory data
-vkb --> server : Start/manage server
+storage --> vkbcli : Read memory data
+vkb --> vkbcli : Delegates to
+vkbcli --> vkbserver : Server management
+vkbserver --> server : Start/manage server
 server --> visualizer : Serve graph data
 visualizer --> browser : Interactive visualization
 

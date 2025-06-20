@@ -1,0 +1,68 @@
+@startuml vkb-cli-sequence-start
+!theme amiga
+title VKB Server Startup Sequence
+
+actor User
+participant "vkb\n(bash)" as vkb
+participant "vkb-cli.js" as vkbcli
+participant "CLI\n(Commander)" as cli
+participant "VKBServer" as server
+participant "DataProcessor" as dataproc
+participant "ServerManager" as servermgr
+participant "Python HTTP\nServer" as python
+participant "Browser" as browser
+
+User -> vkb: vkb start
+activate vkb
+vkb -> vkbcli: node vkb-cli.js server start
+activate vkbcli
+vkbcli -> cli: spawn process
+activate cli
+
+cli -> server: new VKBServer()
+activate server
+server -> server: initialize components
+
+cli -> server: start()
+server -> servermgr: isRunning()
+activate servermgr
+servermgr -> servermgr: check PID file
+servermgr -> servermgr: check port 8080
+servermgr --> server: false (not running)
+deactivate servermgr
+
+server -> dataproc: prepareData()
+activate dataproc
+dataproc -> dataproc: validate paths
+dataproc -> dataproc: create km symlink
+dataproc -> dataproc: process memory.json
+dataproc -> dataproc: write NDJSON
+dataproc --> server: success
+deactivate dataproc
+
+server -> servermgr: start()
+activate servermgr
+servermgr -> python: spawn process
+activate python
+python -> python: bind to port 8080
+python --> servermgr: PID
+servermgr -> servermgr: save PID file
+servermgr -> servermgr: waitForServer()
+servermgr --> server: {success: true, pid: 12345}
+deactivate servermgr
+
+server --> cli: {url: "http://localhost:8080", pid: 12345}
+cli -> browser: open URL
+activate browser
+
+cli --> vkbcli: exit(0)
+deactivate cli
+vkbcli --> vkb: exit(0)
+deactivate vkbcli
+vkb --> User: Server started at http://localhost:8080
+deactivate vkb
+
+note over python: Running in background
+note over browser: Displays knowledge graph
+
+@enduml
