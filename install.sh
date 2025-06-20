@@ -783,6 +783,84 @@ detect_agents() {
     return 0
 }
 
+# Configure team-based knowledge management
+configure_team_setup() {
+    echo ""
+    echo -e "${PURPLE}🏢 Multi-Team Knowledge Base Configuration${NC}"
+    echo -e "${PURPLE}=========================================${NC}"
+    echo ""
+    
+    info "The system supports team-specific knowledge bases for better organization:"
+    echo "  • fw     - Frontend Web development (React, TypeScript, etc.)"
+    echo "  • resi   - Resilience engineering (C++, systems, performance)"
+    echo "  • raas   - RaaS development (Java, DevOps, microservices)"
+    echo "  • custom - Custom team name"
+    echo "  • none   - Individual developer (default single knowledge base)"
+    echo ""
+    
+    local team_choice=""
+    while true; do
+        echo -e "${CYAN}Select your team configuration:${NC}"
+        echo "1) Individual developer (single knowledge base)"
+        echo "2) Frontend Web team (fw)"
+        echo "3) Resilience team (resi)"
+        echo "4) RaaS team (raas)"
+        echo "5) Custom team name"
+        echo ""
+        read -p "Choice [1-5]: " team_choice
+        
+        case $team_choice in
+            1)
+                info "Configured for individual developer setup"
+                # No CODING_TEAM variable set - uses default behavior
+                break
+                ;;
+            2)
+                export CODING_TEAM="fw"
+                info "Configured for Frontend Web team (CODING_TEAM=fw)"
+                break
+                ;;
+            3)
+                export CODING_TEAM="resi"
+                info "Configured for Resilience team (CODING_TEAM=resi)"
+                break
+                ;;
+            4)
+                export CODING_TEAM="raas"
+                info "Configured for RaaS team (CODING_TEAM=raas)"
+                break
+                ;;
+            5)
+                read -p "Enter custom team name: " custom_team
+                if [[ -n "$custom_team" && "$custom_team" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                    export CODING_TEAM="$custom_team"
+                    info "Configured for custom team: $custom_team (CODING_TEAM=$custom_team)"
+                    break
+                else
+                    error "Invalid team name. Use only letters, numbers, hyphens, and underscores."
+                fi
+                ;;
+            *)
+                error "Invalid choice. Please select 1-5."
+                ;;
+        esac
+    done
+    
+    # Add to shell environment if team is set
+    if [[ -n "${CODING_TEAM:-}" ]]; then
+        echo "" >> "$SHELL_RC"
+        echo "# Coding Tools - Team Configuration" >> "$SHELL_RC"
+        echo "export CODING_TEAM=\"$CODING_TEAM\"" >> "$SHELL_RC"
+        success "Team configuration added to $SHELL_RC"
+        
+        info "Your team will use these knowledge files:"
+        echo "  • shared-memory-coding.json (cross-team patterns)"
+        echo "  • shared-memory-${CODING_TEAM}.json (team-specific knowledge)"
+    else
+        info "Using default single knowledge base: shared-memory.json"
+    fi
+}
+
 # Install Node.js dependencies for agent-agnostic functionality
 install_node_dependencies() {
     info "Installing Node.js dependencies for agent-agnostic functionality..."
@@ -928,6 +1006,7 @@ main() {
     # Run installation steps
     check_dependencies
     detect_agents
+    configure_team_setup
     install_node_dependencies
     detect_network_and_set_repos
     test_proxy_connectivity

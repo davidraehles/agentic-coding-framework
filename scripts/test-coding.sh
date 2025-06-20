@@ -350,6 +350,62 @@ else
     print_fixed "Memory visualizer installed and built"
 fi
 
+print_test "Multi-Team Knowledge Base Configuration"
+
+print_check "Team environment variable"
+if [ -n "$CODING_TEAM" ]; then
+    print_pass "CODING_TEAM set to: $CODING_TEAM"
+    
+    print_check "Team-specific knowledge base file"
+    TEAM_FILE="$CODING_ROOT/shared-memory-${CODING_TEAM}.json"
+    if file_exists "$TEAM_FILE"; then
+        print_pass "Team knowledge file exists: shared-memory-${CODING_TEAM}.json"
+        if [ -s "$TEAM_FILE" ]; then
+            TEAM_ENTITIES=$(jq '.entities | length' "$TEAM_FILE" 2>/dev/null || echo "0")
+            print_info "Team knowledge file contains $TEAM_ENTITIES entities"
+        fi
+    else
+        print_warning "Team knowledge file not found: shared-memory-${CODING_TEAM}.json"
+        print_info "Will be created when team adds first entity"
+    fi
+else
+    print_info "CODING_TEAM not set - using individual developer mode"
+fi
+
+print_check "Cross-team coding knowledge base"
+CODING_FILE="$CODING_ROOT/shared-memory-coding.json"
+if file_exists "$CODING_FILE"; then
+    print_pass "Cross-team coding knowledge file exists"
+    if [ -s "$CODING_FILE" ]; then
+        CODING_ENTITIES=$(jq '.entities | length' "$CODING_FILE" 2>/dev/null || echo "0")
+        print_info "Coding knowledge file contains $CODING_ENTITIES entities"
+    fi
+else
+    print_warning "Cross-team coding knowledge file not found"
+    print_info "Migration may be needed if using team setup"
+fi
+
+print_check "Migration script availability"
+MIGRATION_SCRIPT="$CODING_ROOT/scripts/migrate-to-multi-team.js"
+if file_exists "$MIGRATION_SCRIPT"; then
+    print_pass "Multi-team migration script available"
+    if file_exists "$CODING_ROOT/shared-memory.json" && [ ! -f "$CODING_FILE" ]; then
+        print_info "Consider running: node scripts/migrate-to-multi-team.js"
+    fi
+else
+    print_fail "Migration script not found"
+fi
+
+print_check "Team-aware UKB functionality"
+if command_exists ukb && [ -n "$CODING_TEAM" ]; then
+    if ukb --status --team "$CODING_TEAM" >/dev/null 2>&1; then
+        print_pass "UKB team functionality working"
+    else
+        print_warning "UKB team functionality may have issues"
+        print_info "Try: ukb --status --team $CODING_TEAM"
+    fi
+fi
+
 # =============================================================================
 # PHASE 4: AGENT DETECTION & AVAILABILITY
 # =============================================================================

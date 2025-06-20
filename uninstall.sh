@@ -17,7 +17,7 @@ echo -e "${YELLOW}🗑️  Coding Tools System - Uninstaller${NC}"
 echo -e "${YELLOW}=========================================${NC}"
 echo ""
 echo -e "${RED}⚠️  WARNING: This will remove installed components${NC}"
-echo -e "${GREEN}✅ Your knowledge data (shared-memory.json) will be preserved${NC}"
+echo -e "${GREEN}✅ Your knowledge data (shared-memory*.json) will be preserved${NC}"
 echo ""
 read -p "Continue with uninstall? (y/N) " -n 1 -r
 echo
@@ -37,6 +37,9 @@ for rc_file in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile"; do
         # Remove any CODING_TOOLS_PATH or CODING_REPO entries
         sed -i '/CODING_TOOLS_PATH/d' "$rc_file" 2>/dev/null || true
         sed -i '/CODING_REPO/d' "$rc_file" 2>/dev/null || true
+        # Remove team configuration
+        sed -i '/# Coding Tools - Team Configuration/,+1d' "$rc_file" 2>/dev/null || true
+        sed -i '/CODING_TEAM/d' "$rc_file" 2>/dev/null || true
         # Remove any PATH additions for coding tools
         sed -i '/knowledge-management.*coding/d' "$rc_file" 2>/dev/null || true
         echo "  Cleaned $rc_file"
@@ -86,7 +89,18 @@ rm -f /tmp/ukb-*.log 2>/dev/null || true
 rm -f /tmp/vkb-server.* 2>/dev/null || true
 
 echo -e "\n${GREEN}✅ Uninstall completed!${NC}"
-echo -e "${GREEN}📊 Your knowledge data has been preserved in:${NC}"
-echo "   $CODING_REPO/shared-memory.json"
+echo -e "${GREEN}📊 Your knowledge data has been preserved:${NC}"
+echo "   $CODING_REPO/shared-memory.json (if exists)"
+
+# List team-specific knowledge files
+TEAM_FILES=$(find "$CODING_REPO" -name "shared-memory-*.json" 2>/dev/null || true)
+if [[ -n "$TEAM_FILES" ]]; then
+    echo -e "${GREEN}📊 Team-specific knowledge files preserved:${NC}"
+    echo "$TEAM_FILES" | while read -r file; do
+        [[ -n "$file" ]] && echo "   $(basename "$file")"
+    done
+fi
+
 echo ""
 echo "To reinstall, run: ./install.sh"
+echo "Your team configuration will need to be set up again during installation."

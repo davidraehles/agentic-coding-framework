@@ -1,0 +1,99 @@
+{
+  "entities": [
+    {
+      "name": "ViewportCullingOptimizationPattern",
+      "entityType": "TransferablePattern",
+      "observations": [
+        {
+          "date": "2025-06-17T16:26:18Z",
+          "metadata": {
+            "source": "semantic-codebase-analysis"
+          },
+          "type": "problem",
+          "content": "Rendering 800+ 3D timeline events causes performance degradation below 60fps and visual jumping"
+        },
+        {
+          "date": "2025-06-17T16:26:18Z",
+          "metadata": {
+            "source": "semantic-codebase-analysis"
+          },
+          "type": "solution",
+          "content": "Implement balanced marker-centric viewport culling with anti-jump algorithm"
+        },
+        {
+          "date": "2025-06-17T16:26:18Z",
+          "metadata": {
+            "source": "semantic-codebase-analysis"
+          },
+          "type": "implementation",
+          "content": "Protected zone around marker (maxEvents/4), proportional left-right removal, stride-based thinning"
+        },
+        {
+          "date": "2025-06-17T16:26:18Z",
+          "metadata": {
+            "source": "semantic-codebase-analysis"
+          },
+          "type": "performance",
+          "content": "75-90% reduction in rendered objects while maintaining smooth 60fps"
+        },
+        {
+          "date": "2025-06-17T16:26:18Z",
+          "metadata": {
+            "source": "semantic-codebase-analysis"
+          },
+          "type": "link",
+          "content": "Details: http://localhost:8080/knowledge-management/insights/ViewportCullingPattern.md"
+        }
+      ],
+      "significance": 5,
+      "problem": {},
+      "solution": {},
+      "metadata": {
+        "created_at": "2025-06-18T15:17:44.017Z",
+        "last_updated": "2025-06-19T11:25:29Z"
+      },
+      "quick_reference": {
+        "trigger": "Rendering 800+ 3D objects causing performance degradation below 60fps",
+        "action": "Implement balanced marker-centric viewport culling with anti-jump algorithm",
+        "avoid": "Naive culling causing visual jumping, rendering all objects regardless of visibility",
+        "check": "75-90% reduction in rendered objects while maintaining smooth 60fps"
+      },
+      "id": "mc4flkg6dvugvlx70vd"
+    },
+    {
+      "id": "a7bbfb49-c5ce-428d-9676-9fd22885ac4d",
+      "name": "ReSiTestPattern",
+      "entityType": "TechnicalPattern",
+      "observations": [
+        "C++ memory optimization pattern for embedded systems"
+      ],
+      "significance": "8",
+      "created": "2025-06-20T11:21:39.109Z",
+      "updated": "2025-06-20T11:21:39.109Z",
+      "metadata": {
+        "created_by": "knowledge-api",
+        "version": "2.0.0"
+      }
+    }
+  ],
+  "relations": [],
+  "metadata": {
+    "version": "2.0.0",
+    "created": "2025-06-06T10:00:00Z",
+    "last_updated": "2025-06-20T11:21:39.109Z",
+    "contributors": [
+      "agent-q284340",
+      "q284340"
+    ],
+    "total_entities": 1,
+    "total_relations": 0,
+    "source": "curated_high_value_patterns",
+    "last_mode": "automatic",
+    "schema_version": "2.0.0",
+    "cleanup_performed": "2025-06-18T15:57:54.158Z",
+    "garbage_removal_performed": "2025-06-18T15:57:54.115Z",
+    "team": "resi",
+    "description": "Resilience team knowledge",
+    "created_from_migration": "2025-06-20T11:17:47.390Z"
+  }
+}
