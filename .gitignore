@@ -53,7 +53,7 @@ memory-visualizer/
 .activate
 
 # VSCode extension build artifacts
-vscode-km-copilot/*.vsix
+integrations/vscode-km-copilot/*.vsix
 
 # Process ID files
 *.pid
