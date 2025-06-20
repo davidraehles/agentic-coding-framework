@@ -1,5 +1,8 @@
 @startuml ukb-cli-integration
-!theme materia-outline
+!theme plain
+skinparam backgroundColor white
+skinparam roundcorner 20
+skinparam shadowing false
 title UkbCli Integration with UKB Bash Script
 
 actor "Developer" as dev

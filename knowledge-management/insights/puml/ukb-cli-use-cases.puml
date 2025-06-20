@@ -1,5 +1,8 @@
 @startuml ukb-cli-use-cases
-!theme materia-outline
+!theme plain
+skinparam backgroundColor white
+skinparam roundcorner 20
+skinparam shadowing false
 title UkbCli - Use Cases and Workflows
 
 left to right direction

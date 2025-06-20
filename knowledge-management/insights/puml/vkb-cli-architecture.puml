@@ -1,0 +1,43 @@
+@startuml vkb-cli-architecture
+!theme plain
+skinparam backgroundColor white
+skinparam roundcorner 20
+skinparam shadowing false
+
+title VKB CLI Server Management Architecture
+
+package "VKB CLI System" {
+  [CLI Interface] as CLI
+  [VKBServer API] as Server
+  [Data Processor] as Data
+  [Web Server] as Web
+}
+
+package "External Dependencies" {
+  [shared-memory.json] as JSON
+  [Node.js HTTP] as HTTP
+  [Express Server] as Express
+}
+
+CLI --> Server : command routing
+Server --> Data : data processing
+Server --> Web : server control
+Data --> JSON : read knowledge base
+Web --> HTTP : server management
+Web --> Express : web interface
+
+note right of Server
+  - Server lifecycle management
+  - Process control and monitoring
+  - Cross-platform compatibility
+  - Error handling and recovery
+end note
+
+note right of Data
+  - NDJSON conversion
+  - Entity/relation processing
+  - Insight file linking
+  - Memory data preparation
+end note
+
+@enduml

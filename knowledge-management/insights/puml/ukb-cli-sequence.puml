@@ -1,5 +1,8 @@
 @startuml ukb-cli-sequence
-!theme materia-outline
+!theme plain
+skinparam backgroundColor white
+skinparam roundcorner 20
+skinparam shadowing false
 title UkbCli - Detailed Workflow Sequence
 
 actor "Developer" as dev

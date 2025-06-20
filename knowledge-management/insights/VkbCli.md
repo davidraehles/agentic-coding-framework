@@ -8,7 +8,7 @@
 
 ### System Design
 
-![VkbCli Architecture](../../docs/imag/vkb-cli-architecture.png)
+![VkbCli Architecture](images/vkb-cli-architecture.png)
 
 The VkbCli system follows a modular architecture with clear separation of concerns:
 
@@ -170,7 +170,7 @@ vkb logs > server-debug.log
 
 ## Server Startup Sequence
 
-![VkbCli Server Startup](../../docs/imag/vkb-cli-sequence-start.png)
+![VkbCli Server Lifecycle](images/vkb-cli-lifecycle.png)
 
 The above sequence diagram shows the complete workflow for server startup, including:
 
