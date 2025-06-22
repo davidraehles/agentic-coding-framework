@@ -1,6 +1,6 @@
 # Automatic Conversation Logging
 
-![Claude MCP Auto-Logging](../imag/claude-mcp-autologging.png)
+![Claude MCP Auto-Logging](../images/claude-mcp-autologging.png)
 
 ## Overview
 
