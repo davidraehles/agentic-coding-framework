@@ -21,23 +21,23 @@ This repository provides intelligent coding tools that work seamlessly with both
 
 ## Knowledge-Base Viewer
 
-![Knowledge Visualization](docs/imag/viewer.png)
+![Knowledge Visualization](docs/images/viewer.png)
 
 ## Viewer Details Mode
 
-![Knowledge Visualization Details](docs/imag/viewer-details.png)
+![Knowledge Visualization Details](docs/images/viewer-details.png)
 
 ## Viewer Implementation Details
 
-![Knowledge Visualization Implementation Details](docs/imag/viewer-details-impl.png)
+![Knowledge Visualization Implementation Details](docs/images/viewer-details-impl.png)
 
 ## Viewer View Selection
 
-![Knowledge Visualization View Selection](docs/imag/viewer-view-selection.png)
+![Knowledge Visualization View Selection](docs/images/viewer-view-selection.png)
 
 ## Agent-Agnostic Architecture
 
-![Agent-Agnostic Architecture](docs/imag/agent-agnostic-architecture.png)
+![Agent-Agnostic Architecture](docs/images/agent-agnostic-architecture.png)
 
 ## 📚 Documentation
 
@@ -133,7 +133,7 @@ vkb                  # Visualize your team's knowledge
 - **[Team Setup Guide](docs/team-knowledge-setup.md)** - Multi-agent team collaboration
 
 ### Development  
-- **[Architecture Diagrams](docs/imag/)** - System architecture and workflow diagrams
+- **[Architecture Diagrams](docs/images/)** - System architecture and workflow diagrams
 - **[Insights Library](knowledge-management/insights/)** - Transferable patterns and solutions
 - **[API Reference](docs/api-reference.md)** - Agent adapter APIs
 
