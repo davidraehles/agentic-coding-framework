@@ -8,9 +8,30 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables from coding/.env
+const envPath = path.join(__dirname, '..', '.env');
+try {
+  const envContent = readFileSync(envPath, 'utf8');
+  const envVars = envContent.split('\n')
+    .filter(line => line.trim() && !line.startsWith('#'))
+    .reduce((acc, line) => {
+      const [key, ...values] = line.split('=');
+      if (key && values.length) {
+        acc[key.trim()] = values.join('=').trim();
+      }
+      return acc;
+    }, {});
+  
+  // Set environment variables
+  Object.assign(process.env, envVars);
+} catch (error) {
+  console.warn('Warning: Could not load .env file from coding directory');
+}
 
 // Path to the actual CLI implementation
 const cliPath = path.join(__dirname, '..', 'lib', 'knowledge-api', 'cli.js');
