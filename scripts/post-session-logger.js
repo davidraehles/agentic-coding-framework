@@ -151,6 +151,31 @@ class PostSessionLogger {
   detectCodingContent(content) {
     const lowerContent = content.toLowerCase();
     
+    // First, check for explicit project-specific indicators that should NOT go to coding
+    const projectSpecificIndicators = [
+      // Timeline project specific
+      /timeline.*shared-memory\.json/,
+      /shared-memory\.json.*timeline/,
+      /vite.*proxy.*port.*calendar/,
+      /calendar.*data.*api/,
+      /timeline.*project.*issue/,
+      
+      // Document structure fixes (non-coding specific)
+      /docs\/documentation\.md.*structure/,
+      /fix.*document.*structure.*coherent/,
+      /table\s+of\s+contents.*ordinal\s+numbers/,
+      
+      // General project-specific patterns
+      /\.specstory\/history\s+(data|files?|directory)(?!.*coding)/,
+      /extract.*\.specstory.*data(?!.*coding)/,
+      /read.*\.specstory.*files?(?!.*coding)/
+    ];
+    
+    // If it matches project-specific patterns, it's NOT coding-related
+    if (projectSpecificIndicators.some(pattern => pattern.test(lowerContent))) {
+      return false;
+    }
+    
     // Semantic patterns for coding infrastructure discussions
     const codingPatterns = [
       // Knowledge base management tools
@@ -162,16 +187,20 @@ class PostSessionLogger {
       /\bmcp\s+(server|client|tool|development|integration)/,
       /claude[\s-]?mcp\s+(setup|configuration|development)/,
       /claude\s+tools?\s+(development|setup|configuration)/,
+      /mcp\s+memory\s+(server|sync|management)/,
       
       // Logging infrastructure (not just any .specstory mention)
       /specstory\s+(logger|logging|mechanism|infrastructure)/,
       /claude[\s-]?logger\s+(setup|configuration|development)/,
       /post[\s-]?session[\s-]?logg(er|ing)/,
       /automatic\s+logging\s+(setup|mechanism|infrastructure)/,
+      /conversation\s+logging\s+(mechanism|fix|issue)/,
       
       // Coding repository specific
       /coding\s+(project|repo|repository)\s+(setup|configuration|tools)/,
       /agentic\/coding\s+(directory|folder|repository)/,
+      /coding\s+mechanism.*fix/,
+      /fix.*coding\s+mechanism/,
       
       // Infrastructure and tooling
       /install\.sh\s+(script|setup|configuration)/,
@@ -182,32 +211,27 @@ class PostSessionLogger {
       // Cross-project patterns and knowledge transfer
       /transferable\s+pattern/,
       /cross[\s-]?project\s+(knowledge|pattern|tool)/,
-      /shared\s+knowledge\s+(management|system)/
+      /shared\s+knowledge\s+(management|system)/,
+      
+      // Claude.md and coding instructions
+      /claude\.md\s+(instructions|update|fix)/,
+      /coding\s+instructions/
     ];
     
-    // Check semantic patterns first
+    // Check semantic patterns
     const hasSemanticMatch = codingPatterns.some(pattern => pattern.test(lowerContent));
     if (hasSemanticMatch) return true;
     
-    // Fallback to specific unambiguous keywords
+    // Specific unambiguous keywords that always indicate coding-related content
     const unambiguousKeywords = [
       'ukb', 'vkb', // These are always coding-related
       'agentic/coding',
       'coding_repo',
-      'todowrite', 'todoread' // These are Claude Code specific tools
+      'todowrite', 'todoread', // These are Claude Code specific tools
+      'mcp__memory__', // MCP memory operations
+      'claude-mcp', // Claude MCP command
+      'shared-memory-coding.json' // Coding-specific knowledge base
     ];
-    
-    // Context-aware detection: if discussing .specstory in context of timeline data, it's NOT coding-related
-    const timelineContext = [
-      /\.specstory\/history\s+(data|files?|directory)/,
-      /timeline.*\.specstory/,
-      /\.specstory.*timeline/,
-      /extract.*\.specstory.*data/,
-      /read.*\.specstory.*files?/
-    ];
-    
-    const isTimelineContext = timelineContext.some(pattern => pattern.test(lowerContent));
-    if (isTimelineContext) return false;
     
     return unambiguousKeywords.some(keyword => lowerContent.includes(keyword));
   }
