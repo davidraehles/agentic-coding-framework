@@ -104,6 +104,11 @@ ukb --auto                    # Explicit auto mode
 # Interactive mode - guided insight capture
 ukb --interactive             # Manual deep insight capture
 ukb --agent                   # Semantic analysis mode
+
+# AI-Powered analysis via MCP tools (when using claude-mcp)
+analyze_repository { "repository": ".", "depth": 15 }
+analyze_conversation { "content": "meeting transcript" }
+start_workflow { "workflowType": "repository-analysis" }
 ```
 
 ### Entity Management
@@ -377,13 +382,31 @@ knowledge-management/
 
 ### Claude Code Integration
 ```bash
-# Start with MCP features
+# Start with MCP features (includes semantic analysis system)
 claude-mcp
 
 # Auto-loads knowledge base at session start
 # Provides pattern guidance during development
 # Captures insights automatically
+
+# Available AI-powered tools:
+# - analyze_repository: Intelligent code analysis
+# - analyze_conversation: Extract insights from discussions  
+# - search_web: Technical documentation search
+# - start_workflow: Complex multi-agent workflows
+# - sync_with_ukb: Integrate with knowledge base
 ```
+
+### Semantic Analysis System Integration
+
+The semantic analysis system provides AI-powered knowledge management through:
+
+![Semantic Analysis Integration](../../docs/images/semantic-analysis-integration.png)
+
+- **Multi-Agent Architecture**: 4 specialized agents for comprehensive analysis
+- **Hybrid Communication**: MQTT + JSON-RPC for scalable processing
+- **LLM Integration**: Claude (primary) and OpenAI (fallback) providers
+- **Backward Compatibility**: Seamless integration with existing ukb/vkb tools
 
 ### Git Integration
 ```bash
@@ -394,6 +417,7 @@ git push origin main
 ```
 
 ### Team Collaboration
+
 - Knowledge base is git-tracked for team sharing
 - Visualization server enables collaborative exploration
 - Standardized patterns ensure consistent code quality
@@ -401,6 +425,7 @@ git push origin main
 ## Benefits
 
 ### Practical Improvements
+
 - **Cross-session knowledge retention** for AI assistants
 - **Comprehensive technical debt** assessment capability
 - **Real-time visualization** of knowledge connections

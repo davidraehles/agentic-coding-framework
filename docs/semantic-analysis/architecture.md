@@ -123,7 +123,7 @@ class BaseAgent extends EventEmitter {
 
 ## Communication Architecture
 
-![Communication Architecture](../images/semantic-analysis-communication.png)
+![Communication Architecture](../images/semantic-analysis-communication-vertical.png)
 
 ### MQTT Event Bus
 

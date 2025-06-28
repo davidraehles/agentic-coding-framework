@@ -1,0 +1,76 @@
+@startuml semantic-analysis-communication-vertical
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Semantic Analysis System - Communication Architecture
+
+package "Client Layer" {
+  component [Claude Code] as claude
+  component [External APIs] as apis
+  component [Command Line] as cli
+}
+
+package "Integration Layer" {
+  component [MCP Server] as mcp
+  note right of mcp
+    • Tool registration
+    • Request routing
+    • Response formatting
+  end note
+}
+
+package "Communication Infrastructure" {
+  component [MQTT Broker] as mqtt
+  note right of mqtt
+    • Async event bus
+    • Topic-based messaging
+    • Agent coordination
+  end note
+  
+  component [JSON-RPC Server] as rpc
+  note right of rpc
+    • Sync request/response
+    • Direct method calls
+    • Immediate results
+  end note
+}
+
+package "Agent Network" {
+  component [Semantic Analysis] as sa
+  component [Web Search] as ws
+  component [Knowledge Graph] as kg
+  component [Coordinator] as coord
+}
+
+' Vertical connection flow
+claude --> mcp : tool calls
+apis --> rpc : direct API
+cli --> rpc : commands
+
+mcp --> mqtt : async events
+mcp --> rpc : sync calls
+
+mqtt --> sa : subscribe/publish
+mqtt --> ws : subscribe/publish
+mqtt --> kg : subscribe/publish
+mqtt --> coord : subscribe/publish
+
+rpc --> sa : method calls
+rpc --> ws : method calls
+rpc --> kg : method calls
+rpc --> coord : method calls
+
+' Return paths
+sa --> mqtt : results
+ws --> mqtt : results
+kg --> mqtt : results
+coord --> mqtt : results
+
+sa --> rpc : responses
+ws --> rpc : responses
+kg --> rpc : responses
+coord --> rpc : responses
+
+@enduml

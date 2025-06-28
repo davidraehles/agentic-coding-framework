@@ -62,7 +62,41 @@ This document captures an agent-agnostic knowledge management system that works 
 
 ## System Architecture
 
-![Knowledge Management System Architecture](images/knowledge-management-system-architecture.png)
+![Knowledge Management System Architecture](images/knowledge-management-system-architecture-enhanced.png)
+
+### Enhanced AI-Powered Analysis (NEW)
+
+The system now includes a comprehensive **Semantic Analysis System** that provides AI-powered knowledge management through a multi-agent architecture:
+
+![Semantic Analysis Integration](../../docs/images/semantic-analysis-integration.png)
+
+#### Key Enhancements:
+
+**Multi-Agent Network:**
+- **Semantic Analysis Agent**: LLM-powered code and conversation analysis
+- **Web Search Agent**: Intelligent technical documentation search  
+- **Knowledge Graph Agent**: Automated entity creation and relationship mapping
+- **Coordinator Agent**: Complex workflow orchestration across agents
+
+**AI-Powered Tools (via MCP):**
+```bash
+# Available when using claude-mcp
+analyze_repository { "repository": ".", "depth": 15 }
+analyze_conversation { "content": "meeting transcript" }
+search_web { "query": "React performance patterns" }
+start_workflow { "workflowType": "repository-analysis" }
+sync_with_ukb { "direction": "bidirectional" }
+```
+
+**Hybrid Communication:**
+- **MQTT**: Asynchronous event-driven coordination between agents
+- **JSON-RPC**: Synchronous request-response for immediate results
+- **MCP Tools**: Direct integration with Claude Code conversations
+
+**Backward Compatibility:**
+- Traditional `ukb` and `vkb` commands continue to work
+- AI tools enhance but don't replace manual workflows  
+- Seamless integration with existing shared-memory.json format
 
 ## Interactive Knowledge Visualizer
 
@@ -141,11 +175,11 @@ UKB Engine → shared-memory.json → [Optional: MCP Sync Instructions → AI Ag
 
 ### System Integration Architecture
 
-![MCP Integration Architecture](images/mcp-integration-compact.png)
+![MCP Integration Architecture](images/mcp-integration-enhanced.png)
 
 ### Detailed System Architecture
 
-![Detailed System Architecture](images/detailed-system-architecture.png)
+![Detailed System Architecture](images/detailed-system-architecture-enhanced.png)
 
 **Key Architectural Points:**
 - **MCP Servers** run as separate processes communicating with Claude via JSON-RPC over stdio
@@ -174,6 +208,48 @@ UKB Engine → shared-memory.json → [Optional: MCP Sync Instructions → AI Ag
 - **Knowledge Building**: "This extends the ConditionalLoggingPattern - I'll update the knowledge base"
 
 **Current Status**: ✅ **Auto-sync working** - shared-memory.json automatically syncs with MCP memory on startup via `.mcp-sync/sync-required.json` trigger.
+
+### AI-Enhanced Development Workflow (NEW)
+
+![AI-Enhanced Workflow](../../docs/images/coding-workflow-with-ai.png)
+
+The semantic analysis system transforms the traditional manual knowledge capture process into an AI-powered automated workflow:
+
+#### Traditional Manual Flow:
+```bash
+# Manual process (still supported)
+Developer: "Can you add a new pattern?"
+Claude: "Use ukb --interactive"
+Developer: [Manual entry via ukb --interactive]
+System: [Auto-sync to visualization]
+```
+
+#### Enhanced AI Flow:
+```bash
+# AI-powered process (new)
+Developer: "Analyze this repository for patterns"
+Claude: [Uses analyze_repository tool]
+System: [Multi-agent analysis with LLM]
+System: [Automatic entity creation]
+System: [Auto-sync to knowledge base]
+Claude: "Found 5 patterns, created entities automatically"
+```
+
+#### Complex Analysis Workflow:
+```bash
+# Comprehensive project analysis
+Developer: "Complete analysis of this project"
+Claude: [Uses start_workflow tool]
+System: [Repository analysis + Web research + Entity creation + Relationship mapping]
+Result: [15 new insights automatically captured and categorized]
+```
+
+**Key Benefits:**
+- **10x faster analysis** - AI handles heavy analysis work
+- **Automatic knowledge capture** - No manual ukb entry required for many use cases
+- **Enhanced research** - Web search integration for comprehensive insights
+- **Backward compatibility** - Traditional ukb commands still available
+- **Real-time updates** - All results immediately visible in VKB visualization
 
 #### 2. Automatic Conversation Logging (Post-Session Capture) - ✅ WORKING
 
@@ -388,7 +464,7 @@ detect_network_environment() {
 
 ### Cross-Session Knowledge Usage
 
-![Cross-Session Knowledge Usage](images/cross-session-knowledge-usage.png)
+![Cross-Session Knowledge Usage](images/cross-session-knowledge-usage-enhanced.png)
 
 **How Claude Code Sessions Access Accumulated Knowledge:**
 
@@ -402,7 +478,7 @@ Every `claude-mcp` session provides Claude with access to the accumulated knowle
 
 ### MCP Memory Server Data Flow
 
-![MCP Memory Data Flow](images/mcp-memory-data-flow.png)
+![MCP Memory Data Flow](images/mcp-memory-data-flow-enhanced.png)
 
 **Claude Code sessions actively consider everything in the knowledge base through:**
 
@@ -421,7 +497,7 @@ Every `claude-mcp` session provides Claude with access to the accumulated knowle
 
 ### Daily Development Workflow
 
-![UKB and VKB Command Sequences](images/ukb-vkb-compact.png)
+![UKB and VKB Command Sequences](images/ukb-vkb-enhanced.png)
 
 ### Knowledge Discovery Workflow
 
