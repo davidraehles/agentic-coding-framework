@@ -34,9 +34,9 @@ The Knowledge Management (KM) system is designed to automatically capture, organ
 
 ## Architecture
 
-![System Architecture](../images/system-architecture.png)
+![System Architecture](../images/system-architecture-agnostic.png)
 
-The system consists of three main layers:
+The system supports multiple AI agents through an agent-agnostic architecture:
 
 ### 1. Knowledge Capture Layer
 
@@ -46,13 +46,21 @@ The system consists of three main layers:
 - **Semantic Analysis**: Deep analysis of both code changes and AI conversation patterns
 - **Commit Analysis**: Classifies commits by type (fix, feat, perf, etc.)
 
-### 2. Data Storage Layer
+### 2. AI Agent Integration
+
+- **Claude Code**: Native MCP server integration with memory persistence
+- **GitHub Copilot**: Fallback services for compatibility
+- **Other Agents**: Generic API interface for extensibility
+- **Agent Abstraction**: Unified interface regardless of underlying agent
+
+### 3. Data Storage Layer
 
 - **shared-memory.json**: Authoritative knowledge graph data (git-tracked)
-- **MCP Integration**: Persistent memory for coding agent sessions
+- **MCP Memory Server**: In-memory graph database for Claude Code sessions
+- **Fallback Services**: Graphology-based memory for other agents
 - **Conversation Logging**: Automatic capture of coding agent conversations in `.specstory/history/`
 
-### 3. Visualization Layer
+### 4. Visualization Layer
 
 - **VKB Command**: Server management and data conversion
 - **HTTP Server**: Serves interactive graph on localhost:8080

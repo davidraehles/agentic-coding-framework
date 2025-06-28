@@ -1,5 +1,8 @@
 @startuml knowledge-schema
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 title Knowledge Base Schema
 
 class "Shared Memory" {

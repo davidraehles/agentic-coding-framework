@@ -1,5 +1,9 @@
 @startuml system-architecture
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
 title Knowledge Management System Architecture
 
 package "Knowledge Capture Layer" {
@@ -13,8 +17,13 @@ package "Knowledge Capture Layer" {
 }
 
 package "Data Storage Layer" {
-  [shared-memory.json] as storage
-  [.backups/] as backups
+  database [shared-memory.json] as storage
+  database [MCP Memory Server] as mcpmem
+  note right of mcpmem
+    • In-memory graph database
+    • Session persistence
+    • Cross-session continuity
+  end note
 }
 
 package "Visualization Layer" {
@@ -26,9 +35,10 @@ package "Visualization Layer" {
   [Web Browser] as browser
 }
 
-package "MCP Integration" {
-  [Coding Agent] as agent
-  [MCP Memory Server] as mcp
+package "AI Agent Integration" {
+  [Claude Code] as claude
+  [GitHub Copilot] as copilot
+  [MCP Server Interface] as mcp
 }
 
 git --> analysis : Commit data
@@ -38,7 +48,7 @@ semantic --> ukbcli : Pattern insights
 ukb --> ukbcli : Delegates to
 ukbcli --> kapi : Uses API
 kapi --> storage : Knowledge graph updates
-storage --> backups : Automated backups
+storage <--> mcpmem : Sync operations
 
 storage --> vkbcli : Read memory data
 vkb --> vkbcli : Delegates to
@@ -47,13 +57,26 @@ vkbserver --> server : Start/manage server
 server --> visualizer : Serve graph data
 visualizer --> browser : Interactive visualization
 
-agent <--> mcp : MCP operations
-mcp <--> storage : Sync operations
-agent --> ukb : Trigger knowledge capture
-agent --> logs : Generate conversations
+claude --> mcp : MCP tools
+copilot --> storage : Direct access
+mcp <--> mcpmem : Memory operations
+claude --> ukb : Trigger knowledge capture
+copilot --> ukb : Trigger knowledge capture
+claude --> logs : Generate conversations
+copilot --> logs : Generate conversations
 
-note right of storage : Authoritative data source\nGit-tracked for team sharing
-note right of visualizer : Interactive D3.js graph\nColor-coded by entity type
-note right of mcp : Persistent memory\nCross-session knowledge
+note bottom of storage
+  **File-based Storage:**
+  • Git-tracked JSON format
+  • Team collaboration ready
+  • Version controlled
+end note
+
+note bottom of visualizer
+  **Interactive Visualization:**
+  • D3.js force-directed graph
+  • Color-coded entity types
+  • Real-time updates
+end note
 
 @enduml

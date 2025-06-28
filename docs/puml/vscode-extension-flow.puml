@@ -1,5 +1,8 @@
 @startuml vscode-extension-flow
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 title VSCode Extension Knowledge Management Flow
 
 actor Developer as dev

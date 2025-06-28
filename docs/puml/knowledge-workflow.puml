@@ -1,5 +1,8 @@
 @startuml knowledge-workflow
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 title Knowledge Management Workflow
 
 actor Developer as dev

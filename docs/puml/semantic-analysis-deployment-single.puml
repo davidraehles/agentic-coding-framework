@@ -1,0 +1,58 @@
+@startuml semantic-analysis-deployment-single
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Semantic Analysis System - Single Machine Deployment
+
+node "Host Machine" as host {
+  component [Claude Code] as cc
+  component [MCP Server] as mcp
+  
+  package "Infrastructure" {
+    component [MQTT Broker\nPort 1883] as mqtt
+    component [JSON-RPC Server\nPort 3001] as rpc
+  }
+  
+  package "Agents" {
+    component [Semantic\nAnalysis] as sa
+    component [Web\nSearch] as ws
+    component [Knowledge\nGraph] as kg
+    component [Coordinator] as ca
+  }
+  
+  database [shared-memory.json] as storage
+  folder [.specstory/history] as history
+}
+
+cloud "External Services" {
+  component [Claude API] as claude_api
+  component [OpenAI API] as openai_api
+  component [Search Engines] as search
+}
+
+' Internal connections
+cc --> mcp
+mcp --> mqtt
+mcp --> rpc
+
+sa --> mqtt
+ws --> mqtt
+kg --> mqtt
+ca --> mqtt
+
+sa --> rpc
+ws --> rpc
+kg --> rpc
+ca --> rpc
+
+kg --> storage
+cc --> history
+
+' External connections
+sa --> claude_api
+sa --> openai_api
+ws --> search
+
+@enduml

@@ -1,0 +1,61 @@
+@startuml semantic-analysis-communication-compact
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Communication Patterns in Semantic Analysis System
+
+package "Communication Methods" {
+  component [MQTT Event Bus] as mqtt
+  component [JSON-RPC Server] as rpc
+  component [MCP Server] as mcp
+}
+
+package "Agent Network" {
+  component [Semantic Analysis] as sa
+  component [Web Search] as ws
+  component [Knowledge Graph] as kg
+  component [Coordinator] as coord
+}
+
+package "Client Interfaces" {
+  component [Claude Code] as claude
+  component [External APIs] as apis
+}
+
+' Communication patterns
+mqtt --> sa : async events
+mqtt --> ws : async events
+mqtt --> kg : async events
+mqtt --> coord : async events
+
+rpc --> sa : sync calls
+rpc --> ws : sync calls
+rpc --> kg : sync calls
+rpc --> coord : sync calls
+
+mcp --> claude : tool interface
+mcp --> mqtt : event routing
+mcp --> rpc : request proxy
+
+claude --> mcp : tool calls
+apis --> rpc : direct API calls
+
+note right of mqtt
+  **MQTT Topics:**
+  • analysis/code/requested
+  • search/web/completed
+  • knowledge/entity/created
+  • workflow/step/completed
+end note
+
+note right of rpc
+  **RPC Methods:**
+  • semantic-analysis.analyzeCode()
+  • web-search.search()
+  • knowledge-graph.createEntity()
+  • coordinator.startWorkflow()
+end note
+
+@enduml

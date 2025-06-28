@@ -1,5 +1,8 @@
 @startuml vscode-integrated-architecture
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 title Knowledge Management System Architecture with VSCode Integration
 
 package "Developer Environment" {

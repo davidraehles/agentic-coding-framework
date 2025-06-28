@@ -1,5 +1,8 @@
 @startuml vscode-component-diagram
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 title VSCode Extension Components and Interactions
 
 package "VSCode Environment" {

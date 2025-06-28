@@ -11,18 +11,21 @@ The semantic analysis system implements a **multi-agent architecture** with **hy
 ## Architectural Principles
 
 ### 1. Agent-Oriented Design
+
 - **Autonomous agents** with specialized capabilities
 - **Loose coupling** through event-driven communication
 - **Resilient operation** with automatic failure recovery
 - **Horizontal scalability** across multiple machines
 
 ### 2. Hybrid Communication
+
 - **MQTT** for asynchronous, event-driven coordination
 - **JSON-RPC** for synchronous, request-response operations
 - **MCP** for external tool integration with Claude Code
 - **Direct API** for programmatic access
 
 ### 3. Knowledge Integration
+
 - **Backward compatibility** with existing ukb/vkb tools
 - **Seamless data migration** from shared-memory.json
 - **Enhanced entity management** with AI-powered extraction
@@ -51,7 +54,8 @@ class BaseAgent extends EventEmitter {
 ### Agent Responsibilities
 
 #### Semantic Analysis Agent
-```
+
+```text
 ├── LLM Provider Abstraction
 │   ├── Claude Provider (Primary)
 │   ├── OpenAI Provider (Fallback)
@@ -67,7 +71,8 @@ class BaseAgent extends EventEmitter {
 ```
 
 #### Web Search Agent
-```
+
+```text
 ├── Search Providers
 │   ├── DuckDuckGo (Default)
 │   ├── Bing API (Optional)
@@ -83,7 +88,8 @@ class BaseAgent extends EventEmitter {
 ```
 
 #### Knowledge Graph Agent
-```
+
+```text
 ├── Entity Management
 │   ├── Creation & Updates
 │   ├── Relationship Mapping
@@ -99,7 +105,8 @@ class BaseAgent extends EventEmitter {
 ```
 
 #### Coordinator Agent
-```
+
+```text
 ├── Workflow Engine
 │   ├── Step Execution
 │   ├── Error Recovery
@@ -122,7 +129,7 @@ class BaseAgent extends EventEmitter {
 
 The system uses MQTT for **asynchronous, event-driven communication**:
 
-```
+```text
 Topic Structure:
 ├── analysis/
 │   ├── code/requested
@@ -147,7 +154,7 @@ Topic Structure:
 
 For **synchronous operations** requiring immediate responses:
 
-```
+```text
 RPC Methods:
 ├── semantic-analysis.*
 │   ├── analyzeCode(params)
@@ -171,7 +178,7 @@ RPC Methods:
 
 The **MCP server** exposes agent capabilities as tools for Claude Code:
 
-```
+```text
 MCP Tools:
 ├── analyze_repository
 ├── analyze_conversation
@@ -193,18 +200,21 @@ MCP Tools:
 ### Workflow Engine Components
 
 #### Workflow Builder
+
 - **Template Management**: Predefined workflow patterns
 - **Custom Workflows**: User-defined analysis sequences
 - **Parameter Binding**: Dynamic value substitution
 - **Validation**: Workflow structure verification
 
 #### Workflow Engine
+
 - **Step Execution**: Sequential and parallel step processing
 - **State Management**: Context and result storage
 - **Error Recovery**: Automatic retry with exponential backoff
 - **Progress Tracking**: Real-time status updates
 
 #### Task Scheduler
+
 - **Recurring Tasks**: Cron-like scheduling for automated analysis
 - **Priority Management**: Resource allocation and task ordering
 - **Dependency Resolution**: Task prerequisite handling
@@ -212,7 +222,7 @@ MCP Tools:
 
 ### Example Workflow: Repository Analysis
 
-```
+```text
 1. analyze-repository
    ├── Input: repository path, analysis depth
    ├── Agent: semantic-analysis
@@ -338,50 +348,25 @@ The system integrates with Claude Code through multiple layers:
 
 ### Single Machine Deployment
 
-```
-┌─────────────────────────────────────┐
-│            Host Machine             │
-├─────────────────────────────────────┤
-│  ┌─────────────────────────────────┐│
-│  │        MQTT Broker              ││
-│  │        (Port 1883)              ││
-│  └─────────────────────────────────┘│
-│  ┌─────────────────────────────────┐│
-│  │       JSON-RPC Server           ││
-│  │        (Port 3001)              ││
-│  └─────────────────────────────────┘│
-│  ┌─────────────────────────────────┐│
-│  │         All Agents              ││
-│  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ││
-│  │  │ S.A │ │ W.S │ │ K.G │ │ C.A │ ││
-│  │  └─────┘ └─────┘ └─────┘ └─────┘ ││
-│  └─────────────────────────────────┘│
-│  ┌─────────────────────────────────┐│
-│  │         MCP Server              ││
-│  │       (Claude Code)             ││
-│  └─────────────────────────────────┘│
-└─────────────────────────────────────┘
-```
+![Single Machine Deployment](../images/semantic-analysis-deployment-single.png)
+
+Key characteristics:
+
+- All components run on a single host
+- Shared memory and localhost communication
+- Ideal for development and small teams
+- Minimal infrastructure requirements
 
 ### Distributed Deployment
 
-```
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│   MQTT Broker   │  │  Agent Node 1   │  │  Agent Node 2   │
-│                 │  │                 │  │                 │
-│  ┌───────────┐  │  │ ┌─────┐ ┌─────┐ │  │ ┌─────┐ ┌─────┐ │
-│  │   Aedes   │  │  │ │ S.A │ │ W.S │ │  │ │ K.G │ │ C.A │ │
-│  │           │  │  │ └─────┘ └─────┘ │  │ └─────┘ └─────┘ │
-│  └───────────┘  │  └─────────────────┘  └─────────────────┘
-└─────────────────┘           │                     │
-         │                    │                     │
-         └────────────────────┼─────────────────────┘
-                              │
-                    ┌─────────────────┐
-                    │   MCP Client    │
-                    │  (Claude Code)  │
-                    └─────────────────┘
-```
+![Distributed Deployment](../images/semantic-analysis-deployment-distributed.png)
+
+Key characteristics:
+
+- Agents distributed across multiple nodes
+- Central MQTT broker for coordination
+- Scalable and fault-tolerant
+- Network-based communication
 
 ## Security Architecture
 

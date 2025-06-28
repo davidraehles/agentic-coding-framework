@@ -1,5 +1,8 @@
 @startuml knowledge-workflow-enhanced
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 title Enhanced Knowledge Management Workflow with VSCode Integration
 
 actor Developer as dev

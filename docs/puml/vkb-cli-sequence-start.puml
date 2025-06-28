@@ -1,5 +1,8 @@
 @startuml vkb-cli-sequence-start
-!theme amiga
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 title VKB Server Startup Sequence
 
 actor User
