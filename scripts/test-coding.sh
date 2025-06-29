@@ -119,6 +119,12 @@ fi
 # Preserve original KNOWLEDGE_VIEW for restoration after testing
 ORIGINAL_KNOWLEDGE_VIEW="$KNOWLEDGE_VIEW"
 
+# Stop any running VKB viewer to prevent memory corruption during testing
+if command_exists vkb && vkb status >/dev/null 2>&1; then
+    echo -e "${BLUE}[INFO]${NC} Stopping running VKB viewer before testing..."
+    vkb stop >/dev/null 2>&1 || true
+fi
+
 print_header "CODING TOOLS COMPREHENSIVE TEST & REPAIR"
 
 echo -e "${BOLD}Test started at:${NC} $(date)"
@@ -1469,10 +1475,17 @@ if [[ -n "$ORIGINAL_KNOWLEDGE_VIEW" ]]; then
     export KNOWLEDGE_VIEW="$ORIGINAL_KNOWLEDGE_VIEW"
     echo -e "\n${BLUE}[INFO]${NC} Restored KNOWLEDGE_VIEW to: $KNOWLEDGE_VIEW"
     
-    # If VKB is running, restart it with original settings
+    # Stop any running VKB viewer first to ensure clean state
     if command_exists vkb && vkb status >/dev/null 2>&1; then
-        echo -e "${BLUE}[INFO]${NC} Restarting VKB with restored settings..."
-        vkb restart >/dev/null 2>&1 || true
+        echo -e "${BLUE}[INFO]${NC} Stopping VKB viewer to apply corrected settings..."
+        vkb stop >/dev/null 2>&1 || true
+        sleep 2
+    fi
+    
+    # Start VKB with corrected settings and proper memory.json
+    if command_exists vkb; then
+        echo -e "${BLUE}[INFO]${NC} Starting VKB with corrected KNOWLEDGE_VIEW settings..."
+        vkb start >/dev/null 2>&1 || true
     fi
 fi
 
