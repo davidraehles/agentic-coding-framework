@@ -622,9 +622,10 @@ setup_mcp_config() {
     cp "$CODING_REPO/claude-code-mcp.json" "$temp_file"
     
     # Replace environment variables - use the actual CODING_REPO path
-    sed -i.bak "s|{{CLAUDE_PROJECT_PATH}}|$CODING_REPO|g" "$temp_file"
+    sed -i.bak "s|{{CODING_TOOLS_PATH}}|$CODING_REPO|g" "$temp_file"
     sed -i.bak "s|{{LOCAL_CDP_URL}}|${LOCAL_CDP_URL:-ws://localhost:9222}|g" "$temp_file"
     sed -i.bak "s|{{ANTHROPIC_API_KEY}}|${ANTHROPIC_API_KEY:-}|g" "$temp_file"
+    sed -i.bak "s|{{OPENAI_API_KEY}}|${OPENAI_API_KEY:-}|g" "$temp_file"
     
     # Save the processed version locally
     cp "$temp_file" "$CODING_REPO/claude-code-mcp-processed.json"
@@ -703,14 +704,15 @@ BROWSERBASE_API_KEY=your-browserbase-api-key
 BROWSERBASE_PROJECT_ID=your-project-id
 LOCAL_CDP_URL=ws://localhost:9222
 
-# Project path - will be set automatically by installer
-CLAUDE_PROJECT_PATH=/path/to/coding/repo
+# Primary coding tools path (set automatically by installer)
+# This is the main path used throughout the system
+CODING_TOOLS_PATH=/path/to/coding/repo
 
 # For claude-logger MCP server
 # No specific environment variables required
 
 # Custom paths (optional)
-# CODING_REPO=/path/to/coding/repo
+# CODING_REPO=/path/to/coding/repo (legacy, now uses CODING_TOOLS_PATH)
 # MEMORY_VISUALIZER_DIR=/path/to/memory-visualizer
 
 # Knowledge Base path - where shared-memory-*.json files are located
@@ -872,75 +874,32 @@ configure_team_setup() {
     echo -e "${PURPLE}=========================================${NC}"
     echo ""
     
-    info "The system supports team-specific knowledge bases for better organization:"
-    echo "  • ui     - UI/Frontend development (React, TypeScript, etc.)"
-    echo "  • resi   - Resilience engineering (C++, systems, performance)"
-    echo "  • raas   - RaaS development (Java, DevOps, microservices)"
-    echo "  • custom - Custom team name"
-    echo "  • none   - Individual developer (default single knowledge base)"
+    # Set default team configuration
+    export CODING_TEAM="coding ui"
+    
+    info "Team configuration automatically set to: coding and ui"
+    info ""
+    info "ℹ️  To change the team configuration, modify the CODING_TEAM environment variable"
+    info "   Available teams:"
+    echo "     • coding - General coding patterns and knowledge"
+    echo "     • ui     - UI/Frontend development (React, TypeScript, etc.)"
+    echo "     • resi   - Reprocessing/Simulation development (C++, systems, performance)"
+    echo "     • raas   - RaaS development (Java, DevOps, microservices)"
+    echo "     • custom - Any custom team name"
     echo ""
+    info "   Example: export CODING_TEAM=\"resi raas\" for multiple teams"
+    info "   Example: export CODING_TEAM=\"myteam\" for a custom team"
     
-    local team_choice=""
-    while true; do
-        echo -e "${CYAN}Select your team configuration:${NC}"
-        echo "1) Individual developer (single knowledge base)"
-        echo "2) UI/Frontend team (ui)"
-        echo "3) Resilience team (resi)"
-        echo "4) RaaS team (raas)"
-        echo "5) Custom team name"
-        echo ""
-        read -p "Choice [1-5]: " team_choice
-        
-        case $team_choice in
-            1)
-                info "Configured for individual developer setup"
-                # No CODING_TEAM variable set - uses default behavior
-                break
-                ;;
-            2)
-                export CODING_TEAM="ui"
-                info "Configured for UI/Frontend team (CODING_TEAM=ui)"
-                break
-                ;;
-            3)
-                export CODING_TEAM="resi"
-                info "Configured for Resilience team (CODING_TEAM=resi)"
-                break
-                ;;
-            4)
-                export CODING_TEAM="raas"
-                info "Configured for RaaS team (CODING_TEAM=raas)"
-                break
-                ;;
-            5)
-                read -p "Enter custom team name: " custom_team
-                if [[ -n "$custom_team" && "$custom_team" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-                    export CODING_TEAM="$custom_team"
-                    info "Configured for custom team: $custom_team (CODING_TEAM=$custom_team)"
-                    break
-                else
-                    error_exit "Invalid team name. Use only letters, numbers, hyphens, and underscores."
-                fi
-                ;;
-            *)
-                error_exit "Invalid choice. Please select 1-5."
-                ;;
-        esac
-    done
+    # Add to shell environment
+    echo "" >> "$SHELL_RC"
+    echo "# Coding Tools - Team Configuration" >> "$SHELL_RC"
+    echo "# Modify this variable to change team scope (e.g., \"resi raas\" for multiple teams)" >> "$SHELL_RC"
+    echo "export CODING_TEAM=\"$CODING_TEAM\"" >> "$SHELL_RC"
+    success "Team configuration added to $SHELL_RC"
     
-    # Add to shell environment if team is set
-    if [[ -n "${CODING_TEAM:-}" ]]; then
-        echo "" >> "$SHELL_RC"
-        echo "# Coding Tools - Team Configuration" >> "$SHELL_RC"
-        echo "export CODING_TEAM=\"$CODING_TEAM\"" >> "$SHELL_RC"
-        success "Team configuration added to $SHELL_RC"
-        
-        info "Your team will use these knowledge files:"
-        echo "  • shared-memory-coding.json (cross-team patterns)"
-        echo "  • shared-memory-${CODING_TEAM}.json (team-specific knowledge)"
-    else
-        info "Using default single knowledge base: shared-memory.json"
-    fi
+    info "Your configuration will use these knowledge files:"
+    echo "  • shared-memory-coding.json (general coding patterns)"
+    echo "  • shared-memory-ui.json (UI/frontend specific knowledge)"
 }
 
 # Install Node.js dependencies for agent-agnostic functionality

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Semantic Analysis System CLI wrapper
+CODING_REPO="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
+SEMANTIC_DIR="$CODING_REPO/semantic-analysis-system"
+
+if [[ ! -d "$SEMANTIC_DIR" ]]; then
+    echo "Error: Semantic analysis system not found at $SEMANTIC_DIR" >&2
+    exit 1
+fi
+
+cd "$SEMANTIC_DIR"
+node index.js "$@"

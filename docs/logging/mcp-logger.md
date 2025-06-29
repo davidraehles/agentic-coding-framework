@@ -39,10 +39,10 @@ Add to `claude-code-mcp.json` (automatically done by install.sh):
   "mcpServers": {
     "claude-logger": {
       "command": "node",
-      "args": ["{{CLAUDE_PROJECT_PATH}}/claude-logger-mcp/dist/index-auto.js"],
+      "args": ["{{CODING_TOOLS_PATH}}/claude-logger-mcp/dist/index-auto.js"],
       "env": {
-        "PROJECT_PATH": "{{CLAUDE_PROJECT_PATH}}",
-        "CLAUDE_TOOLS_PATH": "{{CLAUDE_PROJECT_PATH}}"
+        "PROJECT_PATH": "{{CODING_TOOLS_PATH}}",
+        "CLAUDE_TOOLS_PATH": "{{CODING_TOOLS_PATH}}"
       }
     }
   }

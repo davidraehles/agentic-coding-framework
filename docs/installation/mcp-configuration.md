@@ -27,8 +27,8 @@ ANTHROPIC_API_KEY=your-actual-api-key-here
 # Chrome debugging URL (default is usually fine)
 LOCAL_CDP_URL=ws://localhost:9222
 
-# Project path (will be set automatically by installer)
-CLAUDE_PROJECT_PATH=/path/to/your/coding/repo
+# Primary coding tools path (set automatically by installer)
+CODING_TOOLS_PATH=/path/to/your/coding/repo
 ```
 
 ### 2. Run the installer
@@ -65,7 +65,7 @@ cp claude-code-mcp.json "$APPDATA/Claude/"
 
 The `claude-code-mcp.json` template uses these placeholders:
 
-- `{{CLAUDE_PROJECT_PATH}}` - The absolute path to your Claude repo
+- `{{CODING_TOOLS_PATH}}` - The absolute path to your coding tools repo
 - `{{LOCAL_CDP_URL}}` - Chrome DevTools Protocol URL
 - `{{ANTHROPIC_API_KEY}}` - Your Anthropic API key
 
@@ -90,7 +90,7 @@ If you see errors about missing API keys:
 ### Path Issues
 
 If MCP servers can't find files:
-1. Ensure `CLAUDE_PROJECT_PATH` in `.env` points to the correct directory
+1. Ensure `CODING_TOOLS_PATH` in `.env` points to the correct directory
 2. Use absolute paths, not relative paths
 3. On Windows, use forward slashes: `C:/Users/username/Claude`
 

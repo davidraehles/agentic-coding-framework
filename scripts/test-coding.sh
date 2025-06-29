@@ -948,7 +948,7 @@ else
 fi
 
 print_check "Documentation diagrams and images"
-KEY_IMAGES=("imag/system-architecture.png" "puml/vscode-component-diagram.png" "puml/vscode-extension-flow.png" "imag/claude-mcp-autologging.png")
+KEY_IMAGES=("images/system-architecture.png" "puml/vscode-component-diagram.png" "puml/vscode-extension-flow.png" "images/claude-mcp-autologging.png")
 MISSING_IMAGES=0
 for img in "${KEY_IMAGES[@]}"; do
     if file_exists "$CODING_ROOT/docs/$img"; then
@@ -974,11 +974,23 @@ print_section "PHASE 8: End-to-End Integration Testing"
 print_test "Full system integration"
 
 print_check "Knowledge base state"
-if file_exists "$CODING_ROOT/shared-memory.json"; then
-    print_pass "shared-memory.json exists"
+# Check for team-specific or context-specific shared-memory files
+TEAM_KB_FILES=$(find "$CODING_ROOT" -maxdepth 1 -name "shared-memory-*.json" 2>/dev/null)
+LEGACY_KB="$CODING_ROOT/shared-memory.json"
+
+if [ -n "$TEAM_KB_FILES" ]; then
+    print_pass "Context-specific knowledge base files found:"
+    for file in $TEAM_KB_FILES; do
+        BASENAME=$(basename "$file")
+        ENTITY_COUNT=$(jq '.entities | length' "$file" 2>/dev/null || echo "0")
+        RELATION_COUNT=$(jq '.relations | length' "$file" 2>/dev/null || echo "0")
+        print_info "  $BASENAME - Entities: $ENTITY_COUNT, Relations: $RELATION_COUNT"
+    done
+elif file_exists "$LEGACY_KB"; then
+    print_pass "shared-memory.json exists (legacy single-file mode)"
     
-    ENTITY_COUNT=$(jq '.entities | length' "$CODING_ROOT/shared-memory.json" 2>/dev/null || echo "0")
-    RELATION_COUNT=$(jq '.relations | length' "$CODING_ROOT/shared-memory.json" 2>/dev/null || echo "0")
+    ENTITY_COUNT=$(jq '.entities | length' "$LEGACY_KB" 2>/dev/null || echo "0")
+    RELATION_COUNT=$(jq '.relations | length' "$LEGACY_KB" 2>/dev/null || echo "0")
     print_info "Entities: $ENTITY_COUNT, Relations: $RELATION_COUNT"
     
     if [ "$ENTITY_COUNT" -gt 0 ]; then
@@ -987,34 +999,46 @@ if file_exists "$CODING_ROOT/shared-memory.json"; then
         print_info "Knowledge base is empty (normal for new installations)"
     fi
 else
-    print_repair "Creating initial shared-memory.json..."
-    cat > "$CODING_ROOT/shared-memory.json" << 'EOF'
-{
-  "entities": [],
-  "relations": [],
-  "metadata": {
-    "version": "1.0.0",
-    "created": "2024-01-01T00:00:00Z",
-    "contributors": [],
-    "total_entities": 0,
-    "total_relations": 0,
-    "last_updated": "2024-01-01T00:00:00Z"
-  }
-}
-EOF
-    print_fixed "Initial shared-memory.json created"
+    print_info "No knowledge base files found (normal for new installations)"
+    print_info "Knowledge bases will be created when teams/contexts add their first entity"
 fi
 
 print_check "Git integration"
 cd "$CODING_ROOT"
-if git status --porcelain | grep -q "shared-memory.json"; then
-    print_pass "shared-memory.json is tracked by git and has changes"
-elif git ls-files --error-unmatch shared-memory.json >/dev/null 2>&1; then
-    print_pass "shared-memory.json is tracked by git"
+# Check for any knowledge base files (legacy or team-specific)
+KB_FILES_FOUND=false
+KB_GIT_STATUS=""
+
+# Check team-specific files
+for kb_file in shared-memory-*.json; do
+    if [ -f "$kb_file" ]; then
+        KB_FILES_FOUND=true
+        if git status --porcelain | grep -q "$kb_file"; then
+            KB_GIT_STATUS="has_changes"
+            print_pass "$kb_file is tracked by git and has changes"
+        elif git ls-files --error-unmatch "$kb_file" >/dev/null 2>&1; then
+            print_pass "$kb_file is tracked by git"
+        else
+            print_repair "Adding $kb_file to git..."
+            git add "$kb_file"
+            print_fixed "$kb_file added to git"
+        fi
+    fi
+done
+
+# Check legacy shared-memory.json if no team files found
+if [ "$KB_FILES_FOUND" = false ] && [ -f "shared-memory.json" ]; then
+    if git status --porcelain | grep -q "shared-memory.json"; then
+        print_pass "shared-memory.json is tracked by git and has changes"
+    elif git ls-files --error-unmatch shared-memory.json >/dev/null 2>&1; then
+        print_pass "shared-memory.json is tracked by git"
+    else
+        print_repair "Adding shared-memory.json to git..."
+        git add shared-memory.json
+        print_fixed "shared-memory.json added to git"
+    fi
 else
-    print_repair "Adding shared-memory.json to git..."
-    git add shared-memory.json
-    print_fixed "shared-memory.json added to git"
+    print_info "Knowledge base files will be added to git when created"
 fi
 
 # Test UKB with actual pattern creation
@@ -1333,13 +1357,12 @@ fi
 print_test "Integration with existing knowledge system"
 
 print_check "Shared memory access"
-if file_exists "$CODING_ROOT/shared-memory.json"; then
-    print_pass "Shared memory file accessible"
+# Check for any knowledge base files (context-specific or legacy)
+KB_FILES=$(find "$CODING_ROOT" -maxdepth 1 -name "shared-memory*.json" 2>/dev/null | wc -l)
+if [ "$KB_FILES" -gt 0 ]; then
+    print_pass "Knowledge base files accessible ($KB_FILES files found)"
 else
-    print_fail "Shared memory file not found"
-    print_repair "Creating shared-memory.json..."
-    echo '{"entities":[],"relations":[],"metadata":{"version":"1.0.0"}}' > "$CODING_ROOT/shared-memory.json"
-    print_fixed "Shared memory file created"
+    print_info "No knowledge base files found (will be created when needed)"
 fi
 
 print_check "UKB integration paths"
