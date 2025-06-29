@@ -694,8 +694,10 @@ EOF
 create_example_configs() {
     echo -e "\n${CYAN}📄 Creating example configuration files...${NC}"
     
-    # Create .env.example for MCP servers
-    cat > "$CODING_REPO/.env.example" << 'EOF'
+    # Create .env.example for MCP servers (only if it doesn't exist)
+    if [[ ! -f "$CODING_REPO/.env.example" ]]; then
+        info "Creating .env.example file..."
+        cat > "$CODING_REPO/.env.example" << 'EOF'
 # Claude Knowledge Management System - Environment Variables
 
 # For browser-access MCP server (optional)
@@ -720,6 +722,10 @@ CODING_TOOLS_PATH=/path/to/coding/repo
 # Can be set to a different path for centralized knowledge management
 CODING_KB_PATH=/path/to/coding/repo
 
+# Default knowledge views to display in VKB viewer
+# Comma-separated list of views (e.g., "coding,ui,resi")
+KNOWLEDGE_VIEW=coding,ui
+
 # Semantic Analysis System (optional)
 # LLM Provider Configuration
 # ANTHROPIC_API_KEY=your-anthropic-api-key
@@ -735,6 +741,9 @@ CODING_KB_PATH=/path/to/coding/repo
 # Logging
 # LOG_LEVEL=info
 EOF
+    else
+        info ".env.example already exists, skipping creation"
+    fi
     
     # Create actual .env file if it doesn't exist
     if [[ ! -f "$CODING_REPO/.env" ]]; then
@@ -754,6 +763,9 @@ CLAUDE_PROJECT_PATH=$CODING_REPO
 # Knowledge Base path - where shared-memory-*.json files are located
 # Default: same directory as the coding project
 CODING_KB_PATH=$CODING_REPO
+
+# Default knowledge views to display in VKB viewer
+KNOWLEDGE_VIEW=coding,ui
 EOF
         success ".env file created with project paths"
     else
@@ -764,6 +776,14 @@ EOF
             echo "# Knowledge Base path - where shared-memory-*.json files are located" >> "$CODING_REPO/.env"
             echo "# Default: same directory as the coding project" >> "$CODING_REPO/.env"
             echo "CODING_KB_PATH=$CODING_REPO" >> "$CODING_REPO/.env"
+        fi
+        
+        # Update existing .env file to add KNOWLEDGE_VIEW if missing
+        if ! grep -q "KNOWLEDGE_VIEW" "$CODING_REPO/.env"; then
+            info "Adding KNOWLEDGE_VIEW to existing .env file..."
+            echo "" >> "$CODING_REPO/.env"
+            echo "# Default knowledge views to display in VKB viewer" >> "$CODING_REPO/.env"
+            echo "KNOWLEDGE_VIEW=coding,ui" >> "$CODING_REPO/.env"
         fi
     fi
     
