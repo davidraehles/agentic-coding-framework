@@ -58,6 +58,13 @@ The system provides:
 - **[VKB-CLI Documentation](docs/components/vkb/)** - Knowledge visualization
 - **[Semantic Analysis System](docs/components/semantic-analysis/)** - AI analysis agents
 
+### 🎯 Use Cases & Workflows
+- **[Use Cases Overview](docs/use-cases/)** - Complete workflow examples
+- **[Managing Knowledge Base](docs/use-cases/managing-knowledge-base.md)** - Team knowledge capture and access
+- **[Semantic Workflows](docs/use-cases/semantic-workflows.md)** - Orchestrated multi-step analysis processes
+- **[Code Pattern Analysis](docs/use-cases/code-pattern-analysis.md)** - Automatic pattern detection
+- **[Conversation Insights](docs/use-cases/conversation-insights.md)** - Learning from team discussions
+
 ### 🔌 Integrations
 - **[VSCode CoPilot Integration](docs/integrations/vscode-copilot-integration.md)** - Enhanced development experience
 - **[API Reference](docs/integrations/api-reference.md)** - HTTP and MCP APIs
@@ -92,37 +99,90 @@ The system provides:
 - **Hot Reloading**: Live updates during development
 - **Cross-Platform**: Works on macOS, Linux, and Windows
 
-## ⚡ Usage Examples
+## ⚡ Quick Start Examples
 
-### Capture Knowledge from Code Analysis
+### 1. Analyze Your Current Project
+
+**Using Claude Code:**
 ```bash
-# Analyze recent commits and capture insights
-ukb --auto
+# Start Claude with semantic analysis
+claude-mcp
 
-# Interactive knowledge capture
-ukb --interactive
-
-# Analyze specific files
-ukb --files src/components/*.tsx
+# Then in Claude chat:
+analyze_repository {
+  "repository": ".",
+  "depth": 10,
+  "significanceThreshold": 6
+}
 ```
 
-### Visualize Knowledge Graph
+**Using VSCode CoPilot:**
 ```bash
-# Launch web interface
-vkb
+# Start CoPilot with knowledge management
+coding --copilot
 
-# Export for external tools
-vkb --export --format graphml
+# Then in CoPilot chat:
+@KM analyze repository "." --depth 10
 ```
 
-### Semantic Analysis (with agents running)
-```bash
-# In Claude Code - use MCP tools:
-# analyze_repository, analyze_conversation, search_web
+### 2. Capture Knowledge from Discussion
 
-# In VSCode CoPilot - use HTTP API:
-# POST /api/semantic/analyze-repository
-# POST /api/semantic/analyze-conversation
+**Claude Code:**
+```
+create_knowledge_entity {
+  "name": "ReactErrorBoundaryPattern",
+  "entityType": "TechnicalPattern",
+  "significance": 8,
+  "observations": [
+    "Use error boundaries to catch React component errors",
+    "Implement fallback UI for better user experience"
+  ]
+}
+```
+
+**VSCode CoPilot:**
+```
+@KM ukb "Use React error boundaries to catch component errors and show fallback UI for better user experience"
+```
+
+### 3. Search Your Knowledge Base
+
+**Claude Code:**
+```
+search_knowledge {
+  "query": "React error handling",
+  "maxResults": 5
+}
+```
+
+**VSCode CoPilot:**
+```
+@KM search "React error handling"
+```
+
+### 4. Fallback Mode (No API Keys)
+```bash
+# Direct knowledge management
+ukb --interactive  # Follow prompts to capture insights
+vkb               # Open web visualization
+```
+
+### 5. Comprehensive Analysis Workflow
+```bash
+# Claude Code
+start_workflow {
+  "workflowType": "repository-analysis",
+  "parameters": {
+    "repository": ".",
+    "depth": 20,
+    "includeWebSearch": true
+  }
+}
+
+# VSCode CoPilot API
+curl -X POST http://localhost:8765/api/semantic/analyze-repository \
+  -H "Content-Type: application/json" \
+  -d '{"repository": ".", "depth": 20}'
 ```
 
 ## 🔍 System Status

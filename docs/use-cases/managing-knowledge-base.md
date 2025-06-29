@@ -127,6 +127,143 @@ vkb                          # View knowledge graph
 ukb --migrate                # Upgrade knowledge format
 ```
 
+## Step-by-Step Examples
+
+### Example 1: Knowledge Capture in Claude Code
+
+**Scenario**: You just implemented a new error handling pattern in React
+
+**Steps:**
+1. **Start Claude Code with semantic analysis:**
+   ```bash
+   claude-mcp
+   ```
+
+2. **Analyze your recent implementation:**
+   ```
+   analyze_repository {
+     "repository": ".",
+     "depth": 5,
+     "significanceThreshold": 6
+   }
+   ```
+
+3. **Search for similar patterns:**
+   ```
+   search_knowledge {
+     "query": "React error handling",
+     "maxResults": 5
+   }
+   ```
+
+4. **Create a specific pattern entity:**
+   ```
+   create_knowledge_entity {
+     "name": "ReactErrorBoundaryPattern",
+     "entityType": "TechnicalPattern",
+     "significance": 8,
+     "observations": [
+       "Use error boundaries to catch React component errors",
+       "Implement fallback UI for better user experience",
+       "Log errors to monitoring service for debugging"
+     ]
+   }
+   ```
+
+### Example 2: Knowledge Capture in VSCode CoPilot
+
+**Scenario**: You're discussing a complex architectural decision in CoPilot chat
+
+**Steps:**
+1. **Start CoPilot with knowledge management:**
+   ```bash
+   coding --copilot
+   ```
+
+2. **During your chat session, capture insights:**
+   ```
+   @KM ukb "We decided to use Redux for state management because our app has complex nested component state that needs to be shared across multiple route components"
+   ```
+
+3. **Search for related patterns:**
+   ```
+   @KM search "Redux state management patterns"
+   ```
+
+4. **View your knowledge graph:**
+   ```
+   @KM vkb
+   ```
+
+5. **Get statistics on your knowledge base:**
+   ```
+   @KM stats
+   ```
+
+### Example 3: Workflow Orchestration
+
+**Scenario**: Comprehensive analysis of a new project
+
+**Claude Code Workflow:**
+```
+start_workflow {
+  "workflowType": "repository-analysis",
+  "parameters": {
+    "repository": "/path/to/new-project",
+    "depth": 20,
+    "includeWebSearch": true,
+    "technologies": ["React", "Node.js", "PostgreSQL"]
+  }
+}
+```
+
+**Check workflow progress:**
+```
+get_workflow_status {
+  "workflowId": "repo-analysis-abc123"
+}
+```
+
+**VSCode CoPilot API Workflow:**
+```bash
+# Via HTTP API
+curl -X POST http://localhost:8765/api/semantic/analyze-repository \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repository": "/path/to/new-project",
+    "depth": 20,
+    "significanceThreshold": 5
+  }'
+```
+
+### Example 4: Fallback Mode (No API Keys)
+
+**Scenario**: Working without configured API keys
+
+**Steps:**
+1. **Direct knowledge entry:**
+   ```bash
+   ukb --interactive
+   ```
+
+2. **Follow the prompts:**
+   ```
+   Problem: How to handle database connection pooling in Node.js
+   Solution: Use connection pooling with pg-pool for PostgreSQL
+   Rationale: Prevents connection exhaustion and improves performance
+   Key learnings: Pool size should be tuned based on concurrent users
+   Applicability: All Node.js applications using PostgreSQL
+   Technologies: Node.js,PostgreSQL,pg-pool
+   References: https://node-postgres.com/features/pooling
+   Files: database/connection.js,config/database.js
+   Significance: 7
+   ```
+
+3. **View the knowledge graph:**
+   ```bash
+   vkb
+   ```
+
 ## Success Metrics
 
 1. **Knowledge Base Growth**: Entities created per day/week

@@ -13,16 +13,19 @@ The system provides two primary integration paths:
 ### 1. [Managing Collective Knowledge Base](./managing-knowledge-base.md)
 How teams capture, store, and access accumulated knowledge across projects using both Claude Code and VSCode CoPilot.
 
-### 2. [Code Pattern Analysis](./code-pattern-analysis.md)
+### 2. [Semantic Analysis Workflows](./semantic-workflows.md)
+Orchestrated multi-step analysis processes for comprehensive knowledge gathering and pattern discovery.
+
+### 3. [Code Pattern Analysis](./code-pattern-analysis.md)
 Automatic detection and documentation of architectural patterns, anti-patterns, and best practices.
 
-### 3. [Conversation Insight Extraction](./conversation-insights.md)
+### 4. [Conversation Insight Extraction](./conversation-insights.md)
 Extracting valuable technical insights from team discussions, code reviews, and AI interactions.
 
-### 4. [Cross-Project Learning](./cross-project-learning.md)
+### 5. [Cross-Project Learning](./cross-project-learning.md)
 How knowledge accumulates across multiple projects and benefits the entire team.
 
-### 5. [Fallback Service Utilization](./fallback-services.md)
+### 6. [Fallback Service Utilization](./fallback-services.md)
 How the system gracefully degrades when semantic agents are unavailable, using direct ukb-cli access.
 
 ## Quick Reference
@@ -30,6 +33,7 @@ How the system gracefully degrades when semantic agents are unavailable, using d
 | Use Case | Claude Code | CoPilot | Fallback |
 |----------|-------------|---------|----------|
 | Knowledge Capture | ✅ MCP Tools | ✅ HTTP API | ✅ ukb-cli |
+| Workflow Orchestration | ✅ start_workflow | ✅ HTTP API | ❌ N/A |
 | Pattern Analysis | ✅ Full | ✅ Full | ❌ N/A |
 | Insight Extraction | ✅ Full | ✅ Full | ❌ N/A |
 | Knowledge Search | ✅ MCP Tools | ✅ HTTP API | ✅ vkb-cli |
