@@ -1,6 +1,4 @@
 {
-  "displayName": "Coding",
-  "description": "Core coding knowledge management system for development teams",
   "entities": [
     {
       "name": "CollectiveKnowledge",
@@ -33,56 +31,6 @@
         "last_updated": "2025-06-18T15:33:31.309Z"
       },
       "id": "mc4flkg6hcc20676x5j"
-    },
-    {
-      "name": "ConditionalLoggingPattern",
-      "entityType": "TransferablePattern",
-      "observations": [
-        {
-          "type": "rule",
-          "content": "NEVER console.log - ALWAYS Logger.log(level, category, message)",
-          "date": "2025-06-19T11:09:12Z"
-        },
-        {
-          "type": "implementation",
-          "content": "Logger.log(\"debug\", \"component\", \"User action\", data)",
-          "date": "2025-06-19T11:09:12Z"
-        },
-        {
-          "type": "levels",
-          "content": "5 levels: debug, info, warn, error, fatal",
-          "date": "2025-06-19T11:09:12Z"
-        },
-        {
-          "type": "categories",
-          "content": "13 categories: auth, api, component, validation, performance, error, etc.",
-          "date": "2025-06-19T11:09:12Z"
-        },
-        {
-          "type": "features",
-          "content": "Runtime filtering, persistent config, zero performance impact when disabled",
-          "date": "2025-06-19T11:09:12Z"
-        },
-        {
-          "type": "link",
-          "content": "Details: http://localhost:8080/knowledge-management/insights/ConditionalLoggingPattern.md",
-          "date": "2025-06-19T11:09:12Z"
-        }
-      ],
-      "significance": 5,
-      "problem": {},
-      "solution": {},
-      "metadata": {
-        "created_at": "2025-06-16T13:46:12.604Z",
-        "last_updated": "2025-06-19T11:09:12Z"
-      },
-      "quick_reference": {
-        "trigger": "Any logging need in JavaScript/TypeScript projects",
-        "action": "Logger.log(level, category, message) - never console methods",
-        "avoid": "console.log, console.warn, console.error, console.debug",
-        "check": "grep -r \"console\\.\" --include=\"*.js\" --include=\"*.ts\" . (should return nothing)"
-      },
-      "id": "mc4flkg60c2h1e1bvf86"
     },
     {
       "name": "KnowledgePersistencePattern",
@@ -396,24 +344,6 @@
   "relations": [
     {
       "from": "CollectiveKnowledge",
-      "to": "ConditionalLoggingPattern",
-      "relationType": "contains",
-      "id": "mc4flkg6c78qfo0he0c"
-    },
-    {
-      "from": "CollectiveKnowledge",
-      "to": "ViewportCullingPattern",
-      "relationType": "contains",
-      "id": "mc4flkg61veut5dayk8"
-    },
-    {
-      "from": "CollectiveKnowledge",
-      "to": "ReduxStateManagementPattern",
-      "relationType": "contains",
-      "id": "mc4flkg6ak7udz49y5g"
-    },
-    {
-      "from": "CollectiveKnowledge",
       "to": "KnowledgePersistencePattern",
       "relationType": "contains",
       "id": "mc4flkg6swfrjor6gga"
@@ -423,30 +353,6 @@
       "to": "NetworkAwareInstallationPattern",
       "relationType": "contains",
       "id": "mc4flkg6ubsskteya6"
-    },
-    {
-      "from": "CollectiveKnowledge",
-      "to": "StateDrivenAnimationPipelinePattern",
-      "relationType": "contains",
-      "id": "mc4flkg6z71o94387n"
-    },
-    {
-      "from": "CollectiveKnowledge",
-      "to": "StrategyBasedModularRoutingPattern",
-      "relationType": "contains",
-      "id": "mc4flkg6dpa23m2es2"
-    },
-    {
-      "from": "ConditionalLoggingPattern",
-      "to": "DynArch",
-      "relationType": "originally developed in",
-      "id": "mc4flkg64k6hqejqe9t"
-    },
-    {
-      "from": "ConditionalLoggingPattern",
-      "to": "Timeline",
-      "relationType": "implemented in",
-      "id": "mc4flkg6pxxw5w25rqc"
     },
     {
       "from": "KnowledgePersistencePattern",
@@ -461,22 +367,10 @@
       "id": "mc4flkg6tpko5s1e39"
     },
     {
-      "from": "Timeline",
-      "to": "CollectiveKnowledge",
-      "relationType": "contributed patterns to",
-      "id": "mc4flkg6sub3eic7k6j"
-    },
-    {
       "from": "Coding",
       "to": "CollectiveKnowledge",
       "relationType": "contributed patterns to",
       "id": "mc4flkg6i4qquuiciqc"
-    },
-    {
-      "from": "DynArch",
-      "to": "CollectiveKnowledge",
-      "relationType": "contributed patterns to",
-      "id": "mc4flkg6azwmpkwyra4"
     },
     {
       "from": "CollectiveKnowledge",
@@ -510,45 +404,15 @@
     },
     {
       "from": "CollectiveKnowledge",
-      "to": "MVIReduxArchitecturePattern",
-      "relationType": "contains",
-      "id": "mc4flkg6svbtw1c86fl"
-    },
-    {
-      "from": "CollectiveKnowledge",
       "to": "ViewportCullingOptimizationPattern",
       "relationType": "contains",
       "id": "mc4flkg6r3kezofwmnk"
-    },
-    {
-      "from": "CollectiveKnowledge",
-      "to": "ReactThreeFiberIntegrationPattern",
-      "relationType": "contains",
-      "id": "mc4flkg63ue03rtwfgy"
-    },
-    {
-      "from": "CollectiveKnowledge",
-      "to": "CustomHookExtractionPattern",
-      "relationType": "contains",
-      "id": "mc4flkg65dfcj9gwv6f"
-    },
-    {
-      "from": "CollectiveKnowledge",
-      "to": "ModularComponentArchitecturePattern",
-      "relationType": "contains",
-      "id": "mc4flkg6yuqj8r61trl"
     },
     {
       "from": "VSCodeExtensionBridgePattern",
       "to": "Coding",
       "relationType": "implemented in",
       "id": "mc4flkg62k5l246p5m6"
-    },
-    {
-      "from": "ViewportCullingOptimizationPattern",
-      "to": "Timeline",
-      "relationType": "implemented in",
-      "id": "mc4flkg676w13bph5ux"
     },
     {
       "type": "relation",
@@ -616,25 +480,23 @@
       "metadata": {
         "created_by": "knowledge-api"
       }
+    },
+    {
+      "id": "13ad4cad-9899-4f09-8f4c-1f509565b608",
+      "from": "ConditionalLoggingPattern",
+      "to": "CollectiveKnowledge",
+      "relationType": "contributes to",
+      "significance": 5,
+      "created": "2025-06-29T07:12:32.374Z",
+      "metadata": {
+        "created_by": "knowledge-api"
+      }
     }
   ],
   "metadata": {
-    "version": "2.0.0",
-    "created": "2025-06-06T10:00:00Z",
-    "last_updated": "2025-06-20T07:24:38.279Z",
-    "contributors": [
-      "agent-q284340",
-      "q284340"
-    ],
-    "total_entities": 10,
-    "total_relations": 34,
-    "source": "curated_high_value_patterns",
-    "last_mode": "automatic",
-    "schema_version": "2.0.0",
-    "cleanup_performed": "2025-06-18T15:57:54.158Z",
-    "garbage_removal_performed": "2025-06-18T15:57:54.115Z",
-    "team": "coding",
-    "description": "Cross-team coding knowledge",
-    "created_from_migration": "2025-06-20T11:17:47.389Z"
+    "last_updated": "2025-06-29T07:12:32.374Z",
+    "total_entities": 9,
+    "total_relations": 20,
+    "team": "ui"
   }
 }

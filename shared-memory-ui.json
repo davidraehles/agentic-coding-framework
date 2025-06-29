@@ -1,6 +1,4 @@
 {
-  "displayName": "UI",
-  "description": "User interface patterns and frontend development knowledge",
   "entities": [
     {
       "name": "CollectiveKnowledge",
@@ -556,6 +554,56 @@
         "check": "DRY principle applied with full TypeScript support and reusable hooks"
       },
       "id": "mc4flkg6pp2n80apkv"
+    },
+    {
+      "name": "ConditionalLoggingPattern",
+      "entityType": "TransferablePattern",
+      "observations": [
+        {
+          "type": "rule",
+          "content": "NEVER console.log - ALWAYS Logger.log(level, category, message)",
+          "date": "2025-06-19T12:35:15Z"
+        },
+        {
+          "type": "implementation",
+          "content": "Dual-axis filtering system with level-based and category-based controls",
+          "date": "2025-06-19T12:35:15Z"
+        },
+        {
+          "type": "architecture",
+          "content": "Logger.log(level, category, message) with configurable output targets",
+          "date": "2025-06-19T12:35:15Z"
+        },
+        {
+          "type": "benefits",
+          "content": "Centralized logging control, runtime filtering, production-ready debugging",
+          "date": "2025-06-19T12:35:15Z"
+        },
+        {
+          "type": "applicability",
+          "content": "Any application requiring sophisticated logging control and filtering",
+          "date": "2025-06-19T12:35:15Z"
+        },
+        {
+          "type": "link",
+          "content": "Details: http://localhost:8080/knowledge-management/insights/ConditionalLoggingPattern.md",
+          "date": "2025-06-19T12:35:15Z"
+        }
+      ],
+      "significance": 5,
+      "problem": {},
+      "solution": {},
+      "metadata": {
+        "created_at": "2025-06-16T13:46:12.604Z",
+        "last_updated": "2025-06-29T07:05:00Z"
+      },
+      "quick_reference": {
+        "trigger": "Need sophisticated logging control with dual-axis filtering (level + category)",
+        "action": "Implement Logger.log(level, category, message) with configurable filtering and output targets",
+        "avoid": "console.log usage, hardcoded logging levels, single-axis filtering",
+        "check": "Zero console.log usage, configurable logging levels, category-based filtering working"
+      },
+      "id": "6f129029-7857-45e7-8e55-a3a1431d291e"
     }
   ],
   "relations": [
@@ -654,24 +702,52 @@
       "to": "CollectiveKnowledge",
       "relationType": "contributes to",
       "id": "ui_pattern_to_collective_8"
+    },
+    {
+      "id": "1d8f8153-1852-4bec-b5de-44fee34833db",
+      "from": "ConditionalLoggingPattern",
+      "to": "DynArch",
+      "relationType": "originally developed in",
+      "significance": 5,
+      "created": "2025-06-29T07:00:58.776Z",
+      "metadata": {
+        "created_by": "knowledge-api"
+      }
+    },
+    {
+      "id": "d9203070-b408-4166-bd7a-f2a34873c7b9",
+      "from": "ConditionalLoggingPattern",
+      "to": "Timeline",
+      "relationType": "implemented in",
+      "significance": 5,
+      "created": "2025-06-29T07:05:32.797Z",
+      "metadata": {
+        "created_by": "knowledge-api"
+      }
+    },
+    {
+      "from": "ConditionalLoggingPattern",
+      "to": "CollectiveKnowledge",
+      "relationType": "contributes to",
+      "id": "ui_pattern_to_collective_9"
     }
   ],
   "metadata": {
     "version": "2.0.0",
     "created": "2025-06-06T10:00:00Z",
-    "last_updated": "2025-06-20T07:24:38.279Z",
+    "last_updated": "2025-06-29T07:13:00.570Z",
     "contributors": [
       "agent-q284340",
       "q284340"
     ],
     "total_entities": 10,
-    "total_relations": 8,
+    "total_relations": 19,
     "source": "curated_high_value_patterns",
     "last_mode": "automatic",
     "schema_version": "2.0.0",
     "cleanup_performed": "2025-06-18T15:57:54.158Z",
     "garbage_removal_performed": "2025-06-18T15:57:54.115Z",
-    "team": "fw",
+    "team": "ui",
     "description": "Frontend Web team knowledge",
     "created_from_migration": "2025-06-20T11:17:47.390Z"
   }
