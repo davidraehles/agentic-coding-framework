@@ -32,6 +32,9 @@ class SemanticAnalysisMCPServer {
 
   async setupServer() {
     try {
+      // Check environment and provide detailed error messages
+      await this.checkEnvironment();
+      
       // Initialize semantic analysis client
       this.client = new SemanticAnalysisClient();
       await this.client.connect();
@@ -48,8 +51,57 @@ class SemanticAnalysisMCPServer {
       
     } catch (error) {
       this.logger.error('Failed to setup MCP server:', error);
+      
+      // Provide detailed error information
+      if (error.code === 'ECONNREFUSED') {
+        console.error('\n❌ MCP Server Failed: Agent system not running');
+        console.error('   The semantic-analysis agent system must be running first.');
+        console.error('   \n   To fix this:');
+        console.error('   1. Ensure API keys are configured in .env file');
+        console.error('   2. Start the agent system: npm run start:agents');
+        console.error('   3. Then start the MCP server: npm run start:mcp\n');
+      } else if (error.message?.includes('API')) {
+        console.error('\n❌ MCP Server Failed: API key configuration issue');
+        console.error(`   ${error.message}`);
+        console.error('   \n   Configure at least one API key in the .env file:');
+        console.error('   - ANTHROPIC_API_KEY=your-actual-key');
+        console.error('   - OPENAI_API_KEY=your-actual-key\n');
+      }
+      
       throw error;
     }
+  }
+  
+  async checkEnvironment() {
+    // Load environment variables
+    const envPath = new URL('../.env', import.meta.url).pathname;
+    
+    try {
+      const { config } = await import('dotenv');
+      config({ path: envPath });
+    } catch (error) {
+      // dotenv might not be available, continue
+    }
+    
+    // Check API keys
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+    
+    if ((!anthropicKey || anthropicKey === 'your-anthropic-api-key') && 
+        (!openaiKey || openaiKey === 'your-openai-api-key')) {
+      throw new Error('No valid API keys found. Please configure ANTHROPIC_API_KEY or OPENAI_API_KEY in .env file');
+    }
+    
+    // Log which keys are configured
+    const configuredKeys = [];
+    if (anthropicKey && anthropicKey !== 'your-anthropic-api-key') {
+      configuredKeys.push('ANTHROPIC_API_KEY');
+    }
+    if (openaiKey && openaiKey !== 'your-openai-api-key') {
+      configuredKeys.push('OPENAI_API_KEY');
+    }
+    
+    this.logger.info(`API keys configured: ${configuredKeys.join(', ')}`);
   }
 
   registerTools() {
