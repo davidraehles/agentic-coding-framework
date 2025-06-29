@@ -27,6 +27,43 @@ export CODING_AGENT="copilot"
 export CODING_TOOLS_PATH="$PROJECT_DIR"
 export CODING_TOOLS_GRAPH_DB="$HOME/.coding-tools/memory.graph"
 
+# Auto-start semantic-analysis agent system if needed
+SEMANTIC_ANALYSIS_DIR="$PROJECT_DIR/semantic-analysis-system"
+if [ -d "$SEMANTIC_ANALYSIS_DIR" ]; then
+  # Check if agents are already running
+  if ! pgrep -f "semantic-analysis-system/index.js" > /dev/null; then
+    colored_log "${CYAN}🤖 Starting semantic-analysis agent system...${NC}"
+    
+    # Check for API keys
+    if [ -f "$SEMANTIC_ANALYSIS_DIR/.env" ]; then
+      source "$SEMANTIC_ANALYSIS_DIR/.env"
+      
+      # Check if at least one API key is configured
+      if [ "$ANTHROPIC_API_KEY" = "your-anthropic-api-key" ] && [ "$OPENAI_API_KEY" = "your-openai-api-key" ]; then
+        colored_log "${YELLOW}⚠️  Warning: No API keys configured for semantic-analysis system${NC}"
+        colored_log "${YELLOW}   Semantic analysis features will not be available${NC}"
+      else
+        # Start the agent system in background
+        cd "$SEMANTIC_ANALYSIS_DIR"
+        nohup npm run start:agents > "$SEMANTIC_ANALYSIS_DIR/logs/agents.log" 2>&1 &
+        AGENT_PID=$!
+        colored_log "${GREEN}✓ Agent system started with PID: $AGENT_PID${NC}"
+        
+        # Wait a moment for agents to initialize
+        sleep 3
+        
+        # Store PID for cleanup
+        echo $AGENT_PID > "$SEMANTIC_ANALYSIS_DIR/.agent.pid"
+        cd "$PROJECT_DIR"
+      fi
+    else
+      colored_log "${YELLOW}⚠️  No .env file found for semantic-analysis system${NC}"
+    fi
+  else
+    colored_log "${GREEN}✓ Agent system already running${NC}"
+  fi
+fi
+
 # Display colorful startup banner
 echo ""
 colored_log "${BLUE}🚀 Starting GitHub CoPilot with Knowledge Management Integration${NC}"
@@ -52,6 +89,16 @@ cleanup() {
     kill $FALLBACK_PID 2>/dev/null || true
   fi
   rm -f "$PROJECT_DIR/.coding-tools/fallback-services.pid"
+  
+  # Also stop semantic-analysis agents if we started them
+  if [ -f "$SEMANTIC_ANALYSIS_DIR/.agent.pid" ]; then
+    AGENT_PID=$(cat "$SEMANTIC_ANALYSIS_DIR/.agent.pid")
+    if kill -0 $AGENT_PID 2>/dev/null; then
+      colored_log "${CYAN}🧹 Stopping semantic-analysis agents...${NC}"
+      kill $AGENT_PID 2>/dev/null || true
+      rm -f "$SEMANTIC_ANALYSIS_DIR/.agent.pid"
+    fi
+  fi
 }
 
 trap cleanup EXIT INT TERM

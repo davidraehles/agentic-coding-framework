@@ -70,7 +70,7 @@ The MCP server now provides detailed error messages:
    - Check API keys are configured
    - Run `mcp-status` for details
 
-2. **"No valid API keys found"**  
+2. **"No valid API keys found"**
    - Configure at least one API key in `.env`
    - Either ANTHROPIC_API_KEY or OPENAI_API_KEY
 
@@ -79,12 +79,14 @@ The MCP server now provides detailed error messages:
 To use only Anthropic (no OpenAI key needed):
 
 1. Set in `.env`:
-   ```
+
+   ```bash
    ANTHROPIC_API_KEY=your-key
    DEFAULT_LLM_PROVIDER=claude
    ```
 
 2. Edit `config/agents.yaml`:
+
    ```yaml
    llm:
      primaryProvider: claude
@@ -93,7 +95,7 @@ To use only Anthropic (no OpenAI key needed):
 
 ## Architecture
 
-```
+```text
 coding --claude
     ↓
 launch-claude.sh
