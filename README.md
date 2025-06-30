@@ -21,7 +21,7 @@ A comprehensive AI-powered development toolkit that provides intelligent code an
 
 ## 🏗️ System Architecture
 
-![Semantic Analysis System Overview](docs/puml/semantic-analysis-system-overview.png)
+![Semantic Analysis System Overview](docs/images/semantic-analysis-system-overview.png)
 
 The system provides:
 - **Multi-Agent Semantic Analysis** - Code pattern recognition, conversation insights
@@ -33,8 +33,8 @@ The system provides:
 ## 🔧 Core Components
 
 ### Knowledge Management Tools
-- **[UKB-CLI](docs/components/ukb/)** - Update Knowledge Base (capture insights)
-- **[VKB-CLI](docs/components/vkb/)** - View Knowledge Base (web visualization)
+- **[UKB-CLI](docs/ukb/)** - Update Knowledge Base (capture insights)
+- **[VKB-CLI](docs/vkb/)** - View Knowledge Base (web visualization)
 
 ### Semantic Analysis System
 - **[Multi-Agent System](docs/components/semantic-analysis/)** - Advanced AI-powered analysis
@@ -54,8 +54,8 @@ The system provides:
 - **[Memory Systems](docs/architecture/memory-systems.md)** - Storage and synchronization
 
 ### 🧩 Component Documentation
-- **[UKB-CLI Documentation](docs/components/ukb/)** - Knowledge capture system
-- **[VKB-CLI Documentation](docs/components/vkb/)** - Knowledge visualization
+- **[UKB-CLI Documentation](docs/ukb/)** - Knowledge capture system
+- **[VKB-CLI Documentation](docs/vkb/)** - Knowledge visualization
 - **[Semantic Analysis System](docs/components/semantic-analysis/)** - AI analysis agents
 
 ### 🎯 Use Cases & Workflows
@@ -69,12 +69,12 @@ The system provides:
 ### 🔌 Integrations
 - **[VSCode CoPilot Integration](docs/integrations/vscode-copilot-integration.md)** - Enhanced development experience
 - **[API Reference](docs/integrations/api-reference.md)** - HTTP and MCP APIs
-- **[Testing Guide](docs/integrations/testing-guide.md)** - Integration testing
+- **[Testing Guide](docs/integrations/vscode-testing-guide.md)** - Integration testing
 
 ### 📋 Reference
-- **[Command Reference](docs/reference/)** - All CLI commands and options
-- **[Configuration](docs/reference/)** - Environment variables and settings
-- **[Troubleshooting](docs/reference/)** - Common issues and solutions
+- **[Reference Documentation](docs/reference/)** - Complete reference materials
+- **[API Keys Setup](docs/reference/api-keys-setup.md)** - LLM provider configuration
+- **[Troubleshooting](docs/reference/troubleshooting-knowledge-base.md)** - Common issues and solutions
 
 ## 🎯 Key Features
 
