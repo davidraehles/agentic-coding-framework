@@ -33,6 +33,14 @@ export class KnowledgeGraphAgent extends BaseAgent {
     // Initialize UKB integration
     this.ukbIntegration = new UkbIntegration(this.config.ukb);
     
+    // CRITICAL: Load UKB API reference at startup
+    try {
+      await this.ukbIntegration.loadUkbApiReference();
+      this.logger.info('UKB API reference loaded successfully');
+    } catch (error) {
+      this.logger.warn('Failed to load UKB API reference at startup:', error.message);
+    }
+    
     // Initialize entity processor
     this.entityProcessor = new EntityProcessor(this.config.processing);
     
@@ -55,6 +63,9 @@ export class KnowledgeGraphAgent extends BaseAgent {
     
     this.registerRequestHandler('knowledge/entity/update',
       this.handleEntityUpdateRequest.bind(this));
+    
+    this.registerRequestHandler('knowledge/entity/remove',
+      this.handleEntityRemoveRequest.bind(this));
     
     this.registerRequestHandler('knowledge/entity/search',
       this.handleEntitySearchRequest.bind(this));
@@ -177,6 +188,47 @@ export class KnowledgeGraphAgent extends BaseAgent {
       
     } catch (error) {
       this.logger.error('Entity update failed:', error);
+      throw error;
+    }
+  }
+
+  async handleEntityRemoveRequest(data) {
+    try {
+      this.logger.info('Processing entity removal request:', data);
+      
+      const { entityName, requestId } = data;
+      
+      if (!entityName) {
+        throw new Error('Entity name is required for removal');
+      }
+
+      // Remove from knowledge API first
+      await this.knowledgeAPI.removeEntity(entityName);
+      
+      // Remove from UKB using validated command
+      if (this.config.autoSyncUkb) {
+        const ukbResult = await this.ukbIntegration.removeEntity(entityName);
+        this.logger.info(`Entity removed from UKB: ${entityName}`, ukbResult);
+      }
+
+      await this.publish('knowledge/entity/removed', {
+        requestId,
+        entityName,
+        status: 'completed'
+      });
+
+      this.logger.info(`Entity removed: ${entityName}`);
+      return { entityName, removed: true };
+      
+    } catch (error) {
+      this.logger.error('Entity removal failed:', error);
+      
+      await this.publish(EventTypes.AGENT_ERROR, {
+        requestId: data.requestId,
+        error: error.message,
+        operation: 'entity-remove'
+      });
+      
       throw error;
     }
   }

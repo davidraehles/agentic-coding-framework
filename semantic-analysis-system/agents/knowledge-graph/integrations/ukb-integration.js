@@ -18,10 +18,13 @@ export class UkbIntegration {
       sharedMemoryPath: config.sharedMemoryPath || process.env.CODING_TOOLS_PATH + '/shared-memory.json',
       autoSync: config.autoSync !== false,
       syncDirection: config.syncDirection || 'bidirectional', // 'to-ukb', 'from-ukb', 'bidirectional'
+      ukbApiDocsPath: config.ukbApiDocsPath || process.env.CODING_TOOLS_PATH + '/knowledge-management/insights/UkbCli.md',
       ...config
     };
     
     this.logger = new Logger('ukb-integration');
+    this.ukbApiReference = null; // Cache for UKB API documentation
+    this.availableCommands = new Set(); // Cache for available commands
     
     this.validateConfiguration();
   }
@@ -34,6 +37,89 @@ export class UkbIntegration {
     if (!this.config.ukbPath) {
       throw new Error('UKB path is required for integration');
     }
+  }
+
+  async loadUkbApiReference() {
+    if (this.ukbApiReference) {
+      return this.ukbApiReference; // Return cached version
+    }
+
+    try {
+      this.logger.debug('Loading UKB API reference from documentation...');
+      
+      // Read UKB CLI documentation
+      const docsContent = await fs.readFile(this.config.ukbApiDocsPath, 'utf8');
+      
+      // Extract command reference section
+      const commandSectionMatch = docsContent.match(/### 🚨 CRITICAL: Complete UKB Command Reference(.*?)```/s);
+      if (!commandSectionMatch) {
+        throw new Error('Could not find UKB command reference section in documentation');
+      }
+      
+      const commandReference = commandSectionMatch[1];
+      
+      // Parse available commands
+      const commandMatches = commandReference.match(/--[\w-]+/g);
+      if (commandMatches) {
+        commandMatches.forEach(cmd => this.availableCommands.add(cmd));
+      }
+      
+      this.ukbApiReference = {
+        fullReference: commandReference,
+        availableCommands: Array.from(this.availableCommands),
+        loadedAt: new Date().toISOString()
+      };
+      
+      this.logger.info(`UKB API reference loaded: ${this.availableCommands.size} commands available`);
+      return this.ukbApiReference;
+      
+    } catch (error) {
+      this.logger.error('Failed to load UKB API reference:', error);
+      
+      // Fallback to help command if docs unavailable
+      try {
+        const { stdout } = await execAsync(`${this.config.ukbPath} --help`, { timeout: 5000 });
+        this.ukbApiReference = {
+          fullReference: stdout,
+          availableCommands: this.parseCommandsFromHelp(stdout),
+          loadedAt: new Date().toISOString(),
+          source: 'help-command'
+        };
+        this.logger.warn('Using fallback help command for UKB API reference');
+        return this.ukbApiReference;
+      } catch (helpError) {
+        throw new Error(`Failed to load UKB API reference from docs or help: ${error.message}`);
+      }
+    }
+  }
+
+  parseCommandsFromHelp(helpOutput) {
+    const commands = [];
+    const lines = helpOutput.split('\n');
+    
+    for (const line of lines) {
+      const commandMatch = line.match(/^\s*(--[\w-]+)/);
+      if (commandMatch) {
+        commands.push(commandMatch[1]);
+        this.availableCommands.add(commandMatch[1]);
+      }
+    }
+    
+    return commands;
+  }
+
+  async validateCommand(command) {
+    await this.loadUkbApiReference();
+    
+    if (!this.availableCommands.has(command)) {
+      const availableList = Array.from(this.availableCommands).join(', ');
+      throw new Error(
+        `Unknown UKB command: ${command}. Available commands: ${availableList}. ` +
+        `Please check UKB API documentation at ${this.config.ukbApiDocsPath}`
+      );
+    }
+    
+    return true;
   }
 
   async syncEntity(entity) {
@@ -404,11 +490,14 @@ export class UkbIntegration {
     return tempFile;
   }
 
-  async executeUkbCommand(inputFile) {
+  async executeUkbCommand(inputFile, commandOption = '--interactive') {
     try {
-      const command = `${this.config.ukbPath} --interactive < "${inputFile}"`;
+      // CRITICAL: Always validate command before execution
+      await this.validateCommand(commandOption);
       
-      this.logger.debug(`Executing UKB command: ${command}`);
+      const command = `${this.config.ukbPath} ${commandOption} < "${inputFile}"`;
+      
+      this.logger.debug(`Executing validated UKB command: ${command}`);
       
       const { stdout, stderr } = await execAsync(command, {
         cwd: process.env.CODING_TOOLS_PATH,
@@ -422,7 +511,9 @@ export class UkbIntegration {
       return {
         success: true,
         stdout,
-        stderr
+        stderr,
+        command: commandOption,
+        validated: true
       };
       
     } catch (error) {
@@ -449,21 +540,97 @@ export class UkbIntegration {
     }
   }
 
+  async removeEntity(entityName) {
+    try {
+      // CRITICAL: Load UKB API first to ensure command exists
+      await this.validateCommand('--remove-entity');
+      
+      const command = `${this.config.ukbPath} --remove-entity "${entityName}"`;
+      
+      this.logger.debug(`Executing validated remove-entity command: ${command}`);
+      
+      const { stdout, stderr } = await execAsync(command, {
+        cwd: process.env.CODING_TOOLS_PATH,
+        timeout: 15000
+      });
+      
+      return {
+        success: true,
+        stdout,
+        stderr,
+        entityName,
+        command: '--remove-entity',
+        validated: true
+      };
+      
+    } catch (error) {
+      this.logger.error(`Failed to remove entity ${entityName}:`, error);
+      throw new Error(`Entity removal failed: ${error.message}`);
+    }
+  }
+
+  async addRelation(fromEntity, toEntity, relationType) {
+    try {
+      // CRITICAL: Load UKB API first to ensure command exists
+      await this.validateCommand('--add-relation');
+      
+      // Create temporary input for relation
+      const tempFile = await this.createTempRelationInput(fromEntity, toEntity, relationType);
+      
+      try {
+        const result = await this.executeUkbCommand(tempFile, '--add-relation');
+        return {
+          ...result,
+          fromEntity,
+          toEntity,
+          relationType
+        };
+      } finally {
+        await this.cleanupTempFile(tempFile);
+      }
+      
+    } catch (error) {
+      this.logger.error(`Failed to add relation ${fromEntity} -> ${toEntity}:`, error);
+      throw new Error(`Relation creation failed: ${error.message}`);
+    }
+  }
+
+  async createTempRelationInput(fromEntity, toEntity, relationType) {
+    const tempDir = process.env.TMPDIR || '/tmp';
+    const tempFile = path.join(tempDir, `ukb-relation-${Date.now()}.txt`);
+    
+    // Format for UKB relation input
+    const inputContent = [
+      fromEntity,
+      toEntity, 
+      relationType
+    ].join('\n');
+    
+    await fs.writeFile(tempFile, inputContent, 'utf8');
+    return tempFile;
+  }
+
   async testUkbAvailability() {
     try {
+      // Load API reference as part of availability test
+      await this.loadUkbApiReference();
+      
       const { stdout } = await execAsync(`${this.config.ukbPath} --help`, {
         timeout: 5000
       });
       
       return {
         available: true,
-        version: this.extractUkbVersion(stdout)
+        version: this.extractUkbVersion(stdout),
+        apiLoaded: !!this.ukbApiReference,
+        commandsAvailable: this.availableCommands.size
       };
       
     } catch (error) {
       return {
         available: false,
-        error: error.message
+        error: error.message,
+        apiLoaded: false
       };
     }
   }
@@ -479,6 +646,10 @@ export class UkbIntegration {
       sharedMemoryPath: this.config.sharedMemoryPath,
       autoSync: this.config.autoSync,
       syncDirection: this.config.syncDirection,
+      ukbApiDocsPath: this.config.ukbApiDocsPath,
+      apiReferenceLoaded: !!this.ukbApiReference,
+      availableCommands: this.ukbApiReference ? this.ukbApiReference.availableCommands : [],
+      commandCount: this.availableCommands.size,
       capabilities: this.getCapabilities()
     };
   }
@@ -490,7 +661,12 @@ export class UkbIntegration {
       'bidirectional-sync',
       'ukb-export',
       'ukb-import',
-      'format-conversion'
+      'format-conversion',
+      'api-validation',
+      'command-verification',
+      'documentation-integration',
+      'entity-removal',
+      'relation-management'
     ];
   }
 }
