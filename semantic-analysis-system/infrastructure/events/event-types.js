@@ -35,8 +35,11 @@ export const EventTypes = {
   // Knowledge graph events
   ENTITY_CREATE_REQUESTED: 'knowledge/entity/create/requested',
   ENTITY_CREATED: 'knowledge/entity/created',
+  ENTITY_UPDATED: 'knowledge/entity/updated',
+  ENTITY_REMOVED: 'knowledge/entity/removed',
   RELATION_CREATE_REQUESTED: 'knowledge/relation/create/requested',
   RELATION_CREATED: 'knowledge/relation/created',
+  RELATION_REMOVED: 'knowledge/relation/removed',
   KNOWLEDGE_UPDATED: 'knowledge/updated',
   KNOWLEDGE_SYNCED: 'knowledge/synced',
   
