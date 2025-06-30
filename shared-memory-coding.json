@@ -339,6 +339,63 @@
         "version": "2.0.0",
         "last_updated": "2025-06-20T07:24:30.512Z"
       }
+    },
+    {
+      "id": "5ff86b44-2da3-4557-a176-d16fd693b226",
+      "name": "AutomaticcodepatternASTbasedpatternrecog",
+      "entityType": "WorkflowPattern",
+      "observations": [
+        {
+          "type": "problem",
+          "content": "Automatic code pattern analysis lacks systematic detection and documentation workflows for development teams",
+          "date": "2025-06-30T06:04:37.157Z"
+        },
+        {
+          "type": "solution",
+          "content": "AST-based pattern recognition system with automated documentation workflows and comprehensive quality assessment",
+          "date": "2025-06-30T06:04:37.157Z"
+        },
+        {
+          "type": "rationale",
+          "content": "Enables systematic pattern detection, quality assessment, and consistency enforcement across codebases",
+          "date": "2025-06-30T06:04:37.157Z"
+        },
+        {
+          "type": "learnings",
+          "content": "Multi-layer analysis (structural, behavioral, dependency) provides comprehensive pattern identification and architectural insights",
+          "date": "2025-06-30T06:04:37.157Z"
+        },
+        {
+          "type": "applicability",
+          "content": "Any development team requiring systematic code quality assessment and architectural pattern documentation",
+          "date": "2025-06-30T06:04:37.157Z"
+        },
+        "Details: http://localhost:8080/knowledge-management/insights/AutomaticCodePatternAnalysisWorkflow.md"
+      ],
+      "significance": 8,
+      "created": "2025-06-30T06:04:37.167Z",
+      "updated": "2025-06-30T06:24:59.924Z",
+      "metadata": {
+        "created_by": "piped-insight",
+        "version": "2.0.0",
+        "team": "coding",
+        "technologies": [
+          "AST",
+          "Pattern-Recognition",
+          "Documentation-Generation",
+          "Quality-Assessment",
+          "Architecture-Analysis"
+        ],
+        "references": [
+          "https://github.com/babel/babel-parser"
+        ],
+        "codeFiles": [
+          "docs/use-cases/code-pattern-analysis.md",
+          "lib/semantic-analysis/analyzers/code-analyzer.js"
+        ],
+        "insight_type": "problem-solution",
+        "last_updated": "2025-06-30T06:24:59.924Z"
+      }
     }
   ],
   "relations": [
@@ -491,10 +548,32 @@
       "metadata": {
         "created_by": "knowledge-api"
       }
+    },
+    {
+      "id": "1f978654-389d-4b12-9d12-6f1e0daedbcd",
+      "from": "CollectiveKnowledge",
+      "to": "AutomaticcodepatternASTbasedpatternrecog",
+      "relationType": "contains",
+      "significance": 5,
+      "created": "2025-06-30T06:05:12.375Z",
+      "metadata": {
+        "created_by": "knowledge-api"
+      }
+    },
+    {
+      "id": "abfbb3a7-3336-40fd-9bc8-cd40c4cc799b",
+      "from": "AutomaticcodepatternASTbasedpatternrecog",
+      "to": "Coding",
+      "relationType": "implemented in",
+      "significance": 5,
+      "created": "2025-06-30T06:05:22.734Z",
+      "metadata": {
+        "created_by": "knowledge-api"
+      }
     }
   ],
   "metadata": {
-    "last_updated": "2025-06-29T07:12:32.374Z",
+    "last_updated": "2025-06-30T06:24:59.924Z",
     "total_entities": 9,
     "total_relations": 20,
     "team": "ui"
