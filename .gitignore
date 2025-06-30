@@ -51,6 +51,7 @@ claude-code-mcp-processed.json
 install.log
 memory-visualizer/
 .activate
+integrations/mcp-server-browserbase/
 
 # VSCode extension build artifacts
 integrations/vscode-km-copilot/*.vsix
