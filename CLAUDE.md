@@ -74,6 +74,22 @@ claude-mcp
 
 **IMPORTANT: The knowledge base is managed through MCP memory service and topic-specific shared-memory-*.json files. ALWAYS use the `ukb` command to update knowledge. Never edit the shared-memory files directly. The ukb tool ensures proper formatting, validation, and synchronization with MCP memory.**
 
+### 🔴 MANDATORY: UKB Command Reference Check
+
+**BEFORE ANY UKB COMMAND: ALWAYS check the UkbCli entity in the knowledge base for the complete command reference!**
+
+```javascript
+// Query UkbCli documentation before any ukb operation
+const ukbDocs = await mcp__memory__search_nodes("UkbCli");
+// OR read the insight file directly:
+// /Users/q284340/Agentic/coding/knowledge-management/insights/UkbCli.md
+```
+
+**NEVER guess ukb commands or use trial-and-error!** The complete API reference is documented in:
+- Knowledge base entity: `UkbCli`
+- Insight file: `knowledge-management/insights/UkbCli.md`
+- Section: "🚨 CRITICAL: Complete UKB Command Reference"
+
 ### 🔧 Knowledge Base Update Methods
 
 **When updating the knowledge base from conversation insights:**

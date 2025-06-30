@@ -257,7 +257,63 @@ The above sequence diagram shows the complete workflow for interactive knowledge
 
 ## API Reference
 
-### Command Line Interface
+### 🚨 CRITICAL: Complete UKB Command Reference
+
+**ALWAYS CHECK THIS BEFORE USING UKB COMMANDS!** This is the definitive reference for all UKB operations:
+
+```bash
+UKB - Universal Knowledge Base CLI
+
+USAGE:
+    ukb [command] [options]
+
+MOST COMMON COMMANDS:
+    --auto [N]              Analyze last N commits (default: 10)
+    --list-entities         List all entities  
+    --stats                 Show knowledge base statistics
+    --interactive           Start interactive mode
+    --status               Show knowledge base status
+
+ENTITY MANAGEMENT:
+    --add-entity           Add new entity (interactive)
+    --remove-entity <name> Remove entity
+    --search-entities <q>  Search entities
+    --rename-entity <old> <new>  Rename entity
+    --add-observation <name> <obs>  Add observation to entity
+    --remove-observation <name> <obs>  Remove observation from entity
+
+RELATION MANAGEMENT:
+    --list-relations       List all relations
+    --add-relation         Add relation (interactive or --from --to --type)
+    --remove-relation      Remove relation (interactive)
+
+GIT ANALYSIS:
+    --auto [commits]       Analyze recent commits
+    --full-history [branch]  Analyze complete history
+    --agent                Interactive analysis mode
+
+KNOWLEDGE BASE:
+    --validate             Validate knowledge base
+    --backup [path]        Create backup
+    --restore <file>       Restore from backup
+    --export <file>        Export to file
+    --import <file>        Import from file
+
+BATCH OPERATIONS:
+    --batch-entities <file>   Add entities from JSON file
+    --batch-relations <file>  Add relations from JSON file
+
+EXAMPLES:
+    ukb --auto 5           # Analyze last 5 commits
+    ukb --list-entities    # List all entities
+    ukb --stats            # Show statistics
+    ukb --interactive      # Start interactive mode
+
+This lightweight script replaces the original 3,948-line bash script
+while providing 100% backward compatibility via ukb-cli delegation.
+```
+
+### Legacy Command Line Interface (ukb-cli)
 
 ```bash
 ukb-cli [options] [command]
