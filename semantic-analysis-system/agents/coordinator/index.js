@@ -7,6 +7,7 @@ import { BaseAgent } from '../../framework/base-agent.js';
 import { WorkflowEngine } from './engines/workflow-engine.js';
 import { WorkflowBuilder } from './builders/workflow-builder.js';
 import { TaskScheduler } from './schedulers/task-scheduler.js';
+import { QualityAssurance } from './qa/quality-assurance.js';
 import { EventTypes } from '../../infrastructure/events/event-types.js';
 import { Logger } from '../../shared/logger.js';
 
@@ -20,6 +21,7 @@ export class CoordinatorAgent extends BaseAgent {
     this.workflowEngine = null;
     this.workflowBuilder = null;
     this.taskScheduler = null;
+    this.qualityAssurance = null;
     this.activeWorkflows = new Map();
     this.agentCapabilities = new Map();
   }
@@ -31,6 +33,7 @@ export class CoordinatorAgent extends BaseAgent {
     this.workflowEngine = new WorkflowEngine(this.config.workflows);
     this.workflowBuilder = new WorkflowBuilder(this.config.workflows);
     this.taskScheduler = new TaskScheduler(this.config.scheduling);
+    this.qualityAssurance = new QualityAssurance(this.config.qualityAssurance);
     
     // Register request handlers
     this.registerRequestHandlers();
@@ -78,6 +81,16 @@ export class CoordinatorAgent extends BaseAgent {
     
     this.registerRequestHandler('coordinator/research/technology',
       this.handleTechnologyResearchRequest.bind(this));
+    
+    // Quality assurance
+    this.registerRequestHandler('coordinator/qa/validate-agent-output',
+      this.handleValidateAgentOutputRequest.bind(this));
+    
+    this.registerRequestHandler('coordinator/qa/validate-workflow',
+      this.handleValidateWorkflowRequest.bind(this));
+    
+    this.registerRequestHandler('coordinator/qa/generate-report',
+      this.handleGenerateQAReportRequest.bind(this));
   }
 
   async subscribeToEvents() {
@@ -374,6 +387,23 @@ export class CoordinatorAgent extends BaseAgent {
 
   async handleEntityCreated(data) {
     try {
+      // Perform quality assurance on the created entity
+      if (this.qualityAssurance && data.entity) {
+        const qaReport = await this.qualityAssurance.validateAgentOutput('knowledgeGraph', data, {
+          entity: data.entity
+        });
+        
+        if (!qaReport.passed) {
+          this.logger.warn(`Quality assurance failed for entity: ${data.entity.name}`, qaReport.errors);
+          
+          // If auto-correction is enabled and successful, use corrected output
+          if (qaReport.corrected) {
+            data.entity = qaReport.correctedOutput.entity;
+            this.logger.info(`Auto-corrected entity: ${data.entity.name}`);
+          }
+        }
+      }
+
       // Find workflows waiting for entity creation
       for (const [workflowId, workflow] of this.activeWorkflows) {
         if (workflow.status === 'running' && workflow.currentStep?.waitingFor === 'entity-creation') {
@@ -463,10 +493,72 @@ export class CoordinatorAgent extends BaseAgent {
     }
   }
 
+  async handleValidateAgentOutputRequest(data) {
+    try {
+      const { agentId, output, context, requestId } = data;
+      
+      const report = await this.qualityAssurance.validateAgentOutput(agentId, output, context);
+      
+      await this.publish('coordinator/qa/output-validated', {
+        requestId,
+        agentId,
+        report,
+        status: 'completed'
+      });
+
+      return report;
+      
+    } catch (error) {
+      this.logger.error('Agent output validation failed:', error);
+      throw error;
+    }
+  }
+
+  async handleValidateWorkflowRequest(data) {
+    try {
+      const { workflowId, steps, results, context, requestId } = data;
+      
+      const report = await this.qualityAssurance.validateWorkflow(workflowId, steps, results, context);
+      
+      await this.publish('coordinator/qa/workflow-validated', {
+        requestId,
+        workflowId,
+        report,
+        status: 'completed'
+      });
+
+      return report;
+      
+    } catch (error) {
+      this.logger.error('Workflow validation failed:', error);
+      throw error;
+    }
+  }
+
+  async handleGenerateQAReportRequest(data) {
+    try {
+      const { requestId } = data;
+      
+      const report = this.qualityAssurance.generateQualityReport();
+      
+      await this.publish('coordinator/qa/report-generated', {
+        requestId,
+        report,
+        status: 'completed'
+      });
+
+      return report;
+      
+    } catch (error) {
+      this.logger.error('QA report generation failed:', error);
+      throw error;
+    }
+  }
+
   async discoverAgentCapabilities() {
     try {
       // Send discovery requests to all known agents
-      const agentIds = ['semantic-analysis', 'web-search', 'knowledge-graph'];
+      const agentIds = ['semantic-analysis', 'web-search', 'knowledge-graph', 'synchronization', 'deduplication'];
       
       for (const agentId of agentIds) {
         try {
@@ -517,7 +609,12 @@ export class CoordinatorAgent extends BaseAgent {
       'agent-discovery',
       'predefined-workflows',
       'failure-recovery',
-      'dependency-management'
+      'dependency-management',
+      'quality-assurance',
+      'agent-output-validation',
+      'workflow-validation',
+      'auto-correction',
+      'quality-metrics'
     ];
   }
 
@@ -528,6 +625,7 @@ export class CoordinatorAgent extends BaseAgent {
       agentCapabilities: Object.fromEntries(this.agentCapabilities),
       workflowEngine: this.workflowEngine?.getInfo(),
       taskScheduler: this.taskScheduler?.getInfo(),
+      qualityAssurance: this.qualityAssurance?.generateQualityReport(),
       config: this.config
     };
   }

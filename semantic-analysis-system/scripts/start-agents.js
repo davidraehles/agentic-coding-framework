@@ -48,7 +48,9 @@ class AgentSystemStarter {
         semantic: process.env.AGENT_SEMANTIC_ENABLED === 'true',
         websearch: process.env.AGENT_WEBSEARCH_ENABLED === 'true',
         knowledge: process.env.AGENT_KNOWLEDGE_ENABLED === 'true',
-        coordinator: process.env.AGENT_COORDINATOR_ENABLED === 'true'
+        coordinator: process.env.AGENT_COORDINATOR_ENABLED === 'true',
+        synchronization: process.env.AGENT_SYNCHRONIZATION_ENABLED === 'true',
+        deduplication: process.env.AGENT_DEDUPLICATION_ENABLED === 'true'
       }
     };
   }
