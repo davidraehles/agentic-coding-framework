@@ -15,8 +15,8 @@ let cachedClient = null;
 async function getClient() {
   if (!cachedClient) {
     cachedClient = new SemanticAnalysisClient({
-      rpcUrl: `http://localhost:${process.env.JSON_RPC_PORT || '8081'}`,
-      mqttUrl: 'mqtt://localhost:1883',
+      rpcUrl: `http://localhost:${process.env.JSON_RPC_PORT || '8082'}`,
+      mqttUrl: `mqtt://localhost:${process.env.MQTT_BROKER_PORT || '1884'}`,
       timeout: 30000
     });
     await cachedClient.connect();

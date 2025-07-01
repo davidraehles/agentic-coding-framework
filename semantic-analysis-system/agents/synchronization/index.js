@@ -65,6 +65,9 @@ export class SynchronizationAgent extends BaseAgent {
     // Start sync processor
     this.startSyncProcessor();
     
+    // Subscribe to sync events from other agents
+    await this.setupSyncEventSubscriptions();
+    
     this.logger.info('Synchronization Agent initialized successfully');
   }
 
@@ -1173,5 +1176,194 @@ export class SynchronizationAgent extends BaseAgent {
     }
     
     this.logger.info('Synchronization Agent stopped');
+  }
+
+  /**
+   * Subscribe to sync events from other agents
+   */
+  async setupSyncEventSubscriptions() {
+    this.logger.info('Setting up sync event subscriptions...');
+    
+    // Subscribe to entity sync events from Knowledge Graph Agent
+    await this.subscribe('sync/entity/created', (data) => this.handleEntitySyncRequest(data));
+    await this.subscribe('sync/entity/updated', (data) => this.handleEntitySyncRequest(data));
+    await this.subscribe('sync/entity/removed', (data) => this.handleEntityRemovalSyncRequest(data));
+    
+    // Subscribe to relation sync events
+    await this.subscribe('sync/relation/created', (data) => this.handleRelationSyncRequest(data));
+    
+    // Subscribe to bulk sync events
+    await this.subscribe('sync/full-sync', (data) => this.handleFullSyncRequest(data));
+    await this.subscribe('sync/export-request', (data) => this.handleExportRequest(data));
+    await this.subscribe('sync/import-request', (data) => this.handleImportRequest(data));
+    await this.subscribe('sync/bidirectional-sync', (data) => this.handleBidirectionalSyncRequest(data));
+    
+    this.logger.info('Sync event subscriptions configured');
+  }
+
+  /**
+   * Handle entity sync requests from other agents
+   */
+  async handleEntitySyncRequest(data) {
+    try {
+      const { entity, requestId, source, syncTargets } = data;
+      
+      this.logger.info(`Processing entity sync request from ${source}: ${entity.name}`);
+      
+      if (syncTargets.includes('ukb')) {
+        // Sync to UKB through UkbIntegration
+        await this.queueSync({
+          type: 'entity-sync-ukb',
+          source: 'agent-request',
+          target: 'ukb',
+          data: { entity, requestId, source }
+        });
+      }
+      
+      if (syncTargets.includes('mcp-memory')) {
+        // Sync to MCP memory
+        await this.queueSync({
+          type: 'entity-sync-mcp',
+          source: 'agent-request',
+          target: 'mcp',
+          data: { entity, requestId, source }
+        });
+      }
+      
+    } catch (error) {
+      this.logger.error('Failed to handle entity sync request:', error);
+    }
+  }
+
+  /**
+   * Handle entity removal sync requests
+   */
+  async handleEntityRemovalSyncRequest(data) {
+    try {
+      const { entityName, requestId, source, syncTargets } = data;
+      
+      this.logger.info(`Processing entity removal sync request from ${source}: ${entityName}`);
+      
+      for (const target of syncTargets) {
+        await this.queueSync({
+          type: 'entity-removal',
+          source: 'agent-request',
+          target,
+          data: { entityName, requestId, source }
+        });
+      }
+      
+    } catch (error) {
+      this.logger.error('Failed to handle entity removal sync request:', error);
+    }
+  }
+
+  /**
+   * Handle relation sync requests
+   */
+  async handleRelationSyncRequest(data) {
+    try {
+      const { relation, requestId, source, syncTargets } = data;
+      
+      this.logger.info(`Processing relation sync request from ${source}: ${relation.from} -> ${relation.to}`);
+      
+      for (const target of syncTargets) {
+        await this.queueSync({
+          type: 'relation-sync',
+          source: 'agent-request',
+          target,
+          data: { relation, requestId, source }
+        });
+      }
+      
+    } catch (error) {
+      this.logger.error('Failed to handle relation sync request:', error);
+    }
+  }
+
+  /**
+   * Handle full sync requests
+   */
+  async handleFullSyncRequest(data) {
+    try {
+      const { requestId, source, syncTargets } = data;
+      
+      this.logger.info(`Processing full sync request from ${source}`);
+      
+      for (const target of syncTargets) {
+        await this.queueSync({
+          type: 'full-sync',
+          source: 'agent-request',
+          target,
+          data: { requestId, source }
+        });
+      }
+      
+    } catch (error) {
+      this.logger.error('Failed to handle full sync request:', error);
+    }
+  }
+
+  /**
+   * Handle export requests
+   */
+  async handleExportRequest(data) {
+    try {
+      const { target, requestId } = data;
+      
+      this.logger.info(`Processing export request to ${target}`);
+      
+      await this.queueSync({
+        type: 'export',
+        source: 'agent-request',
+        target,
+        data: { requestId }
+      });
+      
+    } catch (error) {
+      this.logger.error('Failed to handle export request:', error);
+    }
+  }
+
+  /**
+   * Handle import requests
+   */
+  async handleImportRequest(data) {
+    try {
+      const { target, requestId } = data;
+      
+      this.logger.info(`Processing import request from ${target}`);
+      
+      await this.queueSync({
+        type: 'import',
+        source: target,
+        target: 'agent-request',
+        data: { requestId }
+      });
+      
+    } catch (error) {
+      this.logger.error('Failed to handle import request:', error);
+    }
+  }
+
+  /**
+   * Handle bidirectional sync requests
+   */
+  async handleBidirectionalSyncRequest(data) {
+    try {
+      const { target, requestId } = data;
+      
+      this.logger.info(`Processing bidirectional sync request with ${target}`);
+      
+      await this.queueSync({
+        type: 'bidirectional-sync',
+        source: 'agent-request',
+        target,
+        data: { requestId }
+      });
+      
+    } catch (error) {
+      this.logger.error('Failed to handle bidirectional sync request:', error);
+    }
   }
 }

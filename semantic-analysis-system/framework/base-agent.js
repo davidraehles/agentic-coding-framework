@@ -190,6 +190,16 @@ export class BaseAgent extends EventEmitter {
       
       this.logger.debug(`Received event: ${eventType}`);
       
+      // Agent communication transparency logging for incoming messages
+      this.logAgentCommunication('receive', {
+        from: payload?.source || 'unknown',
+        to: this.config.id,
+        eventType,
+        topic,
+        dataPreview: this.createDataPreview(payload?.data),
+        timestamp: new Date().toISOString()
+      });
+      
       // Emit to local handlers
       this.emit(eventType, payload);
       
@@ -251,11 +261,89 @@ export class BaseAgent extends EventEmitter {
     
     const topic = this.buildTopic(eventType);
     
+    // Agent communication transparency logging
+    this.logAgentCommunication('publish', {
+      from: this.config.id,
+      to: eventType.includes('/') ? eventType.split('/')[0] : 'broadcast',
+      eventType,
+      topic,
+      dataPreview: this.createDataPreview(data),
+      timestamp: new Date().toISOString()
+    });
+    
     if (this.mqttClient) {
       await this.mqttClient.publish(topic, event, options);
     }
     
     return event;
+  }
+
+  /**
+   * Log agent communication for transparency
+   */
+  logAgentCommunication(direction, details) {
+    const logEntry = {
+      ...details,
+      direction,
+      agentId: this.config.id
+    };
+    
+    // Use structured logging for agent communication
+    this.logger.info('🔄 Agent Communication', logEntry);
+    
+    // Also maintain a communication log for workflow tracking
+    if (!this.communicationLog) {
+      this.communicationLog = [];
+    }
+    
+    this.communicationLog.push(logEntry);
+    
+    // Keep only last 100 communications to prevent memory issues
+    if (this.communicationLog.length > 100) {
+      this.communicationLog = this.communicationLog.slice(-100);
+    }
+  }
+
+  /**
+   * Create a preview of data for logging (avoid logging sensitive info)
+   */
+  createDataPreview(data) {
+    if (!data) return null;
+    
+    if (typeof data === 'string') {
+      return data.length > 100 ? data.substring(0, 100) + '...' : data;
+    }
+    
+    if (typeof data === 'object') {
+      const preview = {};
+      const keys = Object.keys(data).slice(0, 5); // Show first 5 keys
+      
+      for (const key of keys) {
+        const value = data[key];
+        if (typeof value === 'string') {
+          preview[key] = value.length > 50 ? value.substring(0, 50) + '...' : value;
+        } else if (typeof value === 'object') {
+          preview[key] = '[Object]';
+        } else {
+          preview[key] = value;
+        }
+      }
+      
+      if (Object.keys(data).length > 5) {
+        preview['...'] = `+${Object.keys(data).length - 5} more`;
+      }
+      
+      return preview;
+    }
+    
+    return String(data);
+  }
+
+  /**
+   * Get agent communication log for workflow transparency
+   */
+  getCommunicationLog() {
+    return this.communicationLog || [];
   }
 
   /**

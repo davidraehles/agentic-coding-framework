@@ -16,7 +16,7 @@ export class UkbIntegration {
     this.config = {
       ukbPath: config.ukbPath || process.env.CODING_TOOLS_PATH + '/bin/ukb',
       sharedMemoryPath: config.sharedMemoryPath || process.env.CODING_TOOLS_PATH + '/shared-memory.json',
-      autoSync: false, // Disabled to prevent conflicts with unified SynchronizationAgent
+      autoSync: true, // Re-enabled with coordination through SynchronizationAgent
       syncDirection: config.syncDirection || 'bidirectional', // 'to-ukb', 'from-ukb', 'bidirectional'
       ukbApiDocsPath: config.ukbApiDocsPath || process.env.CODING_TOOLS_PATH + '/knowledge-management/insights/UkbCli.md',
       ...config

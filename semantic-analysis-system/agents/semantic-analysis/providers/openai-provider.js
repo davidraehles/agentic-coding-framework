@@ -32,10 +32,13 @@ export class OpenAIProvider extends LLMProviderInterface {
     }
     
     this.client = new OpenAI({
-      apiKey: apiKey
+      apiKey: apiKey,
+      baseURL: this.config.baseURL || process.env.OPENAI_BASE_URL || undefined,
+      defaultHeaders: this.config.headers || {}
     });
     
-    this.logger.info('OpenAI provider initialized');
+    const endpoint = this.config.baseURL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+    this.logger.info(`OpenAI provider initialized with endpoint: ${endpoint}`);
   }
 
   validateConfig() {

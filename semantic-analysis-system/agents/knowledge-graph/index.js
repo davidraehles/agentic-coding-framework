@@ -33,13 +33,8 @@ export class KnowledgeGraphAgent extends BaseAgent {
     // Initialize UKB integration
     this.ukbIntegration = new UkbIntegration(this.config.ukb);
     
-    // CRITICAL: Load UKB API reference at startup
-    try {
-      await this.ukbIntegration.loadUkbApiReference();
-      this.logger.info('UKB API reference loaded successfully');
-    } catch (error) {
-      this.logger.warn('Failed to load UKB API reference at startup:', error.message);
-    }
+    // UKB integration now managed by SynchronizationAgent
+    this.logger.info('Knowledge Graph Agent initialized - sync managed by SynchronizationAgent');
     
     // Initialize entity processor
     this.entityProcessor = new EntityProcessor(this.config.processing);
@@ -159,10 +154,13 @@ export class KnowledgeGraphAgent extends BaseAgent {
       // Automatically create relations to central nodes
       await this.createAutomaticRelations(entity);
       
-      // Sync with UKB if configured
-      if (this.config.autoSyncUkb) {
-        await this.ukbIntegration.syncEntity(entity);
-      }
+      // Request sync through SynchronizationAgent (unified sync management)
+      await this.publish('sync/entity/created', {
+        entity,
+        requestId,
+        source: 'knowledge-graph',
+        syncTargets: ['ukb', 'mcp-memory']
+      });
 
       // Publish success event
       await this.publish(EventTypes.ENTITY_CREATED, {
@@ -197,9 +195,13 @@ export class KnowledgeGraphAgent extends BaseAgent {
 
       const updatedEntity = await this.knowledgeAPI.updateEntity(entityId, updates);
       
-      if (this.config.autoSyncUkb) {
-        await this.ukbIntegration.syncEntity(updatedEntity);
-      }
+      // Request sync through SynchronizationAgent
+      await this.publish('sync/entity/updated', {
+        entity: updatedEntity,
+        requestId,
+        source: 'knowledge-graph',
+        syncTargets: ['ukb', 'mcp-memory']
+      });
 
       await this.publish('knowledge/entity/updated', {
         requestId,
@@ -229,10 +231,13 @@ export class KnowledgeGraphAgent extends BaseAgent {
       await this.knowledgeAPI.removeEntity(entityName);
       
       // Remove from UKB using validated command
-      if (this.config.autoSyncUkb) {
-        const ukbResult = await this.ukbIntegration.removeEntity(entityName);
-        this.logger.info(`Entity removed from UKB: ${entityName}`, ukbResult);
-      }
+      // Request sync through SynchronizationAgent
+      await this.publish('sync/entity/removed', {
+        entityName,
+        requestId,
+        source: 'knowledge-graph',
+        syncTargets: ['ukb', 'mcp-memory']
+      });
 
       await this.publish('knowledge/entity/removed', {
         requestId,
@@ -294,9 +299,13 @@ export class KnowledgeGraphAgent extends BaseAgent {
         metadata: metadata || {}
       });
       
-      if (this.config.autoSyncUkb) {
-        await this.ukbIntegration.syncRelation(relation);
-      }
+      // Request sync through SynchronizationAgent
+      await this.publish('sync/relation/created', {
+        relation,
+        requestId,
+        source: 'knowledge-graph',
+        syncTargets: ['ukb', 'mcp-memory']
+      });
 
       await this.publish(EventTypes.RELATION_CREATED, {
         requestId,
@@ -364,9 +373,12 @@ export class KnowledgeGraphAgent extends BaseAgent {
       
       const result = await this.knowledgeAPI.importGraph(format, importData, options);
       
-      if (this.config.autoSyncUkb) {
-        await this.ukbIntegration.syncAll();
-      }
+      // Request full sync through SynchronizationAgent
+      await this.publish('sync/full-sync', {
+        requestId,
+        source: 'knowledge-graph',
+        syncTargets: ['ukb', 'mcp-memory']
+      });
 
       await this.publish('knowledge/graph/imported', {
         requestId,
@@ -427,13 +439,16 @@ export class KnowledgeGraphAgent extends BaseAgent {
       
       switch (direction) {
         case 'to-ukb':
-          result = await this.ukbIntegration.exportToUkb();
+          await this.publish('sync/export-request', { target: 'ukb', requestId });
+          result = { message: 'Export request sent to SynchronizationAgent' };
           break;
         case 'from-ukb':
-          result = await this.ukbIntegration.importFromUkb();
+          await this.publish('sync/import-request', { target: 'ukb', requestId });
+          result = { message: 'Import request sent to SynchronizationAgent' };
           break;
         case 'bidirectional':
-          result = await this.ukbIntegration.syncBidirectional();
+          await this.publish('sync/bidirectional-sync', { target: 'ukb', requestId });
+          result = { message: 'Bidirectional sync request sent to SynchronizationAgent' };
           break;
         default:
           throw new Error(`Unknown sync direction: ${direction}`);

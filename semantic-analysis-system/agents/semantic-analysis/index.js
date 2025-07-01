@@ -44,47 +44,173 @@ export class SemanticAnalysisAgent extends BaseAgent {
   async initializeLLMProviders() {
     const llmConfig = this.config.llm || {};
     
+    // Runtime API key validation - check if ANY API keys are available
+    const hasAnthropicKey = !!(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-anthropic-api-key');
+    const hasOpenAIKey = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key');
+    const hasCustomOpenAIKey = !!(process.env.OPENAI_BASE_URL || llmConfig.openai?.baseURL);
+    
+    if (!hasAnthropicKey && !hasOpenAIKey && !hasCustomOpenAIKey) {
+      this.logger.warn('⚠️  No LLM API keys available - will fallback to standalone UKB-cli mode');
+      this.llmProvider = null;
+      this.fallbackProvider = null;
+      this.useFallbackMode = true;
+      return;
+    }
+    
+    this.useFallbackMode = false;
+    
     try {
-      // Initialize primary provider
-      if (llmConfig.primary === 'claude') {
+      // Initialize primary provider with runtime validation
+      if (llmConfig.primary === 'claude' && hasAnthropicKey) {
         this.llmProvider = new ClaudeProvider(llmConfig.claude);
-      } else if (llmConfig.primary === 'openai') {
+      } else if ((llmConfig.primary === 'openai' || llmConfig.primary === 'custom-openai') && (hasOpenAIKey || hasCustomOpenAIKey)) {
         this.llmProvider = new OpenAIProvider(llmConfig.openai);
       } else {
-        throw new Error(`Unknown primary LLM provider: ${llmConfig.primary}`);
+        // Primary provider not available, try alternatives
+        if (hasAnthropicKey) {
+          this.llmProvider = new ClaudeProvider(llmConfig.claude);
+          this.logger.info('🔄 Using Claude as primary (original primary not available)');
+        } else if (hasOpenAIKey || hasCustomOpenAIKey) {
+          this.llmProvider = new OpenAIProvider(llmConfig.openai);
+          this.logger.info('🔄 Using OpenAI as primary (original primary not available)');
+        }
       }
       
-      if (!this.llmProvider.validateConfig()) {
-        throw new Error(`Primary LLM provider ${llmConfig.primary} is not configured correctly`);
+      if (this.llmProvider && this.llmProvider.validateConfig()) {
+        this.logger.info(`✅ Primary LLM provider initialized: ${this.llmProvider.constructor.name}`);
+      } else {
+        throw new Error('Primary LLM provider validation failed');
       }
-      
-      this.logger.info(`Primary LLM provider initialized: ${llmConfig.primary}`);
       
       // Initialize fallback provider
-      if (llmConfig.fallback && llmConfig.fallback !== llmConfig.primary) {
+      if (hasAnthropicKey && !(this.llmProvider instanceof ClaudeProvider)) {
         try {
-          if (llmConfig.fallback === 'claude') {
-            this.fallbackProvider = new ClaudeProvider(llmConfig.claude);
-          } else if (llmConfig.fallback === 'openai') {
-            this.fallbackProvider = new OpenAIProvider(llmConfig.openai);
-          }
-          
-          if (this.fallbackProvider?.validateConfig()) {
-            this.logger.info(`Fallback LLM provider initialized: ${llmConfig.fallback}`);
+          this.fallbackProvider = new ClaudeProvider(llmConfig.claude);
+          if (this.fallbackProvider.validateConfig()) {
+            this.logger.info('✅ Fallback LLM provider initialized: Claude');
           } else {
             this.fallbackProvider = null;
-            this.logger.warn(`Fallback LLM provider ${llmConfig.fallback} not configured correctly`);
           }
         } catch (error) {
-          this.logger.warn(`Failed to initialize fallback provider:`, error.message);
+          this.logger.warn('Failed to initialize Claude fallback:', error.message);
+          this.fallbackProvider = null;
+        }
+      } else if ((hasOpenAIKey || hasCustomOpenAIKey) && !(this.llmProvider instanceof OpenAIProvider)) {
+        try {
+          this.fallbackProvider = new OpenAIProvider(llmConfig.openai);
+          if (this.fallbackProvider.validateConfig()) {
+            this.logger.info('✅ Fallback LLM provider initialized: OpenAI');
+          } else {
+            this.fallbackProvider = null;
+          }
+        } catch (error) {
+          this.logger.warn('Failed to initialize OpenAI fallback:', error.message);
           this.fallbackProvider = null;
         }
       }
       
     } catch (error) {
       this.logger.error('Failed to initialize LLM providers:', error);
-      throw error;
+      this.logger.warn('🔄 Falling back to standalone UKB-cli mode');
+      this.llmProvider = null;
+      this.fallbackProvider = null;
+      this.useFallbackMode = true;
     }
+  }
+
+  /**
+   * Perform analysis with runtime fallback handling
+   */
+  async performAnalysis(type, data) {
+    if (this.useFallbackMode) {
+      return await this.performFallbackAnalysis(type, data);
+    }
+    
+    try {
+      // Try primary provider
+      if (this.llmProvider) {
+        return await this.llmProvider.analyze(type, data);
+      }
+    } catch (error) {
+      this.logger.warn(`Primary provider failed, trying fallback: ${error.message}`);
+      
+      // Try fallback provider
+      if (this.fallbackProvider) {
+        try {
+          return await this.fallbackProvider.analyze(type, data);
+        } catch (fallbackError) {
+          this.logger.warn(`Fallback provider also failed: ${fallbackError.message}`);
+        }
+      }
+      
+      // Both providers failed, fall back to UKB-cli
+      this.logger.warn('🔄 All LLM providers failed, falling back to standalone UKB-cli mode');
+      return await this.performFallbackAnalysis(type, data);
+    }
+  }
+
+  /**
+   * Fallback analysis using standalone UKB-cli (when no API keys available)
+   */
+  async performFallbackAnalysis(type, data) {
+    this.logger.info('🛠️  Using standalone UKB-cli fallback mode');
+    
+    // Import UKB integration for standalone operation
+    const { UkbIntegration } = await import('../knowledge-graph/integrations/ukb-integration.js');
+    
+    try {
+      const ukbIntegration = new UkbIntegration({
+        ukbPath: process.env.CODING_TOOLS_PATH + '/bin/ukb',
+        sharedMemoryPath: process.env.CODING_TOOLS_PATH + '/shared-memory-coding.json'
+      });
+      
+      // Convert analysis request to UKB format
+      const ukbData = this.convertToUkbFormat(type, data);
+      
+      // Execute UKB command
+      const result = await ukbIntegration.syncEntity(ukbData);
+      
+      return {
+        success: true,
+        result: result,
+        fallbackMode: true,
+        message: 'Analysis completed using standalone UKB-cli (no LLM API keys available)'
+      };
+      
+    } catch (error) {
+      this.logger.error('Fallback UKB analysis failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        fallbackMode: true,
+        message: 'Analysis failed - no LLM providers available and UKB fallback failed'
+      };
+    }
+  }
+
+  /**
+   * Convert analysis data to UKB format for fallback mode
+   */
+  convertToUkbFormat(type, data) {
+    const timestamp = new Date().toISOString();
+    
+    return {
+      name: `${type}_${timestamp.replace(/[:.]/g, '-')}`,
+      entityType: 'FallbackAnalysis',
+      significance: 5,
+      observations: [
+        `Analysis type: ${type}`,
+        `Data preview: ${JSON.stringify(data).substring(0, 200)}...`,
+        `Processed in fallback mode (no LLM API keys available)`,
+        `Timestamp: ${timestamp}`
+      ],
+      metadata: {
+        source: 'semantic-analysis-fallback',
+        analysisType: type,
+        fallbackMode: true,
+        created: timestamp
+      }
+    };
   }
 
   registerRequestHandlers() {
