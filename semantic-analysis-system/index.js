@@ -18,6 +18,7 @@ import { MQTTBroker } from './infrastructure/mqtt/broker.js';
 import { JSONRPCServer } from './infrastructure/rpc/server.js';
 import { Logger } from './shared/logger.js';
 import { ConfigManager } from './shared/config.js';
+import { portManager } from './shared/port-manager.js';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -38,6 +39,9 @@ class SemanticAnalysisSystem {
   async start() {
     try {
       this.logger.info('Starting Semantic Analysis System...');
+      
+      // Initialize port manager first to resolve all port conflicts
+      await portManager.initialize();
       
       // Load configuration
       const config = this.configManager.config;
@@ -228,6 +232,9 @@ class SemanticAnalysisSystem {
       if (this.mqttBroker) {
         await this.mqttBroker.stop();
       }
+
+      // Cleanup port manager
+      await portManager.cleanup();
 
       this.logger.info('System shutdown completed');
       

@@ -164,17 +164,22 @@ export class ConfigManager {
   }
 
   getMQTTConfig() {
+    // Use port manager for consistent port allocation
+    const port = process.env.MQTT_BROKER_PORT || this.get('infrastructure.mqtt.broker.port', 1883);
     return {
-      brokerUrl: `mqtt://${this.get('infrastructure.mqtt.broker.host', 'localhost')}:${this.get('infrastructure.mqtt.broker.port', 1884)}`,
+      brokerUrl: `mqtt://${this.get('infrastructure.mqtt.broker.host', 'localhost')}:${port}`,
       ...this.get('infrastructure.mqtt.client', {})
     };
   }
 
   getJSONRPCConfig() {
-    return this.get('infrastructure.jsonrpc.server', {
-      port: 8082,  // Avoid conflicts: 8080=visualization, 8081=browser-access
-      host: '0.0.0.0'
-    });
+    // Use port manager for consistent port allocation
+    const port = process.env.JSON_RPC_PORT || this.get('infrastructure.jsonrpc.server.port', 8081);
+    return {
+      port: parseInt(port),
+      host: '0.0.0.0',
+      ...this.get('infrastructure.jsonrpc.server', {})
+    };
   }
 
   validate() {

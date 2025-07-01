@@ -13,7 +13,7 @@ export class MQTTClient extends EventEmitter {
     super();
     
     this.config = {
-      brokerUrl: config.brokerUrl || 'mqtt://localhost:1884',
+      brokerUrl: config.brokerUrl || `mqtt://localhost:${process.env.MQTT_BROKER_PORT || 1883}`,
       clientId: config.clientId || `agent-${uuidv4()}`,
       username: config.username,
       password: config.password,
