@@ -19,8 +19,8 @@ fi
 # Auto-start semantic-analysis agent system if needed
 SEMANTIC_ANALYSIS_DIR="$PROJECT_DIR/semantic-analysis-system"
 if [ -d "$SEMANTIC_ANALYSIS_DIR" ]; then
-  # Check if agents are already running
-  if ! pgrep -f "semantic-analysis-system/index.js" > /dev/null; then
+  # Check if agents are already running (check for either index.js or system-health-manager)
+  if ! pgrep -f "semantic-analysis-system/(index.js|system-health-manager.js)" > /dev/null; then
     log "Starting semantic-analysis agent system..."
     
     # Check for API keys
@@ -38,11 +38,11 @@ if [ -d "$SEMANTIC_ANALYSIS_DIR" ]; then
         log "Warning: No API keys configured for semantic-analysis system"
         log "Please set ANTHROPIC_API_KEY and/or OPENAI_API_KEY in $SEMANTIC_ANALYSIS_DIR/.env"
       else
-        # Start the agent system in background
+        # Start the full 7-agent system using system-health-manager
         cd "$SEMANTIC_ANALYSIS_DIR"
-        nohup npm run start:agents > "$SEMANTIC_ANALYSIS_DIR/logs/agents.log" 2>&1 &
+        nohup node system-health-manager.js start > "$SEMANTIC_ANALYSIS_DIR/logs/agents.log" 2>&1 &
         AGENT_PID=$!
-        log "Agent system started with PID: $AGENT_PID"
+        log "Full 7-agent system starting with PID: $AGENT_PID"
         
         # Wait a moment for agents to initialize
         sleep 3

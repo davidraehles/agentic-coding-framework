@@ -48,7 +48,9 @@
       "Bash(mv:*)",
       "Bash(timeout:*)",
       "Bash(pkill:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__semantic-analysis__determine_insights",
+      "Bash(npm run status:*)"
     ],
     "deny": []
   }

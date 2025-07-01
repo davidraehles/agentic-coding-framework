@@ -10,9 +10,13 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 const execAsync = promisify(exec);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load environment variables from .env file
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 class SystemHealthManager {
   constructor() {
@@ -27,12 +31,12 @@ class SystemHealthManager {
       'documentation'
     ];
     
-    // Port configuration with automatic fallbacks
+    // Port configuration - read from environment first, then use defaults
     this.ports = {
-      mqtt: process.env.MQTT_BROKER_PORT || 1883,
-      rpc: process.env.JSON_RPC_PORT || 8082,  // Changed from 8081 to avoid browser-access conflict
-      mcp: process.env.MCP_SERVER_PORT || 3002,  // Changed from 3001
-      monitoring: process.env.MONITORING_PORT || 9090
+      mqtt: parseInt(process.env.MQTT_BROKER_PORT) || 1883,
+      rpc: parseInt(process.env.JSON_RPC_PORT) || 8081,  // Match .env file default
+      mcp: parseInt(process.env.MCP_SERVER_PORT) || 3002,
+      monitoring: parseInt(process.env.MONITORING_PORT) || 9090
     };
     
     this.processes = new Map();
