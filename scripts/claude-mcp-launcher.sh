@@ -127,6 +127,23 @@ if [[ -f "$POST_SESSION_LOGGER" ]]; then
     # Set up trap to trigger post-session logging on exit
     cleanup() {
         echo -e "${BLUE}🔄 Processing session for conversation logging...${NC}"
+        
+        # Clean up MCP processes first to prevent accumulation
+        echo -e "${BLUE}🧹 Cleaning up MCP processes...${NC}"
+        pkill -f "mcp-server-memory" 2>/dev/null || true
+        pkill -f "browser-access/dist/index.js" 2>/dev/null || true  
+        pkill -f "semantic-analysis-system/mcp-server" 2>/dev/null || true
+        
+        # Give processes a moment to terminate gracefully
+        sleep 1
+        
+        # Force kill any remaining stubborn processes
+        pkill -9 -f "mcp-server-memory" 2>/dev/null || true
+        pkill -9 -f "browser-access/dist/index.js" 2>/dev/null || true
+        pkill -9 -f "semantic-analysis-system/mcp-server" 2>/dev/null || true
+        
+        echo -e "${GREEN}✅ MCP processes cleaned up${NC}"
+        
         node "$POST_SESSION_LOGGER" "$(pwd)" "$CODING_REPO_DIR"
         echo -e "${GREEN}✅ Session logged successfully${NC}"
     }
