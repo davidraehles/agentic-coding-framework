@@ -11,6 +11,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import { z } from 'zod';
 import { SemanticAnalysisClient } from './clients/semantic-analysis-client.js';
 import { Logger } from '../shared/logger.js';
+import { robustTools } from './tools/robust-tools.js';
 
 class SemanticAnalysisMCPServer {
   constructor() {
@@ -220,8 +221,6 @@ class SemanticAnalysisMCPServer {
         
         try {
           switch (name) {
-          case 'analyze_repository':
-            return await this.analyzeRepository(args);
           case 'analyze_conversation':
             return await this.analyzeConversation(args);
           case 'search_web':
@@ -241,15 +240,19 @@ class SemanticAnalysisMCPServer {
           case 'sync_with_ukb':
             return await this.syncWithUkb(args);
           case 'get_system_status':
-            return await this.getSystemStatus(args);
+            return await robustTools.get_system_status(args);
           case 'get_mcp_server_status':
-            return await this.getMCPServerStatus(args);
+            return await robustTools.get_mcp_server_status(args);
           case 'determine_insights':
-            return await this.determineInsights(args);
+            return await robustTools.determine_insights(args);
           case 'update_knowledge_base':
-            return await this.updateKnowledgeBase(args);
+            return await robustTools.update_knowledge_base(args);
           case 'lessons_learned':
-            return await this.lessonsLearned(args);
+            return await robustTools.lessons_learned(args);
+          case 'analyze_repository':
+            return await robustTools.analyze_repository(args);
+          case 'search_knowledge':
+            return await robustTools.search_knowledge(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
