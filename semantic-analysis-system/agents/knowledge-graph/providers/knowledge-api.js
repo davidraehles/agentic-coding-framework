@@ -13,7 +13,7 @@ export class KnowledgeAPI {
       sharedMemoryPath: config.sharedMemoryPath || process.env.CODING_TOOLS_PATH + '/shared-memory.json',
       backupEnabled: config.backupEnabled !== false,
       backupPath: config.backupPath || process.env.CODING_TOOLS_PATH + '/.backups',
-      autoSave: config.autoSave !== false,
+      autoSave: false, // Disabled to prevent conflicts with unified SynchronizationAgent
       ...config
     };
     

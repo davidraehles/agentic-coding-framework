@@ -244,6 +244,12 @@ class SemanticAnalysisMCPServer {
             return await this.getSystemStatus(args);
           case 'get_mcp_server_status':
             return await this.getMCPServerStatus(args);
+          case 'determine_insights':
+            return await this.determineInsights(args);
+          case 'update_knowledge_base':
+            return await this.updateKnowledgeBase(args);
+          case 'lessons_learned':
+            return await this.lessonsLearned(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -510,6 +516,91 @@ class SemanticAnalysisMCPServer {
                   type: 'boolean',
                   description: 'Include detailed debug information',
                   default: false
+                }
+              }
+            }
+          },
+          {
+            name: 'determine_insights',
+            description: 'Trigger comprehensive semantic analysis to determine insights from repository and conversation context',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                repository: {
+                  type: 'string',
+                  description: 'Path to repository to analyze (defaults to current working directory)'
+                },
+                conversationContext: {
+                  type: 'string',
+                  description: 'Current conversation context or topic focus'
+                },
+                depth: {
+                  type: 'number',
+                  description: 'Analysis depth - number of recent commits to examine',
+                  default: 10
+                },
+                significanceThreshold: {
+                  type: 'number',
+                  description: 'Minimum significance level for insights (1-10)',
+                  default: 7
+                }
+              }
+            }
+          },
+          {
+            name: 'update_knowledge_base',
+            description: 'Update the knowledge base with new insights and synchronize across all graph databases',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                insights: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      problem: { type: 'string' },
+                      solution: { type: 'string' },
+                      significance: { type: 'number', minimum: 1, maximum: 10 },
+                      entityType: { type: 'string' }
+                    },
+                    required: ['name', 'problem', 'solution']
+                  },
+                  description: 'Array of insights to add to knowledge base'
+                },
+                syncTargets: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Target databases to sync (mcp, graphology, files)',
+                  default: ['mcp', 'graphology', 'files']
+                }
+              },
+              required: ['insights']
+            }
+          },
+          {
+            name: 'lessons_learned',
+            description: 'Extract and capture lessons learned from current session or specific context (alias for determine_insights with focus on learning extraction)',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                context: {
+                  type: 'string',
+                  description: 'Specific context or session to extract lessons from'
+                },
+                repository: {
+                  type: 'string',
+                  description: 'Repository path for contextual analysis'
+                },
+                focusAreas: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific areas to focus on (patterns, solutions, failures, discoveries)'
+                },
+                includeConversationHistory: {
+                  type: 'boolean',
+                  description: 'Whether to analyze recent conversation history',
+                  default: true
                 }
               }
             }
@@ -854,6 +945,269 @@ class SemanticAnalysisMCPServer {
         }
       ]
     };
+  }
+
+  // Unified Command Interface Methods
+
+  async determineInsights(args) {
+    try {
+      if (!this.client || !this.client.isConnected()) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# Determine Insights - Service Unavailable\n\n` +
+                    `**Status:** Agent system not connected\n` +
+                    `**Issue:** Cannot perform semantic analysis without agent system\n\n` +
+                    `## Troubleshooting\n` +
+                    `- Ensure agent system is running (check get_system_status)\n` +
+                    `- Verify API keys are configured\n` +
+                    `- Check MQTT broker and RPC server status`
+            }
+          ]
+        };
+      }
+
+      const repository = args.repository || process.cwd();
+      const context = args.conversationContext || 'General semantic analysis';
+      const depth = args.depth || 10;
+      const threshold = args.significanceThreshold || 7;
+
+      this.logger.info(`Starting insight determination for: ${repository}`);
+      
+      // Start comprehensive workflow through Coordinator agent
+      const workflowResult = await this.client.startWorkflow('repository-analysis', {
+        repository,
+        context,
+        depth,
+        significanceThreshold: threshold,
+        includeConversationAnalysis: true,
+        enableProgressLogging: true
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Insight Determination Started\n\n` +
+                  `**Repository:** ${repository}\n` +
+                  `**Context:** ${context}\n` +
+                  `**Analysis Depth:** ${depth} commits\n` +
+                  `**Significance Threshold:** ${threshold}/10\n` +
+                  `**Workflow ID:** ${workflowResult.workflowId}\n\n` +
+                  `## Status\n` +
+                  `${workflowResult.status === 'running' ? '🔄' : '✅'} ${workflowResult.status}\n\n` +
+                  `## What's Happening\n` +
+                  `1. **Semantic Analysis Agent** - Analyzing repository commits and code patterns\n` +
+                  `2. **Knowledge Graph Agent** - Extracting entities and relationships\n` +
+                  `3. **Web Search Agent** - Finding relevant external documentation\n` +
+                  `4. **Coordinator Agent** - Orchestrating analysis workflow\n` +
+                  `5. **Synchronization Agent** - Ensuring data consistency across all systems\n\n` +
+                  `Use \`get_workflow_status\` with ID \`${workflowResult.workflowId}\` to check progress.\n\n` +
+                  `**Next Step:** The workflow will automatically update the knowledge base when complete.`
+          }
+        ]
+      };
+    } catch (error) {
+      this.logger.error('Insight determination failed:', error);
+      throw new Error(`Failed to determine insights: ${error.message}`);
+    }
+  }
+
+  async updateKnowledgeBase(args) {
+    try {
+      if (!this.client || !this.client.isConnected()) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# Knowledge Base Update - Service Unavailable\n\n` +
+                    `**Status:** Agent system not connected\n` +
+                    `**Issue:** Cannot update knowledge base without agent system\n\n` +
+                    `## Manual Alternative\n` +
+                    `You can still update knowledge using the UKB command:\n` +
+                    `\`\`\`bash\n` +
+                    `ukb --interactive\n` +
+                    `\`\`\``
+            }
+          ]
+        };
+      }
+
+      const insights = args.insights || [];
+      const syncTargets = args.syncTargets || ['mcp', 'graphology', 'files'];
+
+      if (insights.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# Knowledge Base Update - No Insights Provided\n\n` +
+                    `**Status:** No insights to process\n\n` +
+                    `## Usage\n` +
+                    `Provide insights array with objects containing:\n` +
+                    `- \`name\`: Entity name\n` +
+                    `- \`problem\`: Problem description\n` +
+                    `- \`solution\`: Solution description\n` +
+                    `- \`significance\`: Significance level (1-10)\n` +
+                    `- \`entityType\`: Entity type (Pattern, Insight, etc.)`
+            }
+          ]
+        };
+      }
+
+      this.logger.info(`Updating knowledge base with ${insights.length} insights`);
+      
+      // Process insights through Knowledge Graph Agent
+      const results = [];
+      for (const insight of insights) {
+        try {
+          const entity = {
+            name: insight.name,
+            entityType: insight.entityType || 'Insight',
+            significance: insight.significance || 7,
+            observations: [
+              {
+                type: 'problem',
+                content: insight.problem,
+                date: new Date().toISOString()
+              },
+              {
+                type: 'solution', 
+                content: insight.solution,
+                date: new Date().toISOString()
+              }
+            ],
+            metadata: {
+              source: 'mcp-unified-interface',
+              created_at: new Date().toISOString()
+            }
+          };
+
+          const result = await this.client.createKnowledgeEntity(entity);
+          results.push(result);
+          
+        } catch (error) {
+          this.logger.error(`Failed to create entity ${insight.name}:`, error);
+          results.push({ error: error.message, insight: insight.name });
+        }
+      }
+
+      // Trigger synchronization across all targets
+      let syncResults = {};
+      if (syncTargets.includes('files') || syncTargets.includes('graphology')) {
+        try {
+          syncResults = await this.client.syncWithUkb('bidirectional');
+        } catch (error) {
+          this.logger.error('Sync failed:', error);
+          syncResults.error = error.message;
+        }
+      }
+
+      const successful = results.filter(r => !r.error).length;
+      const failed = results.filter(r => r.error).length;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Knowledge Base Update Complete\n\n` +
+                  `**Insights Processed:** ${insights.length}\n` +
+                  `**Successfully Added:** ${successful}\n` +
+                  `**Failed:** ${failed}\n` +
+                  `**Sync Targets:** ${syncTargets.join(', ')}\n\n` +
+                  `## Results Summary\n` +
+                  `${this.formatUpdateResults(results)}\n\n` +
+                  `## Synchronization Status\n` +
+                  `${this.formatSyncResults(syncResults)}\n\n` +
+                  `**Knowledge base successfully updated and synchronized across all systems.**`
+          }
+        ]
+      };
+    } catch (error) {
+      this.logger.error('Knowledge base update failed:', error);
+      throw new Error(`Failed to update knowledge base: ${error.message}`);
+    }
+  }
+
+  async lessonsLearned(args) {
+    try {
+      if (!this.client || !this.client.isConnected()) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# Lessons Learned - Service Unavailable\n\n` +
+                    `**Status:** Agent system not connected\n` +
+                    `**Issue:** Cannot extract lessons without agent system\n\n` +
+                    `## Manual Alternative\n` +
+                    `You can capture lessons manually using:\n` +
+                    `\`\`\`bash\n` +
+                    `ukb --interactive\n` +
+                    `\`\`\``
+            }
+          ]
+        };
+      }
+
+      const context = args.context || 'Current session';
+      const repository = args.repository || process.cwd();
+      const focusAreas = args.focusAreas || ['patterns', 'solutions', 'failures', 'discoveries'];
+      const includeConversation = args.includeConversationHistory !== false;
+
+      this.logger.info(`Extracting lessons learned from: ${context}`);
+      
+      // Use conversation analysis workflow with learning focus
+      const workflowResult = await this.client.startWorkflow('conversation-analysis', {
+        context,
+        repository,
+        focusAreas,
+        includeConversationHistory: includeConversation,
+        extractionMode: 'lessons-learned',
+        significanceThreshold: 6, // Lower threshold for lessons
+        enableProgressLogging: true
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Lessons Learned Extraction Started\n\n` +
+                  `**Context:** ${context}\n` +
+                  `**Repository:** ${repository}\n` +
+                  `**Focus Areas:** ${focusAreas.join(', ')}\n` +
+                  `**Include Conversation:** ${includeConversation ? 'Yes' : 'No'}\n` +
+                  `**Workflow ID:** ${workflowResult.workflowId}\n\n` +
+                  `## Status\n` +
+                  `${workflowResult.status === 'running' ? '🔄' : '✅'} ${workflowResult.status}\n\n` +
+                  `## Learning Extraction Process\n` +
+                  `1. **Context Analysis** - Examining specified context and conversation history\n` +
+                  `2. **Pattern Recognition** - Identifying successful approaches and common pitfalls\n` +
+                  `3. **Solution Extraction** - Capturing effective solutions and workarounds\n` +
+                  `4. **Failure Analysis** - Learning from mistakes and roadblocks\n` +
+                  `5. **Knowledge Integration** - Adding insights to knowledge base\n\n` +
+                  `Use \`get_workflow_status\` with ID \`${workflowResult.workflowId}\` to check progress.\n\n` +
+                  `**Expected Outcome:** Structured lessons will be automatically added to the knowledge base.`
+          }
+        ]
+      };
+    } catch (error) {
+      this.logger.error('Lessons learned extraction failed:', error);
+      throw new Error(`Failed to extract lessons learned: ${error.message}`);
+    }
+  }
+
+  // Helper method for formatting update results
+  formatUpdateResults(results) {
+    if (!results || results.length === 0) return 'No results to display.';
+    
+    return results.map(result => {
+      if (result.error) {
+        return `❌ **${result.insight}**: ${result.error}`;
+      } else {
+        return `✅ **${result.name}**: Added successfully (ID: ${result.id || 'N/A'})`;
+      }
+    }).join('\n');
   }
 
   // Formatting Helper Methods

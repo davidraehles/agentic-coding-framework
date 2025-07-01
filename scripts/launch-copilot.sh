@@ -27,6 +27,10 @@ export CODING_AGENT="copilot"
 export CODING_TOOLS_PATH="$PROJECT_DIR"
 export CODING_TOOLS_GRAPH_DB="$HOME/.coding-tools/memory.graph"
 
+# Enable Graphology service for SynchronizationAgent integration
+export GRAPHOLOGY_SERVICE_ENABLED=true
+export GRAPHOLOGY_SERVICE_PORT=8765
+
 # Auto-start semantic-analysis agent system if needed
 SEMANTIC_ANALYSIS_DIR="$PROJECT_DIR/semantic-analysis-system"
 if [ -d "$SEMANTIC_ANALYSIS_DIR" ]; then

@@ -21,7 +21,11 @@ export class SynchronizationAgent extends BaseAgent {
       ...config
     });
     
-    this.graphAdapter = null;
+    // Support for multiple graph adapters simultaneously
+    this.mcpAdapter = null;
+    this.graphologyAdapter = null;
+    this.activeAdapters = new Set();
+    
     this.fileWatcher = null;
     this.conflictResolver = null;
     this.versionManager = null;
@@ -65,21 +69,35 @@ export class SynchronizationAgent extends BaseAgent {
   }
 
   async initializeGraphAdapter() {
-    const adapterType = this.config.graphDb?.type || 'mcp';
+    this.logger.info('Auto-detecting available graph database services...');
     
-    switch (adapterType) {
-      case 'mcp':
-        this.graphAdapter = new MCPAdapter(this.config.graphDb?.mcp || {});
-        break;
-      case 'graphology':
-        this.graphAdapter = new GraphologyAdapter(this.config.graphDb?.graphology || {});
-        break;
-      default:
-        throw new Error(`Unknown graph database adapter: ${adapterType}`);
+    // Try to initialize MCP adapter
+    try {
+      this.mcpAdapter = new MCPAdapter(this.config.graphDb?.mcp || {});
+      await this.mcpAdapter.initialize();
+      this.activeAdapters.add('mcp');
+      this.logger.info('✅ MCP adapter initialized and connected');
+    } catch (error) {
+      this.logger.warn('❌ MCP adapter initialization failed:', error.message);
+      this.mcpAdapter = null;
     }
     
-    await this.graphAdapter.initialize();
-    this.logger.info(`Graph adapter initialized: ${adapterType}`);
+    // Try to initialize Graphology adapter
+    try {
+      this.graphologyAdapter = new GraphologyAdapter(this.config.graphDb?.graphology || {});
+      await this.graphologyAdapter.initialize();
+      this.activeAdapters.add('graphology');
+      this.logger.info('✅ Graphology adapter initialized and connected');
+    } catch (error) {
+      this.logger.warn('❌ Graphology adapter initialization failed:', error.message);
+      this.graphologyAdapter = null;
+    }
+    
+    if (this.activeAdapters.size === 0) {
+      throw new Error('No graph database adapters could be initialized');
+    }
+    
+    this.logger.info(`Active adapters: ${Array.from(this.activeAdapters).join(', ')}`);
   }
 
   registerRequestHandlers() {
@@ -623,7 +641,7 @@ export class SynchronizationAgent extends BaseAgent {
   async syncFileToGraph(filePath) {
     try {
       const fileData = await this.loadJsonFile(filePath);
-      const graphData = await this.graphAdapter.getFullGraph();
+      const graphData = await this.getUnifiedGraphData();
       
       // Compare and sync entities
       await this.syncEntitiesToGraph(fileData.entities, graphData.entities);
@@ -648,10 +666,10 @@ export class SynchronizationAgent extends BaseAgent {
       
       if (!graphEntity) {
         // Add new entity to graph
-        await this.graphAdapter.createEntity(fileEntity);
+        await this.syncEntityToAllAdapters(fileEntity);
       } else if (this.hasEntityChanged(fileEntity, graphEntity)) {
         // Update existing entity in graph
-        await this.graphAdapter.updateEntity(fileEntity.id, fileEntity);
+        await this.updateEntityInAllAdapters(fileEntity.id, fileEntity);
       }
     }
     
@@ -659,7 +677,7 @@ export class SynchronizationAgent extends BaseAgent {
     const fileEntityIds = new Set(fileEntities.map(e => e.id));
     for (const graphEntity of graphEntities) {
       if (!fileEntityIds.has(graphEntity.id)) {
-        await this.graphAdapter.removeEntity(graphEntity.id);
+        await this.removeEntityFromAllAdapters(graphEntity.id);
       }
     }
   }
@@ -672,9 +690,9 @@ export class SynchronizationAgent extends BaseAgent {
       const graphRelation = graphRelationMap.get(fileRelation.id);
       
       if (!graphRelation) {
-        await this.graphAdapter.createRelation(fileRelation);
+        await this.syncRelationToAllAdapters(fileRelation);
       } else if (this.hasRelationChanged(fileRelation, graphRelation)) {
-        await this.graphAdapter.updateRelation(fileRelation.id, fileRelation);
+        await this.updateRelationInAllAdapters(fileRelation.id, fileRelation);
       }
     }
     
@@ -682,7 +700,7 @@ export class SynchronizationAgent extends BaseAgent {
     const fileRelationIds = new Set(fileRelations.map(r => r.id));
     for (const graphRelation of graphRelations) {
       if (!fileRelationIds.has(graphRelation.id)) {
-        await this.graphAdapter.removeRelation(graphRelation.id);
+        await this.removeRelationFromAllAdapters(graphRelation.id);
       }
     }
   }
@@ -718,7 +736,7 @@ export class SynchronizationAgent extends BaseAgent {
   }
 
   async forceGraphToFiles() {
-    const graphData = await this.graphAdapter.getFullGraph();
+    const graphData = await this.getUnifiedGraphData();
     const results = [];
     
     for (const filePath of this.config.files?.sharedMemoryPaths || []) {
@@ -768,7 +786,7 @@ export class SynchronizationAgent extends BaseAgent {
 
   async forceFilesToGraph() {
     // Clear graph first
-    await this.graphAdapter.clearGraph();
+    await this.executeOnAllAdapters('clearGraph');
     
     const results = [];
     
@@ -778,12 +796,12 @@ export class SynchronizationAgent extends BaseAgent {
         
         // Add all entities
         for (const entity of fileData.entities) {
-          await this.graphAdapter.createEntity(entity);
+          await this.syncEntityToAllAdapters(entity);
         }
         
         // Add all relations
         for (const relation of fileData.relations) {
-          await this.graphAdapter.createRelation(relation);
+          await this.syncRelationToAllAdapters(relation);
         }
         
         results.push({
@@ -950,7 +968,7 @@ export class SynchronizationAgent extends BaseAgent {
   }
 
   async syncGraphToAllFiles() {
-    const graphData = await this.graphAdapter.getFullGraph();
+    const graphData = await this.getUnifiedGraphData();
     const results = [];
     
     // Group entities by area and sync to appropriate files
@@ -1049,6 +1067,90 @@ export class SynchronizationAgent extends BaseAgent {
     };
   }
 
+  /**
+   * Helper methods for multi-adapter operations
+   */
+  
+  async executeOnAllAdapters(operation, ...args) {
+    const results = {};
+    
+    if (this.mcpAdapter && this.activeAdapters.has('mcp')) {
+      try {
+        results.mcp = await this.mcpAdapter[operation](...args);
+      } catch (error) {
+        this.logger.error(`MCP adapter ${operation} failed:`, error);
+        results.mcp = { error: error.message };
+      }
+    }
+    
+    if (this.graphologyAdapter && this.activeAdapters.has('graphology')) {
+      try {
+        results.graphology = await this.graphologyAdapter[operation](...args);
+      } catch (error) {
+        this.logger.error(`Graphology adapter ${operation} failed:`, error);
+        results.graphology = { error: error.message };
+      }
+    }
+    
+    return results;
+  }
+  
+  async getUnifiedGraphData() {
+    const results = await this.executeOnAllAdapters('getFullGraph');
+    
+    // Merge data from all available adapters
+    const unifiedData = { entities: [], relations: [] };
+    
+    if (results.mcp && !results.mcp.error) {
+      unifiedData.entities.push(...(results.mcp.entities || []));
+      unifiedData.relations.push(...(results.mcp.relations || []));
+    }
+    
+    if (results.graphology && !results.graphology.error) {
+      // Add Graphology data, avoiding duplicates
+      const existingEntityIds = new Set(unifiedData.entities.map(e => e.id));
+      const existingRelationIds = new Set(unifiedData.relations.map(r => r.id));
+      
+      for (const entity of results.graphology.entities || []) {
+        if (!existingEntityIds.has(entity.id)) {
+          unifiedData.entities.push(entity);
+        }
+      }
+      
+      for (const relation of results.graphology.relations || []) {
+        if (!existingRelationIds.has(relation.id)) {
+          unifiedData.relations.push(relation);
+        }
+      }
+    }
+    
+    return unifiedData;
+  }
+  
+  async syncEntityToAllAdapters(entity) {
+    return await this.executeOnAllAdapters('createEntity', entity);
+  }
+  
+  async updateEntityInAllAdapters(entityId, entity) {
+    return await this.executeOnAllAdapters('updateEntity', entityId, entity);
+  }
+  
+  async removeEntityFromAllAdapters(entityId) {
+    return await this.executeOnAllAdapters('removeEntity', entityId);
+  }
+  
+  async syncRelationToAllAdapters(relation) {
+    return await this.executeOnAllAdapters('createRelation', relation);
+  }
+  
+  async updateRelationInAllAdapters(relationId, relation) {
+    return await this.executeOnAllAdapters('updateRelation', relationId, relation);
+  }
+  
+  async removeRelationFromAllAdapters(relationId) {
+    return await this.executeOnAllAdapters('removeRelation', relationId);
+  }
+
   async onStop() {
     // Process remaining sync operations
     if (this.syncQueue.length > 0) {
@@ -1061,9 +1163,13 @@ export class SynchronizationAgent extends BaseAgent {
       await this.fileWatcher.stop();
     }
     
-    // Close graph adapter connection
-    if (this.graphAdapter) {
-      await this.graphAdapter.close();
+    // Close all adapter connections
+    if (this.mcpAdapter) {
+      await this.mcpAdapter.close();
+    }
+    
+    if (this.graphologyAdapter) {
+      await this.graphologyAdapter.close();
     }
     
     this.logger.info('Synchronization Agent stopped');
