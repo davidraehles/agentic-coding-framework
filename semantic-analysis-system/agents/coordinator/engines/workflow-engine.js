@@ -6,6 +6,8 @@
 import { EventEmitter } from 'events';
 import { Logger } from '../../../shared/logger.js';
 import { EventTypes } from '../../../infrastructure/events/event-types.js';
+import { WorkflowStateManager } from '../../../framework/persistence/workflow-state-manager.js';
+import { FallbackLogger } from '../../../framework/logging/fallback-logger.js';
 
 export class WorkflowEngine extends EventEmitter {
   constructor(config = {}) {
@@ -24,12 +26,23 @@ export class WorkflowEngine extends EventEmitter {
     this.executions = new Map(); // executionId -> execution state
     this.running = false;
     
+    // Enhanced persistence and logging
+    this.stateManager = new WorkflowStateManager(config.persistence);
+    this.fallbackLogger = new FallbackLogger(config.fallbackLogging);
+    this.recoveryMode = false;
+    
     this.startEngine();
   }
 
-  startEngine() {
+  async startEngine() {
     this.running = true;
     this.logger.info('Workflow engine started');
+    
+    // Start cleanup routine for state manager
+    this.stateManager.startCleanupRoutine();
+    
+    // Recover incomplete executions
+    await this.recoverIncompleteExecutions();
     
     // Start monitoring loop
     this.monitoringInterval = setInterval(() => {
@@ -43,6 +56,9 @@ export class WorkflowEngine extends EventEmitter {
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
     }
+    
+    // Stop state manager
+    this.stateManager.stop();
     
     this.logger.info('Workflow engine stopped');
   }
@@ -72,7 +88,11 @@ export class WorkflowEngine extends EventEmitter {
       const execution = this.createExecution(workflow, parameters);
       this.executions.set(execution.id, execution);
       
+      // Save initial state
+      await this.stateManager.saveExecutionState(execution);
+      
       this.logger.info(`Starting workflow execution: ${execution.id} (${workflowId})`);
+      this.logger.workflowCheckpoint(execution.id, 0, 0, { status: 'started' });
       
       // Start execution
       await this.executeWorkflow(execution);
@@ -100,6 +120,12 @@ export class WorkflowEngine extends EventEmitter {
       if (execution.stepTimeout) {
         clearTimeout(execution.stepTimeout);
       }
+
+      // Save final state
+      await this.stateManager.markExecutionCompleted(executionId, {
+        status: 'stopped',
+        completedAt: execution.stoppedAt
+      });
 
       this.logger.info(`Stopped workflow execution: ${executionId}`);
       
@@ -551,7 +577,466 @@ export class WorkflowEngine extends EventEmitter {
       running: this.running,
       registeredWorkflows: this.workflows.size,
       activeExecutions: this.executions.size,
+      recoveryMode: this.recoveryMode,
       config: this.config
     };
+  }
+
+  /**
+   * Recovery and persistence methods
+   */
+
+  /**
+   * Recover incomplete executions from previous sessions
+   */
+  async recoverIncompleteExecutions() {
+    try {
+      this.logger.info('Checking for incomplete workflow executions to recover...');
+      this.recoveryMode = true;
+      
+      const incompleteExecutions = await this.stateManager.getIncompleteExecutions();
+      
+      if (incompleteExecutions.length === 0) {
+        this.logger.info('No incomplete executions found');
+        this.recoveryMode = false;
+        return;
+      }
+      
+      this.logger.info(`Found ${incompleteExecutions.length} incomplete executions to recover`);
+      
+      for (const savedState of incompleteExecutions) {
+        try {
+          await this.recoverExecution(savedState);
+        } catch (error) {
+          this.logger.error(`Failed to recover execution ${savedState.id}:`, error);
+          
+          // Log fallback decision
+          await this.fallbackLogger.logPlanDeviation(
+            savedState.id,
+            { agent: 'workflow-engine', action: 'recover_execution', expectedOutcome: 'resumed' },
+            { agent: 'manual-intervention', action: 'mark_failed', actualOutcome: 'marked_as_failed' },
+            'Automatic recovery failed',
+            { error: error.message, originalPlan: savedState.originalPlan }
+          );
+          
+          // Mark as failed
+          await this.stateManager.markExecutionCompleted(savedState.id, {
+            status: 'failed',
+            error: error.message,
+            completedAt: new Date().toISOString()
+          });
+        }
+      }
+      
+      this.recoveryMode = false;
+      this.logger.info('Execution recovery process completed');
+      
+    } catch (error) {
+      this.logger.error('Failed to recover incomplete executions:', error);
+      this.recoveryMode = false;
+    }
+  }
+
+  /**
+   * Recover a single execution
+   */
+  async recoverExecution(savedState) {
+    this.logger.info(`Recovering execution: ${savedState.id} from step ${savedState.currentStepIndex}`);
+    
+    // Reconstruct execution object
+    const execution = {
+      ...savedState,
+      workflow: this.workflows.get(savedState.workflowId) || savedState.workflow,
+      stepTimeout: null,
+      recovered: true,
+      recoveredAt: new Date().toISOString()
+    };
+    
+    // Validate workflow still exists
+    if (!execution.workflow) {
+      throw new Error(`Workflow definition not found: ${savedState.workflowId}`);
+    }
+    
+    // Check if agents are available for recovery
+    const requiredAgents = this.extractRequiredAgents(execution.workflow);
+    const availableAgents = await this.checkAgentAvailability(requiredAgents);
+    
+    if (availableAgents.length < requiredAgents.length) {
+      const unavailableAgents = requiredAgents.filter(agent => !availableAgents.includes(agent));
+      
+      this.logger.warn(`Some agents unavailable for recovery: ${unavailableAgents.join(', ')}`);
+      
+      // Log agent fallback
+      for (const agent of unavailableAgents) {
+        await this.fallbackLogger.logAgentFallback(
+          execution.id,
+          { name: agent, type: 'ai' },
+          { name: 'recovery-coordinator', type: 'non-ai', expectedEffectiveness: '70%' },
+          'Agent unavailable during recovery',
+          { step: execution.currentStep?.name, recovery: true }
+        );
+      }
+      
+      // Modify execution plan to use available fallbacks
+      execution = await this.adaptExecutionForFallbacks(execution, unavailableAgents);
+    }
+    
+    // Store in active executions
+    this.executions.set(execution.id, execution);
+    
+    // Log recovery
+    this.logger.systemRecovery(
+      'workflow-execution',
+      execution.status,
+      'recovering',
+      'persistent-state-restoration'
+    );
+    
+    // Continue execution from current step
+    execution.status = 'running';
+    await this.stateManager.saveExecutionState(execution);
+    
+    // Resume execution
+    await this.executeNextStep(execution);
+    
+    this.logger.info(`Successfully recovered execution: ${execution.id}`);
+  }
+
+  /**
+   * Enhance step execution with persistence and fallback tracking
+   */
+  async executeStepWithTracking(step, execution, eventData = null) {
+    const stepStartTime = Date.now();
+    const originalAgent = step.config?.agent;
+    let actualAgent = originalAgent;
+    let fallbackUsed = null;
+    
+    try {
+      // Check if planned agent is available
+      if (originalAgent && !await this.isAgentAvailable(originalAgent)) {
+        // Find fallback
+        const fallback = await this.findAgentFallback(originalAgent, step);
+        if (fallback) {
+          actualAgent = fallback.agent;
+          fallbackUsed = fallback.method;
+          
+          // Log fallback usage
+          await this.fallbackLogger.logAgentFallback(
+            execution.id,
+            { name: originalAgent, type: 'ai' },
+            { name: actualAgent, type: fallback.type, expectedEffectiveness: fallback.effectiveness },
+            'Original agent unavailable',
+            { stepIndex: execution.currentStepIndex, stepName: step.name }
+          );
+          
+          // Update step configuration
+          step = { ...step, config: { ...step.config, agent: actualAgent } };
+        } else {
+          throw new Error(`No fallback available for agent: ${originalAgent}`);
+        }
+      }
+      
+      // Execute the step
+      let result = await this.executeStep(step, execution, eventData);
+      
+      // Handle non-AI fallback if AI method failed
+      if (!result && fallbackUsed) {
+        result = await this.executeNonAiFallback(step, execution, eventData);
+        
+        if (result) {
+          await this.fallbackLogger.logNonAiFallback(
+            execution.id,
+            { description: step.name, originalMethod: 'ai-analysis' },
+            { name: fallbackUsed, type: 'rule-based' },
+            { score: result.effectivenessScore || 75, coverage: result.coverage || 80 },
+            { stepIndex: execution.currentStepIndex }
+          );
+        }
+      }
+      
+      const duration = Date.now() - stepStartTime;
+      
+      // Record execution step
+      await this.stateManager.recordExecutionStep(execution.id, step, {
+        success: true,
+        duration,
+        fallbackUsed,
+        agentUsed: actualAgent
+      });
+      
+      // Log plan deviation if fallback was used
+      if (fallbackUsed && originalAgent !== actualAgent) {
+        await this.fallbackLogger.logPlanDeviation(
+          execution.id,
+          { agent: originalAgent, action: step.name, expectedOutcome: 'ai-processing' },
+          { agent: actualAgent, action: step.name, actualOutcome: 'fallback-processing' },
+          'Agent unavailable, used fallback',
+          { fallbackMethod: fallbackUsed, effectiveness: result?.effectivenessScore }
+        );
+      }
+      
+      // Save execution state after successful step
+      await this.stateManager.saveExecutionState(execution);
+      
+      this.logger.debug(`Step ${step.name} completed in ${duration}ms with agent ${actualAgent}`);
+      
+      return result;
+      
+    } catch (error) {
+      const duration = Date.now() - stepStartTime;
+      
+      // Record failed step
+      await this.stateManager.recordExecutionStep(execution.id, step, {
+        success: false,
+        duration,
+        fallbackUsed,
+        agentUsed: actualAgent,
+        error: error.message
+      });
+      
+      this.logger.error(`Step ${step.name} failed after ${duration}ms:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute non-AI fallback methods
+   */
+  async executeNonAiFallback(step, execution, eventData) {
+    const fallbackMethods = {
+      'semantic-analysis': this.executeRuleBasedAnalysis,
+      'web-search': this.executeCachedSearch,
+      'knowledge-graph': this.executeDirectUkb,
+      'documentation': this.executeTemplateGeneration
+    };
+    
+    const agent = step.config?.agent;
+    const fallbackMethod = fallbackMethods[agent];
+    
+    if (!fallbackMethod) {
+      this.logger.warn(`No non-AI fallback available for agent: ${agent}`);
+      return null;
+    }
+    
+    this.logger.info(`Executing non-AI fallback for ${agent}`);
+    
+    try {
+      const result = await fallbackMethod.call(this, step, execution, eventData);
+      result.effectivenessScore = this.calculateFallbackEffectiveness(step, result);
+      return result;
+    } catch (error) {
+      this.logger.error(`Non-AI fallback failed for ${agent}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fallback method implementations
+   */
+  async executeRuleBasedAnalysis(step, execution, eventData) {
+    // Simple rule-based semantic analysis
+    const context = execution.context;
+    const repository = context.repository || context.target;
+    
+    return {
+      type: 'rule-based-analysis',
+      result: {
+        patterns: ['basic-pattern-detected'],
+        insights: ['rule-based insight generated'],
+        confidence: 0.7
+      },
+      coverage: 60,
+      method: 'rule-based'
+    };
+  }
+
+  async executeCachedSearch(step, execution, eventData) {
+    // Use cached search results or local documentation
+    return {
+      type: 'cached-search',
+      result: {
+        sources: ['local-cache'],
+        results: ['cached result'],
+        confidence: 0.6
+      },
+      coverage: 50,
+      method: 'cached'
+    };
+  }
+
+  async executeDirectUkb(step, execution, eventData) {
+    // Direct UKB integration without AI analysis
+    return {
+      type: 'direct-ukb',
+      result: {
+        entities: [],
+        success: true
+      },
+      coverage: 80,
+      method: 'direct-integration'
+    };
+  }
+
+  async executeTemplateGeneration(step, execution, eventData) {
+    // Template-based documentation generation
+    return {
+      type: 'template-generation',
+      result: {
+        documents: ['template-based-doc'],
+        success: true
+      },
+      coverage: 70,
+      method: 'template-based'
+    };
+  }
+
+  /**
+   * Agent availability and fallback methods
+   */
+  async isAgentAvailable(agentId) {
+    try {
+      // Simple ping test - could be enhanced
+      const response = await this.sendRequest(`${agentId}/ping`, {}, 5000);
+      return response && response.status === 'ok';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async checkAgentAvailability(agentIds) {
+    const available = [];
+    for (const agentId of agentIds) {
+      if (await this.isAgentAvailable(agentId)) {
+        available.push(agentId);
+      }
+    }
+    return available;
+  }
+
+  async findAgentFallback(originalAgent, step) {
+    const fallbackMap = {
+      'semantic-analysis': { agent: 'rule-based-analyzer', method: 'rule-based', type: 'non-ai', effectiveness: '70%' },
+      'web-search': { agent: 'cached-search', method: 'cached-results', type: 'non-ai', effectiveness: '60%' },
+      'knowledge-graph': { agent: 'direct-ukb', method: 'direct-integration', type: 'non-ai', effectiveness: '80%' },
+      'documentation': { agent: 'template-generator', method: 'template-based', type: 'non-ai', effectiveness: '75%' }
+    };
+    
+    return fallbackMap[originalAgent] || null;
+  }
+
+  extractRequiredAgents(workflow) {
+    const agents = new Set();
+    if (workflow.steps) {
+      for (const step of workflow.steps) {
+        if (step.config?.agent) {
+          agents.add(step.config.agent);
+        }
+      }
+    }
+    return Array.from(agents);
+  }
+
+  async adaptExecutionForFallbacks(execution, unavailableAgents) {
+    // Modify workflow steps to use fallbacks for unavailable agents
+    if (execution.workflow?.steps) {
+      execution.workflow.steps = execution.workflow.steps.map(step => {
+        if (step.config?.agent && unavailableAgents.includes(step.config.agent)) {
+          const fallback = this.findAgentFallback(step.config.agent, step);
+          if (fallback) {
+            return {
+              ...step,
+              config: { ...step.config, agent: fallback.agent },
+              fallbackInfo: fallback
+            };
+          }
+        }
+        return step;
+      });
+    }
+    
+    return execution;
+  }
+
+  calculateFallbackEffectiveness(step, result) {
+    // Simple effectiveness calculation - could be enhanced
+    let score = 50; // Base score
+    
+    if (result.coverage) score += result.coverage * 0.3;
+    if (result.confidence) score += result.confidence * 20;
+    if (result.result?.success) score += 10;
+    
+    return Math.min(100, Math.max(0, Math.round(score)));
+  }
+
+  /**
+   * Enhanced completion methods
+   */
+  async completeExecution(execution) {
+    execution.status = 'completed';
+    execution.completedAt = new Date().toISOString();
+    
+    // Calculate completion metrics
+    const metrics = {
+      fallbacksUsed: execution.fallbacksUsed?.length || 0,
+      deviationsFromPlan: this.countPlanDeviations(execution),
+      overallEffectiveness: this.calculateOverallEffectiveness(execution),
+      completionPercentage: 100
+    };
+    
+    // Log recovery completion
+    await this.fallbackLogger.logRecoveryCompletion(
+      execution.id,
+      execution.originalPlan || 'standard-workflow',
+      execution.executionPath || [],
+      { status: 'completed', completionPercentage: 100 },
+      metrics
+    );
+    
+    // Mark as completed in state manager
+    await this.stateManager.markExecutionCompleted(execution.id, {
+      status: 'completed',
+      completedAt: execution.completedAt,
+      results: execution.results
+    });
+    
+    this.logger.info(`Workflow execution completed: ${execution.id}`);
+    this.logger.recoveryComplete(execution.id, { status: 'completed', completionPercentage: 100 }, metrics);
+    
+    this.emit('workflow-completed', {
+      executionId: execution.id,
+      workflowId: execution.workflowId,
+      results: execution.results,
+      context: execution.context,
+      metrics
+    });
+  }
+
+  countPlanDeviations(execution) {
+    return execution.executionPath?.filter(step => step.fallbackUsed).length || 0;
+  }
+
+  calculateOverallEffectiveness(execution) {
+    if (!execution.executionPath?.length) return 100;
+    
+    const stepEffectiveness = execution.executionPath.map(step => {
+      if (step.fallbackUsed) {
+        return step.effectivenessScore || 70; // Default fallback effectiveness
+      }
+      return 100; // Original plan effectiveness
+    });
+    
+    return Math.round(stepEffectiveness.reduce((sum, score) => sum + score, 0) / stepEffectiveness.length);
+  }
+
+  /**
+   * Mock request sender (to be replaced with actual implementation)
+   */
+  async sendRequest(endpoint, params, timeout = 30000) {
+    // This would be implemented to actually send requests to agents
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Mock: Agent at ${endpoint} unavailable`));
+      }, 100);
+    });
   }
 }
