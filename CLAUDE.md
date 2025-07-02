@@ -70,6 +70,26 @@ claude-mcp
 
 **NEVER** use `claude code` directly - it won't have MCP features!
 
+## 🚨 CRITICAL: Working Directory and File Locations
+
+**WORKING DIRECTORY**: Claude Code should ALWAYS start in the top-level project directory (`/Users/q284340/Agentic/coding`), NOT in subdirectories like `semantic-analysis-system`.
+
+**CONVERSATION HISTORY**: 
+- Location: `.specstory/history/` - ALWAYS in the top-level directory, never in subdirectories
+- Format: **Markdown files (.md)**, NOT JSON
+- Structure: Timestamped conversation logs in markdown format
+- Purpose: Cross-session conversation persistence and analysis
+
+**COMMON STARTUP ISSUES**:
+- If you start in a subdirectory, you won't find `.specstory/history/` files
+- Always check `pwd` and ensure you're in the correct root directory
+- Remember: `.specstory/history/*.md` files are the conversation logs, not `.json`
+
+**WHY THIS MATTERS**:
+- Knowledge base files are in the root directory
+- Conversation history is tracked at the project level
+- Scripts and tools expect to run from the root directory
+
 ## 🚨 CRITICAL: Knowledge Base Management Rule
 
 **IMPORTANT: The knowledge base is managed through MCP memory service and topic-specific shared-memory-*.json files. ALWAYS use the `ukb` command to update knowledge. Never edit the shared-memory files directly. The ukb tool ensures proper formatting, validation, and synchronization with MCP memory.**
