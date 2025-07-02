@@ -100,7 +100,10 @@
       "Bash(./cli.js relation:*)",
       "Bash(./cli.js entity list)",
       "Bash(./bin/ukb:*)",
-      "Bash(scripts/test-coding.sh:*)"
+      "Bash(scripts/test-coding.sh:*)",
+      "mcp__semantic-analysis__get_system_status",
+      "mcp__semantic-analysis__determine_insights",
+      "Bash(semantic-analysis)"
     ],
     "deny": []
   }

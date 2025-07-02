@@ -70,6 +70,13 @@ export class DocumentationAgent extends BaseAgent {
     // Batch operations
     this.registerRequestHandler('documentation/batch/generate-from-entities',
       this.handleBatchGenerateFromEntitiesRequest.bind(this));
+
+    // RPC methods for workflow integration
+    this.registerRequestHandler('generateInsightDocs',
+      this.handleGenerateInsightDocsRPC.bind(this));
+    
+    this.registerRequestHandler('generatePlantUML',
+      this.handleGeneratePlantUMLRPC.bind(this));
   }
 
   async subscribeToEvents() {
@@ -541,6 +548,201 @@ export class DocumentationAgent extends BaseAgent {
       supportedFormats: ['markdown', 'html', 'json'],
       config: this.config
     };
+  }
+
+  /**
+   * RPC Methods for Workflow Integration
+   */
+  async handleGenerateInsightDocsRPC(params) {
+    const { entities, outputPath } = params;
+    
+    this.logger.info(`Generating insight documentation for ${entities?.length || 0} entities`);
+    
+    const results = {
+      generatedFiles: [],
+      documentationLinks: [],
+      errors: []
+    };
+
+    const targetPath = outputPath || '../knowledge-management/insights/';
+    
+    for (const entity of entities || []) {
+      try {
+        if (entity.entityType === 'Insight' || 
+            entity.entityType === 'TransferablePattern' ||
+            entity.entityType === 'WorkflowPattern' ||
+            entity.entityType === 'TechnicalPattern') {
+          
+          const doc = await this.documentGenerator.generateInsightDoc(entity, {
+            template: this.templates.get('insight'),
+            format: 'markdown'
+          });
+          
+          const fileName = `${entity.name}.md`;
+          const fullPath = join(targetPath, fileName);
+          
+          // Ensure directory exists
+          if (!existsSync(targetPath)) {
+            mkdirSync(targetPath, { recursive: true });
+          }
+          
+          writeFileSync(fullPath, doc, 'utf8');
+          
+          results.generatedFiles.push(fileName);
+          results.documentationLinks.push({
+            entity: entity.name,
+            link: `knowledge-management/insights/${fileName}`,
+            fullPath: fullPath
+          });
+          
+          this.logger.debug(`Generated documentation for ${entity.name}`);
+        }
+      } catch (error) {
+        results.errors.push({
+          entity: entity.name || 'unknown',
+          error: error.message
+        });
+        this.logger.error(`Failed to generate documentation for ${entity.name}:`, error);
+      }
+    }
+    
+    this.logger.info(`Documentation generation completed: ${results.generatedFiles.length} files, ${results.errors.length} errors`);
+    
+    return results;
+  }
+
+  async handleGeneratePlantUMLRPC(params) {
+    const { entities, patterns, outputPath } = params;
+    
+    this.logger.info('Generating PlantUML diagrams');
+    
+    const results = {
+      plantUMLFiles: [],
+      diagramImages: [],
+      errors: []
+    };
+
+    const pumlPath = outputPath || '../knowledge-management/puml/';
+    const imagesPath = '../knowledge-management/images/';
+    
+    try {
+      // Ensure directories exist
+      if (!existsSync(pumlPath)) {
+        mkdirSync(pumlPath, { recursive: true });
+      }
+      if (!existsSync(imagesPath)) {
+        mkdirSync(imagesPath, { recursive: true });
+      }
+
+      // Generate entity relationship diagram
+      const entityDiagram = this.generateEntityRelationshipPlantUML(entities || []);
+      if (entityDiagram) {
+        const entityFileName = 'entity-relationships.puml';
+        writeFileSync(join(pumlPath, entityFileName), entityDiagram, 'utf8');
+        results.plantUMLFiles.push(entityFileName);
+      }
+
+      // Generate pattern hierarchy diagram
+      const patternDiagram = this.generatePatternHierarchyPlantUML(patterns || []);
+      if (patternDiagram) {
+        const patternFileName = 'pattern-hierarchy.puml';
+        writeFileSync(join(pumlPath, patternFileName), patternDiagram, 'utf8');
+        results.plantUMLFiles.push(patternFileName);
+      }
+
+      // Generate knowledge graph overview
+      const overviewDiagram = this.generateKnowledgeGraphOverview(entities || []);
+      if (overviewDiagram) {
+        const overviewFileName = 'knowledge-graph-overview.puml';
+        writeFileSync(join(pumlPath, overviewFileName), overviewDiagram, 'utf8');
+        results.plantUMLFiles.push(overviewFileName);
+      }
+
+      this.logger.info(`PlantUML generation completed: ${results.plantUMLFiles.length} files`);
+      
+    } catch (error) {
+      results.errors.push({
+        type: 'plantuml-generation',
+        error: error.message
+      });
+      this.logger.error('PlantUML generation failed:', error);
+    }
+    
+    return results;
+  }
+
+  generateEntityRelationshipPlantUML(entities) {
+    let puml = '@startuml entity-relationships\n';
+    puml += '!theme blueprint\n';
+    puml += 'title Entity Relationships\n\n';
+    
+    // Group entities by type
+    const entityTypes = {};
+    entities.forEach(entity => {
+      if (!entityTypes[entity.entityType]) {
+        entityTypes[entity.entityType] = [];
+      }
+      entityTypes[entity.entityType].push(entity);
+    });
+
+    // Add entity boxes
+    Object.entries(entityTypes).forEach(([type, entities]) => {
+      puml += `package "${type}" {\n`;
+      entities.forEach(entity => {
+        puml += `  [${entity.name}]\n`;
+      });
+      puml += '}\n\n';
+    });
+
+    // Add relationships (simplified)
+    puml += '!include <style.common>\n';
+    puml += '@enduml\n';
+    
+    return puml;
+  }
+
+  generatePatternHierarchyPlantUML(patterns) {
+    let puml = '@startuml pattern-hierarchy\n';
+    puml += '!theme blueprint\n';
+    puml += 'title Pattern Hierarchy\n\n';
+    
+    patterns.forEach(pattern => {
+      puml += `class "${pattern.name}" {\n`;
+      puml += `  +type: ${pattern.entityType}\n`;
+      puml += '}\n';
+    });
+    
+    puml += '@enduml\n';
+    
+    return puml;
+  }
+
+  generateKnowledgeGraphOverview(entities) {
+    let puml = '@startuml knowledge-graph-overview\n';
+    puml += '!theme blueprint\n';
+    puml += 'title Knowledge Graph Overview\n\n';
+    
+    // Create a high-level overview
+    puml += 'node "Semantic Analysis System" {\n';
+    puml += `  [${entities.length} Entities]\n`;
+    puml += '}\n\n';
+    
+    // Group by significance level
+    const significant = entities.filter(e => e.significance >= 8);
+    const moderate = entities.filter(e => e.significance >= 6 && e.significance < 8);
+    const low = entities.filter(e => e.significance < 6);
+    
+    if (significant.length > 0) {
+      puml += `folder "High Significance (${significant.length})" {\n`;
+      significant.slice(0, 5).forEach(entity => {
+        puml += `  [${entity.name}]\n`;
+      });
+      puml += '}\n\n';
+    }
+    
+    puml += '@enduml\n';
+    
+    return puml;
   }
 
   async onStop() {

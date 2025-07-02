@@ -35,6 +35,9 @@ export class CoordinatorAgent extends BaseAgent {
     this.taskScheduler = new TaskScheduler(this.config.scheduling);
     this.qualityAssurance = new QualityAssurance(this.config.qualityAssurance);
     
+    // Load predefined workflows
+    await this.loadPredefinedWorkflows();
+    
     // Register request handlers
     this.registerRequestHandlers();
     
@@ -81,6 +84,17 @@ export class CoordinatorAgent extends BaseAgent {
     
     this.registerRequestHandler('coordinator/research/technology',
       this.handleTechnologyResearchRequest.bind(this));
+
+    // Complete semantic analysis workflow
+    this.registerRequestHandler('coordinator/analyze/complete-semantic',
+      this.handleCompleteSemanticAnalysisRequest.bind(this));
+
+    // RPC methods for direct workflow access
+    this.registerRequestHandler('startWorkflow',
+      this.handleStartWorkflowRPC.bind(this));
+    
+    this.registerRequestHandler('getWorkflowStatus',
+      this.handleGetWorkflowStatusRPC.bind(this));
     
     // Quality assurance
     this.registerRequestHandler('coordinator/qa/validate-agent-output',
@@ -628,6 +642,129 @@ export class CoordinatorAgent extends BaseAgent {
       qualityAssurance: this.qualityAssurance?.generateQualityReport(),
       config: this.config
     };
+  }
+
+  async loadPredefinedWorkflows() {
+    try {
+      const { readFileSync } = await import('fs');
+      const { join } = await import('path');
+      
+      // Load complete semantic analysis workflow
+      const workflowPath = join(process.cwd(), 'data', 'workflows', 'complete-semantic-analysis.json');
+      
+      try {
+        const workflowData = JSON.parse(readFileSync(workflowPath, 'utf8'));
+        this.workflowEngine.registerWorkflow(workflowData);
+        this.logger.info('Loaded complete semantic analysis workflow');
+      } catch (error) {
+        this.logger.warn('Failed to load complete semantic analysis workflow:', error.message);
+      }
+      
+    } catch (error) {
+      this.logger.error('Failed to load predefined workflows:', error);
+    }
+  }
+
+  async handleCompleteSemanticAnalysisRequest(data) {
+    try {
+      const { 
+        repository, 
+        depth = 10, 
+        significanceThreshold = 7,
+        expectedEntityCount = 23,
+        requestId 
+      } = data;
+      
+      this.logger.info(`Starting complete semantic analysis workflow for: ${repository}`);
+      
+      // Prepare workflow parameters
+      const parameters = {
+        repository,
+        depth,
+        significanceThreshold,
+        expectedEntityCount
+      };
+      
+      // Start the complete semantic analysis workflow
+      const execution = await this.workflowEngine.startWorkflow('complete-semantic-analysis', parameters);
+      this.activeWorkflows.set('complete-semantic-analysis', execution);
+      
+      await this.publish('coordinator/complete-semantic-analysis/started', {
+        requestId,
+        workflowId: 'complete-semantic-analysis',
+        repository,
+        parameters,
+        status: 'started'
+      });
+
+      return { workflowId: 'complete-semantic-analysis', executionId: execution.id, status: 'started' };
+      
+    } catch (error) {
+      this.logger.error('Complete semantic analysis workflow failed:', error);
+      throw error;
+    }
+  }
+
+  async handleStartWorkflowRPC(params) {
+    const { workflowType, parameters } = params;
+    
+    this.logger.info(`Starting workflow via RPC: ${workflowType}`);
+    
+    switch (workflowType) {
+      case 'complete-semantic-analysis':
+        return await this.handleCompleteSemanticAnalysisRequest(parameters);
+      case 'repository-analysis':
+        return await this.handleRepositoryAnalysisRequest(parameters);
+      case 'conversation-analysis':
+        return await this.handleConversationAnalysisRequest(parameters);
+      default:
+        throw new Error(`Unknown workflow type: ${workflowType}`);
+    }
+  }
+
+  async handleGetWorkflowStatusRPC(params) {
+    const { workflowId } = params;
+    
+    if (!workflowId) {
+      // Return status of all active workflows
+      const statuses = {};
+      for (const [id, workflow] of this.activeWorkflows) {
+        statuses[id] = await this.workflowEngine.getWorkflowStatus(workflow.id || id);
+      }
+      return { workflows: statuses };
+    }
+    
+    return await this.workflowEngine.getWorkflowStatus(workflowId);
+  }
+
+  async discoverAgentCapabilities() {
+    try {
+      // Send discovery requests to all known agents including the new ones
+      const agentIds = [
+        'semantic-analysis', 
+        'web-search', 
+        'knowledge-graph', 
+        'synchronization', 
+        'deduplication',
+        'documentation',
+        'qa'
+      ];
+      
+      for (const agentId of agentIds) {
+        try {
+          const response = await this.sendRequest(`${agentId}/capabilities`, {});
+          if (response && response.capabilities) {
+            this.agentCapabilities.set(agentId, response.capabilities);
+            this.logger.debug(`Discovered capabilities for ${agentId}:`, response.capabilities);
+          }
+        } catch (error) {
+          this.logger.debug(`Failed to discover capabilities for ${agentId}:`, error.message);
+        }
+      }
+      
+    } catch (error) {
+      this.logger.error('Agent capability discovery failed:', error);
+    }
   }
 
   async onStop() {

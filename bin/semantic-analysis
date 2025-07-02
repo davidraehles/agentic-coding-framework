@@ -43,7 +43,57 @@ function findSemanticAnalysisSystem() {
   process.exit(1);
 }
 
-function runSemanticAnalysis() {
+async function checkPortAvailability() {
+  const requiredPorts = [1883, 8080, 8081, 9090];
+  const unavailablePorts = [];
+  
+  for (const port of requiredPorts) {
+    try {
+      const { createServer } = await import('net');
+      const server = createServer();
+      
+      await new Promise((resolve, reject) => {
+        server.once('error', (err) => {
+          if (err.code === 'EADDRINUSE') {
+            reject(err);
+          } else {
+            reject(err);
+          }
+        });
+        
+        server.listen(port, () => {
+          server.close(() => resolve());
+        });
+      });
+    } catch (error) {
+      if (error.code === 'EADDRINUSE') {
+        unavailablePorts.push(port);
+      }
+    }
+  }
+  
+  if (unavailablePorts.length > 0) {
+    console.error('❌ Port conflicts detected:');
+    unavailablePorts.forEach(port => {
+      console.error(`  - Port ${port} is already in use`);
+    });
+    console.error('\n💡 Resolution steps:');
+    console.error('  1. Stop conflicting services:');
+    unavailablePorts.forEach(port => {
+      console.error(`     lsof -ti :${port} | xargs kill -9`);
+    });
+    console.error('  2. Or restart your system to clear port conflicts');
+    console.error('  3. Then try running semantic-analysis again');
+    process.exit(1);
+  }
+  
+  console.log('✅ All required ports are available');
+}
+
+async function runSemanticAnalysis() {
+  // Check port availability first
+  await checkPortAvailability();
+  
   const systemPath = findSemanticAnalysisSystem();
   const indexPath = join(systemPath, 'index.js');
   
