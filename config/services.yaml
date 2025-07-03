@@ -38,7 +38,7 @@ services:
   semantic-analysis:
     displayName: "Semantic Analysis System"
     type: "compound"
-    command: "node index-robust.js --working-dir ${PWD}"
+    command: "node index.js --working-dir ${PWD}"
     workingDirectory: "semantic-analysis-system"
     env:
       inherit: true
