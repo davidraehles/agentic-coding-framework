@@ -65,6 +65,36 @@ if [[ -d "$CODING_REPO/integrations/mcp-server-browserbase" ]]; then
     echo "  Removed mcp-server-browserbase"
 fi
 
+# Remove semantic analysis system (preserving knowledge data)
+if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis" ]]; then
+    echo "  Removing semantic analysis system..."
+    
+    # Remove Python virtual environment
+    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/venv" ]]; then
+        rm -rf "$CODING_REPO/integrations/mcp-server-semantic-analysis/venv"
+        echo "    Removed Python virtual environment"
+    fi
+    
+    # Remove Python cache directories
+    find "$CODING_REPO/integrations/mcp-server-semantic-analysis" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+    find "$CODING_REPO/integrations/mcp-server-semantic-analysis" -name "*.pyc" -delete 2>/dev/null || true
+    
+    # Remove logs directory
+    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/logs" ]]; then
+        rm -rf "$CODING_REPO/integrations/mcp-server-semantic-analysis/logs"
+        echo "    Removed semantic analysis logs"
+    fi
+    
+    # Remove reports directory
+    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/reports" ]]; then
+        rm -rf "$CODING_REPO/integrations/mcp-server-semantic-analysis/reports"
+        echo "    Removed analysis reports"
+    fi
+    
+    # Note: We preserve the source code since it might be a local development environment
+    echo "  Semantic analysis system cleaned (source code preserved)"
+fi
+
 # Clean up node_modules in MCP servers
 for dir in "integrations/browser-access" "integrations/claude-logger-mcp" "mcp-memory-server"; do
     if [[ -d "$CODING_REPO/$dir/node_modules" ]]; then

@@ -105,7 +105,13 @@
       "mcp__semantic-analysis__determine_insights",
       "Bash(semantic-analysis)",
       "WebFetch(domain:github.com)",
-      "mcp__semantic-analysis__analyze_repository"
+      "mcp__semantic-analysis__analyze_repository",
+      "Bash(./venv/bin/pip list)",
+      "Bash(source:*)",
+      "Bash(./integrations/mcp-server-semantic-analysis/venv/bin/pip install -e ./integrations/mcp-server-semantic-analysis/)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"import mcp; print(mcp.__version__)\")"
     ],
     "deny": []
   }

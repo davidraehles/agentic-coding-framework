@@ -14,6 +14,17 @@
         "LOCAL_CDP_URL": "{{LOCAL_CDP_URL}}",
         "ANTHROPIC_API_KEY": "{{ANTHROPIC_API_KEY}}"
       }
+    },
+    "semantic-analysis": {
+      "command": "{{CODING_TOOLS_PATH}}/integrations/mcp-server-semantic-analysis/venv/bin/python",
+      "args": ["{{CODING_TOOLS_PATH}}/integrations/mcp-server-semantic-analysis/simple_mcp_server.py"],
+      "env": {
+        "CODING_TOOLS_PATH": "{{CODING_TOOLS_PATH}}",
+        "PYTHONPATH": "{{CODING_TOOLS_PATH}}/integrations/mcp-server-semantic-analysis",
+        "ANTHROPIC_API_KEY": "{{ANTHROPIC_API_KEY}}",
+        "OPENAI_API_KEY": "{{OPENAI_API_KEY}}",
+        "OPENAI_BASE_URL": "{{OPENAI_BASE_URL}}"
+      }
     }
   }
 }

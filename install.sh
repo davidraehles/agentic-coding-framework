@@ -417,6 +417,96 @@ install_browserbase() {
     cd "$CODING_REPO"
 }
 
+# Install semantic analysis system
+install_semantic_analysis() {
+    echo -e "\n${CYAN}🧠 Installing semantic analysis system...${NC}"
+    
+    local semantic_dir="$CODING_REPO/integrations/mcp-server-semantic-analysis"
+    
+    # Check if directory exists
+    if [[ ! -d "$semantic_dir" ]]; then
+        warning "Semantic analysis directory not found at $semantic_dir"
+        return 1
+    else
+        info "Semantic analysis system directory already exists"
+    fi
+    
+    # Ensure we're in the semantic analysis directory
+    if [[ -d "$semantic_dir" ]]; then
+        cd "$semantic_dir"
+        
+        # Check for Python
+        if ! command -v python3 &> /dev/null; then
+            warning "Python 3 not found. Please install Python 3.8+ to use semantic analysis."
+            return 1
+        fi
+        
+        info "Setting up Python virtual environment..."
+        
+        # Create virtual environment if it doesn't exist
+        if [[ ! -d "venv" ]]; then
+            python3 -m venv venv || {
+                warning "Failed to create virtual environment"
+                return 1
+            }
+        fi
+        
+        # Activate virtual environment
+        source venv/bin/activate || {
+            warning "Failed to activate virtual environment"
+            return 1
+        }
+        
+        # Upgrade pip
+        info "Upgrading pip..."
+        pip install --upgrade pip || warning "Failed to upgrade pip"
+        
+        # Install dependencies
+        if [[ -f "pyproject.toml" ]]; then
+            info "Installing semantic analysis dependencies..."
+            pip install -e . || {
+                warning "Failed to install semantic analysis dependencies"
+                return 1
+            }
+            success "Semantic analysis dependencies installed"
+        else
+            warning "pyproject.toml not found - manual dependency installation required"
+            return 1
+        fi
+        
+        # Install additional development dependencies if requirements-dev.txt exists
+        if [[ -f "requirements-dev.txt" ]]; then
+            info "Installing development dependencies..."
+            pip install -r requirements-dev.txt || warning "Failed to install dev dependencies"
+        fi
+        
+        # Make sal command executable
+        local sal_command="$CODING_REPO/bin/sal"
+        if [[ -f "$sal_command" ]]; then
+            chmod +x "$sal_command"
+            success "sal command made executable"
+        else
+            warning "sal command not found at $sal_command"
+        fi
+        
+        # Test installation
+        info "Testing semantic analysis installation..."
+        if python -c "import semantic_analysis; print('✅ Semantic analysis import successful')" 2>/dev/null; then
+            success "Semantic analysis system installed successfully"
+        else
+            warning "Semantic analysis system installation verification failed"
+        fi
+        
+        # Deactivate virtual environment
+        deactivate
+        
+    else
+        warning "Semantic analysis directory not found - skipping installation"
+    fi
+    
+    cd "$CODING_REPO"
+}
+
 # Install MCP servers
 install_mcp_servers() {
     echo -e "\n${CYAN}🔌 Installing MCP servers...${NC}"
@@ -607,6 +697,7 @@ setup_mcp_config() {
     sed -i.bak "s|{{LOCAL_CDP_URL}}|${LOCAL_CDP_URL:-ws://localhost:9222}|g" "$temp_file"
     sed -i.bak "s|{{ANTHROPIC_API_KEY}}|${ANTHROPIC_API_KEY:-}|g" "$temp_file"
     sed -i.bak "s|{{OPENAI_API_KEY}}|${OPENAI_API_KEY:-}|g" "$temp_file"
+    sed -i.bak "s|{{OPENAI_BASE_URL}}|${OPENAI_BASE_URL:-}|g" "$temp_file"
     
     # Save the processed version locally
     cp "$temp_file" "$CODING_REPO/claude-code-mcp-processed.json"
@@ -1031,6 +1122,7 @@ main() {
     test_proxy_connectivity
     install_memory_visualizer
     install_browserbase
+    install_semantic_analysis
     install_mcp_servers
     create_command_wrappers
     setup_unified_launcher

@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""
+SAL - Semantic Analysis Launcher
+Global command for semantic analysis operations
+
+This command provides access to the new Graphite-based semantic analysis system
+with 3-tier API key fallback and multi-agent architecture.
+"""
+
+import os
+import sys
+import subprocess
+from pathlib import Path
+
+
+def find_semantic_analysis_system():
+    """Find the semantic analysis system installation."""
+    # Get the coding tools path
+    coding_tools_path = os.getenv("CODING_TOOLS_PATH")
+    if not coding_tools_path:
+        # Try to determine from script location
+        script_path = Path(__file__).resolve()
+        coding_tools_path = script_path.parent.parent
+    
+    # Check for the new MCP server
+    mcp_server_path = Path(coding_tools_path) / "integrations" / "mcp-server-semantic-analysis"
+    
+    if mcp_server_path.exists():
+        return mcp_server_path
+    
+    # Fallback to old system or error
+    print("❌ Semantic Analysis System not found!")
+    print(f"Expected location: {mcp_server_path}")
+    print("\nPlease ensure the system is installed with:")
+    print("  ./install.sh")
+    sys.exit(1)
+
+
+def check_python_environment():
+    """Check if Python environment is properly set up."""
+    system_path = find_semantic_analysis_system()
+    
+    # Check if virtual environment exists
+    venv_path = system_path / "venv"
+    if venv_path.exists():
+        # Use virtual environment
+        if os.name == "nt":  # Windows
+            python_exe = venv_path / "Scripts" / "python.exe"
+        else:  # Unix-like
+            python_exe = venv_path / "bin" / "python"
+        
+        if python_exe.exists():
+            return str(python_exe)
+    
+    # Fallback to system Python
+    return sys.executable
+
+
+def main():
+    """Main entry point for SAL command."""
+    try:
+        # Find system installation
+        system_path = find_semantic_analysis_system()
+        
+        # Get appropriate Python executable
+        python_exe = check_python_environment()
+        
+        # Set up environment
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(system_path)
+        env["CODING_TOOLS_PATH"] = str(system_path.parent.parent)
+        
+        # Prepare command
+        cli_module = system_path / "semantic_analysis" / "cli.py"
+        cmd = [python_exe, str(cli_module)] + sys.argv[1:]
+        
+        # Execute the semantic analysis CLI
+        result = subprocess.run(cmd, env=env)
+        sys.exit(result.returncode)
+        
+    except KeyboardInterrupt:
+        print("\n👋 Analysis cancelled")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Failed to start semantic analysis: {e}")
+        print("\nTroubleshooting:")
+        print("1. Check that the system is installed: ./install.sh")
+        print("2. Verify CODING_TOOLS_PATH environment variable")
+        print("3. Ensure Python dependencies are installed")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

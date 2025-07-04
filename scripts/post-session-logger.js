@@ -59,7 +59,7 @@ class PostSessionLogger {
       console.log(`🎯 Routing to: ${targetRepo === this.codingRepo ? 'CODING repo' : 'current project'}`);
 
       // Create log file
-      const logFile = this.createLogFile(targetRepo, sessionData, conversationContent);
+      const logFile = await this.createLogFile(targetRepo, sessionData, conversationContent);
       
       console.log(`✅ Conversation logged to: ${logFile}`);
       
@@ -239,7 +239,7 @@ class PostSessionLogger {
     return unambiguousKeywords.some(keyword => lowerContent.includes(keyword));
   }
 
-  createLogFile(targetRepo, sessionData, content) {
+  async createLogFile(targetRepo, sessionData, content) {
     const now = new Date();
     // Use local time instead of UTC
     const date = now.getFullYear() + '-' + 
