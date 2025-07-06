@@ -11,6 +11,22 @@ log() {
   echo "[Claude] $1"
 }
 
+show_session_reminder() {
+  local specstory_dir="$PROJECT_DIR/.specstory/history"
+  
+  if [ -d "$specstory_dir" ]; then
+    # Find the most recent session log
+    local latest_session=$(ls -t "$specstory_dir"/*.md 2>/dev/null | head -1)
+    
+    if [ -n "$latest_session" ] && [ -f "$latest_session" ]; then
+      local session_file=$(basename "$latest_session")
+      echo "📋 Latest session log: $session_file"
+      echo "💡 Reminder: Ask Claude to read the session log for continuity"
+      echo ""
+    fi
+  fi
+}
+
 # Check for MCP sync requirement
 if [ -f "$PROJECT_DIR/.mcp-sync/sync-required.json" ]; then
   log "MCP memory sync required, will be handled by Claude on startup"
@@ -43,6 +59,9 @@ if ! "$PROJECT_DIR/start-services.sh"; then
   log "Error: Failed to start services"
   exit 1
 fi
+
+# Show session summary for continuity
+show_session_reminder
 
 # Find MCP config
 MCP_CONFIG=""

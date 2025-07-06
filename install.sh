@@ -214,6 +214,10 @@ check_dependencies() {
         missing_deps+=("jq")
     fi
     
+    if ! command -v plantuml >/dev/null 2>&1; then
+        missing_deps+=("plantuml")
+    fi
+    
     # Platform-specific checks
     if [[ "$PLATFORM" == "macos" ]]; then
         if ! command -v brew >/dev/null 2>&1; then
@@ -317,12 +321,12 @@ handle_non_mirrored_repo_cn() {
         case "$PLATFORM" in
             macos)
                 echo "  - Install Homebrew: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-                echo "  - Then run: brew install git node python3 jq"
+                echo "  - Then run: brew install git node python3 jq plantuml"
                 ;;
             linux)
-                echo "  - Ubuntu/Debian: sudo apt-get update && sudo apt-get install -y git nodejs npm python3 python3-pip jq"
-                echo "  - RHEL/CentOS: sudo yum install -y git nodejs npm python3 python3-pip jq"
-                echo "  - Arch: sudo pacman -S git nodejs npm python python-pip jq"
+                echo "  - Ubuntu/Debian: sudo apt-get update && sudo apt-get install -y git nodejs npm python3 python3-pip jq plantuml"
+                echo "  - RHEL/CentOS: sudo yum install -y git nodejs npm python3 python3-pip jq plantuml"
+                echo "  - Arch: sudo pacman -S git nodejs npm python python-pip jq plantuml"
                 ;;
             windows)
                 echo "  - Install Git Bash: https://git-scm.com/downloads"
@@ -969,6 +973,115 @@ configure_team_setup() {
     echo "  • shared-memory-ui.json (UI/frontend specific knowledge)"
 }
 
+# Install PlantUML for diagram generation
+install_plantuml() {
+    info "Installing PlantUML for diagram generation..."
+    
+    # Check if already installed
+    if command -v plantuml >/dev/null 2>&1; then
+        success "✓ PlantUML already installed"
+        return 0
+    fi
+    
+    case "$PLATFORM" in
+        macos)
+            if command -v brew >/dev/null 2>&1; then
+                info "Installing PlantUML via Homebrew..."
+                if brew install plantuml; then
+                    success "✓ PlantUML installed via Homebrew"
+                else
+                    warning "Failed to install PlantUML via Homebrew, trying JAR fallback..."
+                    install_plantuml_jar
+                fi
+            else
+                warning "Homebrew not found, trying JAR fallback..."
+                install_plantuml_jar
+            fi
+            ;;
+        linux)
+            # Try package managers in order of preference
+            if command -v apt-get >/dev/null 2>&1; then
+                info "Installing PlantUML via apt-get..."
+                if sudo apt-get update && sudo apt-get install -y plantuml; then
+                    success "✓ PlantUML installed via apt-get"
+                else
+                    warning "Failed to install PlantUML via apt-get, trying JAR fallback..."
+                    install_plantuml_jar
+                fi
+            elif command -v yum >/dev/null 2>&1; then
+                info "Installing PlantUML via yum..."
+                if sudo yum install -y plantuml; then
+                    success "✓ PlantUML installed via yum"
+                else
+                    warning "Failed to install PlantUML via yum, trying JAR fallback..."
+                    install_plantuml_jar
+                fi
+            elif command -v pacman >/dev/null 2>&1; then
+                info "Installing PlantUML via pacman..."
+                if sudo pacman -S --noconfirm plantuml; then
+                    success "✓ PlantUML installed via pacman"
+                else
+                    warning "Failed to install PlantUML via pacman, trying JAR fallback..."
+                    install_plantuml_jar
+                fi
+            else
+                warning "No supported package manager found, trying JAR fallback..."
+                install_plantuml_jar
+            fi
+            ;;
+        windows)
+            warning "Windows detected, trying JAR fallback..."
+            install_plantuml_jar
+            ;;
+        *)
+            warning "Unknown platform, trying JAR fallback..."
+            install_plantuml_jar
+            ;;
+    esac
+}
+
+# Fallback installation using PlantUML JAR
+install_plantuml_jar() {
+    info "Installing PlantUML JAR fallback..."
+    
+    # Check if Java is available
+    if ! command -v java >/dev/null 2>&1; then
+        warning "Java not found. PlantUML JAR requires Java to run."
+        INSTALLATION_WARNINGS+=("PlantUML: Java required but not found")
+        return 1
+    fi
+    
+    # Create local bin directory
+    local bin_dir="$CODING_REPO/bin"
+    mkdir -p "$bin_dir"
+    
+    # Download PlantUML JAR
+    local plantuml_jar="$bin_dir/plantuml.jar"
+    info "Downloading PlantUML JAR..."
+    
+    if curl -L -o "$plantuml_jar" "https://github.com/plantuml/plantuml/releases/download/v1.2023.12/plantuml-1.2023.12.jar"; then
+        # Create wrapper script
+        local plantuml_script="$bin_dir/plantuml"
+        cat > "$plantuml_script" << 'EOF'
+#!/bin/bash
+java -jar "$(dirname "$0")/plantuml.jar" "$@"
+EOF
+        chmod +x "$plantuml_script"
+        
+        # Add to PATH in .activate if not already there
+        if [ -f "$CODING_REPO/.activate" ] && ! grep -q "$bin_dir" "$CODING_REPO/.activate"; then
+            echo "export PATH=\"$bin_dir:\$PATH\"" >> "$CODING_REPO/.activate"
+        fi
+        
+        success "✓ PlantUML JAR installed to $bin_dir"
+        info "Note: PlantUML added to PATH via .activate script"
+    else
+        warning "Failed to download PlantUML JAR"
+        INSTALLATION_WARNINGS+=("PlantUML: Failed to download JAR")
+        return 1
+    fi
+}
+
 # Install Node.js dependencies for agent-agnostic functionality
 install_node_dependencies() {
     info "Installing Node.js dependencies for agent-agnostic functionality..."
@@ -1118,6 +1231,7 @@ main() {
     detect_agents
     configure_team_setup
     install_node_dependencies
+    install_plantuml
     detect_network_and_set_repos
     test_proxy_connectivity
     install_memory_visualizer

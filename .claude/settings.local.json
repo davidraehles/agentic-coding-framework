@@ -114,7 +114,17 @@
       "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"import mcp; print(mcp.__version__)\")",
       "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"from mcp.server import Server; from mcp.server.stdio import stdio_server; print(''All imports OK'')\")",
       "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"from mcp.server import Server; s = Server(''test''); print([m for m in dir(s) if not m.startswith(''_'')])\")",
-      "Bash(./venv/bin/python:*)"
+      "Bash(./venv/bin/python:*)",
+      "mcp__semantic-analysis__extract_patterns",
+      "mcp__semantic-analysis__search_knowledge_graph",
+      "mcp__semantic-analysis__generate_plantuml_diagrams",
+      "mcp__semantic-analysis__search_documentation",
+      "mcp__semantic-analysis__execute_workflow",
+      "mcp__semantic-analysis__create_insight_report",
+      "mcp__semantic-analysis__update_knowledge_graph",
+      "mcp__semantic-analysis__sync_knowledge_sources",
+      "mcp__semantic-analysis__detect_duplicates",
+      "mcp__semantic-analysis__backup_knowledge"
     ],
     "deny": []
   }

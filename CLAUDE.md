@@ -61,9 +61,34 @@ node /path/to/post-session-logger.js
 
 **ARCHITECTURE**: Post-session logging processes completed Claude sessions to extract and save conversations, ensuring all valuable interactions are preserved for future reference.
 
+## 🚨 CRITICAL: Session Continuity Check
+
+**MANDATORY**: At the start of EVERY session, check the previous session log for continuity and context. This ensures seamless cross-session workflow and prevents losing track of progress.
+
+**PROCESS**:
+
+1. **Manual check**: User will be reminded to ask Claude to read the most recent session log in `.specstory/history/`
+2. **Context understanding**: Review what was accomplished and what remains
+3. **Continuity maintenance**: Continue from where the previous session left off
+4. **Progress tracking**: Maintain todo lists and knowledge across sessions
+
+**IMPLEMENTATION**:
+
+```bash
+# Check most recent session log
+ls -la .specstory/history/ | head -5
+# Read the latest session for context
+Read /path/to/latest/session.md
+```
+
+**IMPORTANT**: The `coding` startup script will remind you to ask Claude to read the session log. Claude cannot automatically read files on startup, so this must be done manually each session.
+
+**WHY THIS MATTERS**: Cross-session continuity is critical for complex multi-session projects. Without checking previous logs, work gets duplicated, context is lost, and progress stalls.
+
 ## 🚨 CRITICAL: How to Start Claude Code
 
 **ALWAYS** start Claude Code using the `claude-mcp` command:
+
 ```bash
 claude-mcp
 ```
@@ -75,11 +100,13 @@ claude-mcp
 **🔴 AUTOMATIC STARTUP**: The coding services are **AUTOMATICALLY STARTED** when you run `coding` or `claude-mcp`! The system now uses a simple, reliable startup script.
 
 **🚨 STARTUP PROCESS**:
+
 1. **Simple Command**: Just run `coding` or `coding --claude`
 2. **Automatic Service Start**: The system starts all required services automatically
 3. **No Manual Intervention**: No need to check ports or start services manually
 
 **✅ CORRECT WORKFLOW**:
+
 ```bash
 # 1. Start coding session (this starts ALL services)
 coding
@@ -93,10 +120,9 @@ mcp__semantic-analysis__determine_insights(...)
 ```
 
 **SYSTEM COMPONENTS**:
+
 - VKB Server (port 8080) - Knowledge visualization
-- MQTT broker (port 1883) - Message broker
-- JSON-RPC server (port 8081) - Remote procedure calls
-- MCP server (port 8082) - Model Context Protocol
+- MCP Server (stdio transport) - Model Context Protocol for semantic analysis
 
 **🔧 SIMPLE ARCHITECTURE**: The system uses `start-services.sh` for reliable service startup with automatic port conflict resolution.
 
