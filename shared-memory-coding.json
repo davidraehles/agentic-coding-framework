@@ -265,7 +265,7 @@
         },
         {
           "type": "workflow",
-          "content": "Session start → Pattern queries → Development → Knowledge capture → Git sharing",
+          "content": "Session start \u2192 Pattern queries \u2192 Development \u2192 Knowledge capture \u2192 Git sharing",
           "date": "2025-06-19T11:11:34Z"
         },
         {
@@ -497,6 +497,8 @@
     "last_updated": "2025-06-29T07:12:32.374Z",
     "total_entities": 9,
     "total_relations": 20,
-    "team": "coding"
+    "team": "coding",
+    "last_sync": 1751786029.9948921,
+    "sync_source": "semantic_analysis_agent"
   }
 }

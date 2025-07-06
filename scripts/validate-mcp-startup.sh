@@ -66,7 +66,7 @@ while [ $(($(date +%s) - start_time)) -lt $TIMEOUT ]; do
     echo -e "\n${BLUE}📊 Service Status Check:${NC}"
     
     services_ok=0
-    total_services=4
+    total_services=2
     
     # Check VKB Server (port 8080)
     if check_port 8080 "VKB Server"; then
@@ -75,16 +75,6 @@ while [ $(($(date +%s) - start_time)) -lt $TIMEOUT ]; do
     
     # Check VKB Health Endpoint
     if check_health "http://localhost:8080/health" "VKB Server"; then
-        ((services_ok++))
-    fi
-    
-    # Check MQTT Broker (port 1883)
-    if check_port 1883 "MQTT Broker"; then
-        ((services_ok++))
-    fi
-    
-    # Check JSON-RPC Server (port 8081)
-    if check_port 8081 "JSON-RPC Server"; then
         ((services_ok++))
     fi
     
@@ -110,9 +100,9 @@ if [ "$all_ready" = true ]; then
 else
     echo -e "${RED}❌ Some services failed to start within ${TIMEOUT} seconds${NC}"
     echo -e "${YELLOW}💡 Troubleshooting tips:${NC}"
-    echo "   1. Check if ports 8080, 1883, 8081 are free: lsof -i :8080,:1883,:8081"
+    echo "   1. Check if port 8080 is free: lsof -i :8080"
     echo "   2. Restart services: ./start-services.sh"
     echo "   3. Check logs: tail -f vkb-server.log"
-    echo "   4. Install missing dependencies: brew install mosquitto"
+    echo "   4. Verify VKB server is running: curl http://localhost:8080/health"
     exit 1
 fi

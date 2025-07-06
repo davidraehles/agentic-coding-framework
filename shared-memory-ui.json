@@ -38,7 +38,7 @@
         },
         {
           "type": "performance",
-          "content": "Basic: 200 objects → ~20-50 visible, <10 FPS → 60 FPS. Advanced: 75-90% reduction in rendered objects",
+          "content": "Basic: 200 objects \u2192 ~20-50 visible, <10 FPS \u2192 60 FPS. Advanced: 75-90% reduction in rendered objects",
           "date": "2025-06-19T12:34:22Z"
         },
         {
@@ -259,7 +259,7 @@
       },
       "quick_reference": {
         "trigger": "Need to coordinate 15+ simultaneous animation components",
-        "action": "Implement standardized lifecycle: initialize → start → pause → stop → destroy with single requestAnimationFrame loop",
+        "action": "Implement standardized lifecycle: initialize \u2192 start \u2192 pause \u2192 stop \u2192 destroy with single requestAnimationFrame loop",
         "avoid": "Multiple uncoordinated animation loops, missing error handling, lack of graceful cleanup",
         "check": "Verify 60fps maintenance with complex animations and proper component registration/cleanup"
       },
@@ -760,6 +760,8 @@
     "garbage_removal_performed": "2025-06-18T15:57:54.115Z",
     "team": "ui",
     "description": "Frontend Web team knowledge",
-    "created_from_migration": "2025-06-20T11:17:47.390Z"
+    "created_from_migration": "2025-06-20T11:17:47.390Z",
+    "last_sync": 1751786030.006092,
+    "sync_source": "semantic_analysis_agent"
   }
 }

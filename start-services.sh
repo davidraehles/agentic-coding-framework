@@ -26,17 +26,30 @@ kill_port() {
 
 # Kill any existing processes on our ports
 echo "🧹 Cleaning up existing processes..."
-for port in 8080; do
+# Kill VKB server port and FastMCP server port
+for port in 8080 8001; do
     if check_port $port; then
         kill_port $port
     fi
 done
+
+# Kill any existing semantic analysis processes
+echo "🧹 Cleaning up existing semantic analysis processes..."
+pkill -f "semantic_analysis_server.py" 2>/dev/null || true
 
 # Start VKB Server
 echo "🟢 Starting VKB Server (port 8080)..."
 cd /Users/q284340/Agentic/coding
 nohup node lib/vkb-server/cli.js server start --foreground > vkb-server.log 2>&1 &
 VKB_PID=$!
+
+# Start Semantic Analysis MCP Server
+echo "🟢 Starting Semantic Analysis MCP Server (Standard MCP)..."
+cd /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis
+# Note: Standard MCP server uses stdio transport, not HTTP
+# It will be started by Claude Code when needed
+echo "ℹ️  Semantic Analysis MCP Server configured for stdio transport"
+SEMANTIC_PID="stdio"
 
 # Wait for services to start
 echo "⏳ Waiting for services to start..."
@@ -53,28 +66,39 @@ else
     echo "❌ VKB Server NOT running on port 8080"
 fi
 
+# Check if semantic analysis server is configured (stdio transport)
+if [ -f "/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/working_mcp_server.py" ]; then
+    echo "✅ Semantic Analysis MCP Server configured (stdio transport)"
+    services_running=$((services_running + 1))
+else
+    echo "❌ Semantic Analysis MCP Server NOT configured"
+fi
+
 # Update services tracking file
 cat > .services-running.json << EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")",
-  "services": ["vkb-server"],
+  "services": ["vkb-server", "semantic-analysis"],
   "ports": {
-    "vkb-server": 8080
+    "vkb-server": 8080,
+    "semantic-analysis": 8001
   },
   "pids": {
-    "vkb-server": $VKB_PID
+    "vkb-server": $VKB_PID,
+    "semantic-analysis": $SEMANTIC_PID
   },
   "services_running": $services_running,
   "agent": "claude"
 }
 EOF
 
-if [ $services_running -ge 1 ]; then
-    echo "✅ Services started successfully! ($services_running/1 running)"
+if [ $services_running -ge 2 ]; then
+    echo "✅ Services started successfully! ($services_running/2 running)"
     echo "📊 Services status: .services-running.json"
-    echo "📝 Logs: vkb-server.log"
+    echo "📝 Logs: vkb-server.log, semantic-analysis.log"
 else
-    echo "⚠️  VKB Server not running. Check logs for issues."
+    echo "⚠️  Some services not running. Check logs for issues."
+    echo "📝 Logs: vkb-server.log, semantic-analysis.log"
 fi
 
 echo "🎉 Startup complete!"

@@ -111,7 +111,10 @@
       "Bash(./integrations/mcp-server-semantic-analysis/venv/bin/pip install -e ./integrations/mcp-server-semantic-analysis/)",
       "Bash(python:*)",
       "Bash(pip install:*)",
-      "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"import mcp; print(mcp.__version__)\")"
+      "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"import mcp; print(mcp.__version__)\")",
+      "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"from mcp.server import Server; from mcp.server.stdio import stdio_server; print(''All imports OK'')\")",
+      "Bash(/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c \"from mcp.server import Server; s = Server(''test''); print([m for m in dir(s) if not m.startswith(''_'')])\")",
+      "Bash(./venv/bin/python:*)"
     ],
     "deny": []
   }

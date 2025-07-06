@@ -110,8 +110,12 @@
   "metadata": {
     "version": "1.0.0",
     "created": "2025-06-20T19:15:00.000Z",
-    "contributors": ["Claude"],
+    "contributors": [
+      "Claude"
+    ],
     "total_entities": 4,
-    "total_relations": 5
+    "total_relations": 5,
+    "last_sync": 1751786029.985533,
+    "sync_source": "semantic_analysis_agent"
   }
 }
