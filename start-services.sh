@@ -70,6 +70,21 @@ fi
 if [ -f "/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/working_mcp_server.py" ]; then
     echo "✅ Semantic Analysis MCP Server configured (stdio transport)"
     services_running=$((services_running + 1))
+    
+    # Show Python executable verification for the MCP server
+    echo "🐍 MCP Server Python Verification:"
+    cd /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis
+    /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/venv/bin/python -c "
+import sys
+import os
+print(f'   Current Python: {sys.executable}')
+print(f'   Python version: {sys.version.split()[0]}')
+print(f'   Virtual env: {os.getenv(\"VIRTUAL_ENV\", \"Not detected\")}')
+print(f'   Is venv Python: {\"✅ YES\" if \"venv\" in sys.executable else \"❌ NO - SYSTEM PYTHON\"}')
+print(f'   ANTHROPIC_API_KEY: {\"✅ Set\" if os.getenv(\"ANTHROPIC_API_KEY\") else \"❌ Not set\"}')
+print(f'   OPENAI_API_KEY: {\"✅ Set\" if os.getenv(\"OPENAI_API_KEY\") else \"❌ Not set\"}')
+"
+    cd /Users/q284340/Agentic/coding
 else
     echo "❌ Semantic Analysis MCP Server NOT configured"
 fi

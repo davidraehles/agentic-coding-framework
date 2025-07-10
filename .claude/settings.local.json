@@ -125,7 +125,11 @@
       "mcp__semantic-analysis__sync_knowledge_sources",
       "mcp__semantic-analysis__detect_duplicates",
       "mcp__semantic-analysis__backup_knowledge",
-      "mcp__semantic-analysis__generate_documentation"
+      "mcp__semantic-analysis__generate_documentation",
+      "Bash(sal:*)",
+      "mcp__semantic-analysis__analyze_code",
+      "mcp__semantic-analysis__test_connection",
+      "Bash(./start-services.sh:*)"
     ],
     "deny": []
   }
