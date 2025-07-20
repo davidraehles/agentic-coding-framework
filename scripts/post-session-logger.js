@@ -63,9 +63,13 @@ class PostSessionLogger {
       // Only route to coding repo if content is explicitly coding-related
       const targetRepo = shouldGoToCoding ? this.codingRepo : actualProjectPath;
       
-      console.log(`🎯 Routing to: ${targetRepo === this.codingRepo ? 'CODING repo' : 'current project'}`);
-      console.log(`📁 Project path: ${actualProjectPath}`);
+      const isRerouted = shouldGoToCoding && targetRepo !== actualProjectPath;
+      
+      console.log(`🎯 Routing to: ${targetRepo === this.codingRepo ? 'CODING repo (RE-ROUTED)' : 'current project (DEFAULT)'}`);
+      console.log(`📁 Original project: ${actualProjectPath}`);
+      console.log(`📁 Target repo: ${targetRepo}`);
       console.log(`🔍 Content analysis: ${shouldGoToCoding ? 'coding-related' : 'project-specific'}`);
+      console.log(`🔄 Re-routed: ${isRerouted ? 'YES' : 'NO'}`);
 
       // Create log file
       const logFile = await this.createLogFile(targetRepo, sessionData, conversationContent);
@@ -175,18 +179,22 @@ class PostSessionLogger {
       // Fallback to basic pattern detection
       const lowerContent = content.toLowerCase();
       
-      // Very specific coding infrastructure keywords
+      // VERY SPECIFIC coding infrastructure keywords - must be precise to avoid false positives
       const codingKeywords = [
-        'ukb', 'vkb',
-        'mcp server', 'mcp__memory',
-        'semantic-analysis system',
-        'post-session-logger',
-        'claude-mcp',
-        'shared-memory-coding.json',
-        '/agentic/coding'
+        'ukb command', 'vkb command', 'ukb --', 'vkb --',
+        'mcp__memory__', 'mcp server', 'semantic-analysis system',
+        'post-session-logger', 'claude-mcp command',
+        'shared-memory-coding.json', 'knowledge-management/',
+        'coding repo', '/agentic/coding', 'ukb.js', 'vkb.js'
       ];
       
-      return codingKeywords.some(keyword => lowerContent.includes(keyword));
+      // Count occurrences to prevent false positives
+      const keywordCount = codingKeywords.reduce((count, keyword) => {
+        return count + (lowerContent.split(keyword).length - 1);
+      }, 0);
+      
+      // Require multiple specific infrastructure keywords
+      return keywordCount >= 3;
     }
   }
 
@@ -199,9 +207,11 @@ class PostSessionLogger {
     const time = String(now.getHours()).padStart(2, '0') + '-' + 
                 String(now.getMinutes()).padStart(2, '0') + '-' + 
                 String(now.getSeconds()).padStart(2, '0');
+    const isRerouted = targetRepo !== sessionData.projectPath;
     const suffix = targetRepo === this.codingRepo ? 'coding-session' : 'project-session';
+    const routingMarker = isRerouted ? '-rerouted' : '';
     
-    const filename = `${date}_${time}_post-logged-${suffix}.md`;
+    const filename = `${date}_${time}_post-logged-${suffix}${routingMarker}.md`;
     const logPath = path.join(targetRepo, '.specstory', 'history', filename);
     
     // Ensure directory exists
@@ -210,14 +220,18 @@ class PostSessionLogger {
       fs.mkdirSync(historyDir, { recursive: true });
     }
 
-    const logContent = `# Post-Session Logged Conversation
+    const isRerouted = targetRepo !== sessionData.projectPath;
+    const routingStatus = isRerouted ? 'RE-ROUTED' : 'DEFAULT';
+    
+    const logContent = `# Post-Session Logged Conversation ${isRerouted ? '🔄 [RE-ROUTED]' : '📁 [DEFAULT]'}
 
 **Session ID:** ${sessionData.sessionId}  
 **Started:** ${sessionData.startTime}  
 **Logged:** ${now.toISOString()}  
-**Project:** ${sessionData.projectPath}  
+**Original Project:** ${sessionData.projectPath}  
 **Target Repository:** ${targetRepo}  
-**Content Classification:** ${targetRepo === this.codingRepo ? 'Coding/Knowledge Management' : 'Project-specific'}
+**Content Classification:** ${targetRepo === this.codingRepo ? 'Coding/Knowledge Management' : 'Project-specific'}  
+**Routing Status:** ${routingStatus} ${isRerouted ? '(Content detected as coding-related)' : '(Content stayed in original project)'}
 
 ---
 
@@ -227,8 +241,11 @@ ${content}
 
 **Post-Session Logging Summary:**
 - Logged at: ${now.toISOString()}
+- Original project: ${sessionData.projectPath}
 - Content routed to: ${targetRepo === this.codingRepo ? 'Coding repository' : 'Current project'}
+- Routing decision: ${routingStatus}
 - Automatic classification: ${targetRepo === this.codingRepo ? 'Coding-related' : 'Project-specific'}
+${isRerouted ? '- ⚠️  This session was RE-ROUTED from its original project due to coding-related content' : '- ✅ This session remained in its original project location'}
 `;
 
     fs.writeFileSync(logPath, logContent);

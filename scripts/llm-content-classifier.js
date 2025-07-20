@@ -31,14 +31,26 @@ class LLMContentClassifier {
     // Extract a sample of the content for classification (first 2000 chars)
     const contentSample = content.substring(0, 2000);
     
-    const classificationPrompt = `Analyze this conversation excerpt and determine if it's primarily about the "coding" project's infrastructure (knowledge management tools, MCP development, logging systems, etc.) or about a specific application project.
+    const classificationPrompt = `Analyze this conversation excerpt and determine if it's primarily about the "coding" project's INFRASTRUCTURE (knowledge management tools like ukb/vkb, MCP development, logging systems, semantic analysis systems) or about developing a specific application project.
 
-Context: The "coding" project contains tools like ukb, vkb, MCP servers, semantic analysis, logging infrastructure, and knowledge management systems. All other conversations about specific applications (timeline, UI, etc.) should be classified as project-specific.
+CODING INFRASTRUCTURE includes:
+- ukb, vkb commands and knowledge management
+- MCP servers, semantic analysis systems  
+- Logging infrastructure, post-session logging
+- Knowledge base management, shared-memory files
+- The /Agentic/coding repository tools
+
+PROJECT-SPECIFIC includes:
+- React/Vue/Angular applications
+- Timeline, UI components, web apps
+- Database schemas, API development
+- Kotlin, Compose Multiplatform apps
+- ANY specific business application
 
 Conversation excerpt:
 ${contentSample}
 
-Respond with ONLY one word: "coding" if this is about coding infrastructure/tools, or "project" if this is about a specific application project.`;
+Respond with ONLY one word: "coding" if this is about coding infrastructure/knowledge tools, or "project" if this is about developing a specific application.`;
 
     try {
       if (this.claudeAvailable) {
@@ -200,16 +212,13 @@ Respond with ONLY one word: "coding" if this is about coding infrastructure/tool
   fallbackClassification(content) {
     const lowerContent = content.toLowerCase();
     
-    // Core coding infrastructure keywords (very specific)
+    // VERY SPECIFIC coding infrastructure keywords - must be precise
     const codingKeywords = [
-      'ukb', 'vkb',
-      'mcp server', 'mcp__memory',
-      'semantic-analysis system',
-      'post-session-logger',
-      'claude-mcp command',
-      'shared-memory-coding.json',
-      'coding repo', 'coding repository',
-      '/agentic/coding'
+      'ukb command', 'vkb command', 'ukb --', 'vkb --',
+      'mcp__memory__', 'mcp server', 'semantic-analysis system',
+      'post-session-logger', 'claude-mcp command',
+      'shared-memory-coding.json', 'knowledge-management/',
+      'coding repo', '/agentic/coding', 'ukb.js', 'vkb.js'
     ];
     
     // Count occurrences
@@ -217,8 +226,9 @@ Respond with ONLY one word: "coding" if this is about coding infrastructure/tool
       return count + (lowerContent.split(keyword).length - 1);
     }, 0);
     
-    // If multiple coding keywords appear, it's likely coding-related
-    return keywordCount >= 2 ? 'coding' : 'project';
+    // Require MULTIPLE specific infrastructure keywords to classify as coding
+    // This prevents false positives from general programming discussions
+    return keywordCount >= 3 ? 'coding' : 'project';
   }
 }
 
