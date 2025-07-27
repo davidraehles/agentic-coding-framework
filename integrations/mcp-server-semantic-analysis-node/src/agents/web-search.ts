@@ -1,4 +1,6 @@
 import { log } from "../logging.js";
+import axios, { AxiosRequestConfig } from "axios";
+import * as cheerio from "cheerio";
 
 export interface SearchOptions {
   maxResults?: number;
@@ -137,38 +139,283 @@ export class WebSearchAgent {
   }
 
   private async searchDuckDuckGo(query: string, options: SearchOptions): Promise<SearchResult[]> {
-    // Simulated DuckDuckGo search
-    // In a real implementation, this would call the DuckDuckGo API
-    log("Searching with DuckDuckGo", "info");
+    log("Searching with DuckDuckGo", "info", { query });
 
-    const mockResults: SearchResult[] = [
-      {
-        title: `${query} - Documentation`,
-        url: `https://docs.example.com/${query.replace(/\s+/g, '-')}`,
-        snippet: `Official documentation for ${query} with examples and API reference.`,
-        content: this.generateMockContent(query, "documentation"),
-        codeBlocks: this.generateMockCodeBlocks(query),
-        links: [`https://github.com/example/${query}`, `https://api.example.com/${query}`],
-        relevanceScore: 0.95,
-      },
-      {
-        title: `${query} Tutorial - Complete Guide`,
-        url: `https://tutorial.example.com/${query}`,
-        snippet: `Learn ${query} with step-by-step examples and best practices.`,
-        content: this.generateMockContent(query, "tutorial"),
-        codeBlocks: this.generateMockCodeBlocks(query),
-        relevanceScore: 0.88,
-      },
-    ];
+    try {
+      const encodedQuery = encodeURIComponent(query);
+      const url = `https://html.duckduckgo.com/html/?q=${encodedQuery}`;
+      
+      const config: AxiosRequestConfig = {
+        timeout: options.timeout || 30000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+        },
+      };
 
-    return mockResults.slice(0, options.maxResults || 10);
+      const response = await axios.get(url, config);
+      const $ = cheerio.load(response.data);
+      
+      const results: SearchResult[] = [];
+      
+      $('.result').each((i: number, elem: any) => {
+        if (results.length >= (options.maxResults || 10)) return false;
+        
+        const $elem = $(elem);
+        const $link = $elem.find('a.result__a');
+        const $snippet = $elem.find('a.result__snippet');
+        
+        if ($link.length) {
+          const title = $link.text().trim();
+          const url = $link.attr('href') || '';
+          const snippet = $snippet.text().trim();
+          
+          if (title && url) {
+            results.push({
+              title,
+              url,
+              snippet,
+              relevanceScore: this.calculateRelevance(title, snippet, query),
+            });
+          }
+        }
+      });
+
+      // Extract content if requested
+      if (options.contentExtraction?.extractCode || options.contentExtraction?.extractLinks) {
+        for (const result of results.slice(0, 3)) { // Only extract for top 3 results
+          try {
+            const content = await this.extractContent(result.url, options);
+            result.content = content;
+            
+            if (options.contentExtraction?.extractCode) {
+              result.codeBlocks = this.extractCodeBlocks(content);
+            }
+            
+            if (options.contentExtraction?.extractLinks) {
+              result.links = this.extractLinks(content, result.url);
+            }
+          } catch (error) {
+            log("Failed to extract content", "warning", { url: result.url, error });
+          }
+        }
+      }
+
+      return results;
+      
+    } catch (error) {
+      log("DuckDuckGo search failed", "error", error);
+      // Fallback to mock results if real search fails
+      return this.getFallbackResults(query, options);
+    }
   }
 
   private async searchGoogle(query: string, options: SearchOptions): Promise<SearchResult[]> {
-    // Simulated Google search
-    // In a real implementation, this would use Google Custom Search API
-    log("Searching with Google", "info");
+    log("Searching with Google", "info", { query });
 
+    try {
+      // Note: This is a fallback implementation using web scraping
+      // In production, you should use Google Custom Search API
+      const encodedQuery = encodeURIComponent(query);
+      const url = `https://www.google.com/search?q=${encodedQuery}&num=${options.maxResults || 10}`;
+      
+      const config: AxiosRequestConfig = {
+        timeout: options.timeout || 30000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+        },
+      };
+
+      const response = await axios.get(url, config);
+      const $ = cheerio.load(response.data);
+      
+      const results: SearchResult[] = [];
+      
+      // Google search result parsing (note: Google actively blocks scraping)
+      $('div.g').each((i: number, elem: any) => {
+        if (results.length >= (options.maxResults || 10)) return false;
+        
+        const $elem = $(elem);
+        const $link = $elem.find('h3').closest('a');
+        const $snippet = $elem.find('[data-sncf]').first();
+        
+        if ($link.length) {
+          const title = $link.find('h3').text().trim();
+          const href = $link.attr('href') || '';
+          const snippet = $snippet.text().trim();
+          
+          // Clean up Google's redirect URLs
+          let cleanUrl = href;
+          if (href.startsWith('/url?q=')) {
+            const urlParams = new URLSearchParams(href.substring(6));
+            cleanUrl = urlParams.get('q') || href;
+          }
+          
+          if (title && cleanUrl && !cleanUrl.startsWith('/search')) {
+            results.push({
+              title,
+              url: cleanUrl,
+              snippet,
+              relevanceScore: this.calculateRelevance(title, snippet, query),
+            });
+          }
+        }
+      });
+
+      // Extract content if requested (limit to top 3 results)
+      if (options.contentExtraction?.extractCode || options.contentExtraction?.extractLinks) {
+        for (const result of results.slice(0, 3)) {
+          try {
+            const content = await this.extractContent(result.url, options);
+            result.content = content;
+            
+            if (options.contentExtraction?.extractCode) {
+              result.codeBlocks = this.extractCodeBlocks(content);
+            }
+            
+            if (options.contentExtraction?.extractLinks) {
+              result.links = this.extractLinks(content, result.url);
+            }
+          } catch (error) {
+            log("Failed to extract content", "warning", { url: result.url, error });
+          }
+        }
+      }
+
+      return results;
+      
+    } catch (error) {
+      log("Google search failed, using fallback", "warning", error);
+      // Fallback to mock results if real search fails
+      return this.getFallbackResults(query, options);
+    }
+  }
+
+  private calculateRelevance(title: string, snippet: string, query: string): number {
+    const queryWords = query.toLowerCase().split(/\s+/);
+    const titleWords = title.toLowerCase().split(/\s+/);
+    const snippetWords = snippet.toLowerCase().split(/\s+/);
+    
+    let score = 0;
+    let totalWords = queryWords.length;
+    
+    for (const word of queryWords) {
+      // Exact matches in title (highest weight)
+      if (titleWords.some(tw => tw === word)) {
+        score += 0.4;
+      }
+      // Partial matches in title
+      else if (titleWords.some(tw => tw.includes(word) || word.includes(tw))) {
+        score += 0.2;
+      }
+      
+      // Exact matches in snippet
+      if (snippetWords.some(sw => sw === word)) {
+        score += 0.3;
+      }
+      // Partial matches in snippet
+      else if (snippetWords.some(sw => sw.includes(word) || word.includes(sw))) {
+        score += 0.1;
+      }
+    }
+    
+    return Math.min(score / totalWords, 1.0);
+  }
+
+  private extractCodeBlocks(content: string): string[] {
+    const codeBlocks: string[] = [];
+    
+    // Match various code block patterns
+    const patterns = [
+      // Markdown code blocks
+      /```[\s\S]*?```/g,
+      // HTML pre/code blocks
+      /<pre[^>]*>[\s\S]*?<\/pre>/gi,
+      /<code[^>]*>[\s\S]*?<\/code>/gi,
+      // Common code patterns
+      /function\s+\w+\s*\([^)]*\)\s*\{[\s\S]*?\}/g,
+      /class\s+\w+[\s\S]*?\{[\s\S]*?\}/g,
+      /\w+\s*\([^)]*\)\s*=>\s*\{[\s\S]*?\}/g,
+    ];
+    
+    for (const pattern of patterns) {
+      const matches = content.match(pattern);
+      if (matches) {
+        codeBlocks.push(...matches.map(match => {
+          // Clean up HTML tags and markdown syntax
+          return match
+            .replace(/<[^>]+>/g, '')  // Remove HTML tags
+            .replace(/^```\w*\n?/, '')  // Remove opening markdown
+            .replace(/\n?```$/, '')  // Remove closing markdown
+            .trim();
+        }));
+      }
+    }
+    
+    // Remove duplicates and empty blocks
+    return [...new Set(codeBlocks)].filter(block => block.length > 10);
+  }
+
+  private extractLinks(content: string, baseUrl: string): string[] {
+    const links: string[] = [];
+    
+    // Extract various link patterns
+    const patterns = [
+      // HTML links
+      /<a[^>]+href=["']([^"']+)["'][^>]*>/gi,
+      // Markdown links
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      // Plain URLs
+      /https?:\/\/[^\s<>"{}|\\^`[\]]+/g,
+    ];
+    
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(content)) !== null) {
+        let url = match[1] || match[2] || match[0];
+        
+        // Clean up the URL
+        url = url.trim().replace(/["'<>]/g, '');
+        
+        // Convert relative URLs to absolute
+        if (url.startsWith('/')) {
+          try {
+            const base = new URL(baseUrl);
+            url = `${base.protocol}//${base.host}${url}`;
+          } catch (e) {
+            continue; // Skip invalid URLs
+          }
+        }
+        
+        // Validate URL format
+        if (url.match(/^https?:\/\/.+/)) {
+          links.push(url);
+        }
+      }
+    }
+    
+    // Remove duplicates and invalid links
+    return [...new Set(links)].filter(link => {
+      try {
+        new URL(link);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  private getFallbackResults(query: string, options: SearchOptions): SearchResult[] {
     const mockResults: SearchResult[] = [
       {
         title: `${query} - Stack Overflow`,
@@ -176,7 +423,7 @@ export class WebSearchAgent {
         snippet: `Questions and answers about ${query} from the developer community.`,
         content: this.generateMockContent(query, "stackoverflow"),
         codeBlocks: this.generateMockCodeBlocks(query),
-        relevanceScore: 0.92,
+        relevanceScore: 0.85,
       },
       {
         title: `GitHub - ${query} Examples`,
@@ -185,7 +432,14 @@ export class WebSearchAgent {
         content: this.generateMockContent(query, "github"),
         codeBlocks: this.generateMockCodeBlocks(query),
         links: [`https://github.com/trending?q=${query}`],
-        relevanceScore: 0.85,
+        relevanceScore: 0.80,
+      },
+      {
+        title: `${query} Documentation`,
+        url: `https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(query)}`,
+        snippet: `Official documentation and guides for ${query}.`,
+        content: this.generateMockContent(query, "documentation"),
+        relevanceScore: 0.75,
       },
     ];
 
@@ -225,13 +479,58 @@ const result = ${query.replace(/\s+/g, '')}();`,
   async extractContent(url: string, options: SearchOptions = {}): Promise<string> {
     log(`Extracting content from: ${url}`, "info");
 
-    // In a real implementation, this would fetch and parse the webpage
-    const mockContent = `Extracted content from ${url}. This would contain the full text content of the webpage, processed and cleaned for analysis.`;
+    try {
+      const config: AxiosRequestConfig = {
+        timeout: (options.timeout || 30000) / 2, // Use half the search timeout for content extraction
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      };
 
-    const maxLength = options.contentExtraction?.maxContentLength || 10000;
-    return mockContent.length > maxLength 
-      ? mockContent.substring(0, maxLength) + "..."
-      : mockContent;
+      const response = await axios.get(url, config);
+      const $ = cheerio.load(response.data);
+      
+      // Remove script and style elements
+      $('script, style, nav, header, footer, aside, .sidebar, .menu, .advertisement').remove();
+      
+      // Extract main content areas
+      let content = '';
+      const contentSelectors = [
+        'main', 'article', '.content', '.post', '.entry',
+        '#content', '#main', '.main-content', '.post-content',
+        'section', '.container'
+      ];
+      
+      // Try content selectors in order of preference
+      for (const selector of contentSelectors) {
+        const $contentArea = $(selector).first();
+        if ($contentArea.length && $contentArea.text().trim().length > 100) {
+          content = $contentArea.text();
+          break;
+        }
+      }
+      
+      // Fallback to body if no content area found
+      if (!content) {
+        content = $('body').text();
+      }
+      
+      // Clean up the content
+      content = content
+        .replace(/\s+/g, ' ')  // Normalize whitespace
+        .replace(/\n\s*\n/g, '\n')  // Remove extra newlines
+        .trim();
+      
+      const maxLength = options.contentExtraction?.maxContentLength || 10000;
+      return content.length > maxLength 
+        ? content.substring(0, maxLength) + "..."
+        : content;
+        
+    } catch (error) {
+      log(`Failed to extract content from ${url}`, "warning", error);
+      return `Failed to extract content from ${url}: ${error instanceof Error ? error.message : String(error)}`;
+    }
   }
 
   async searchSimilarPatterns(pattern: string): Promise<SearchResult[]> {

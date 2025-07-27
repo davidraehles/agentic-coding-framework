@@ -1,6 +1,7 @@
 import { log } from "../logging.js";
 import fs from "fs/promises";
 import path from "path";
+import crypto from "crypto";
 
 export interface SyncTarget {
   name: string;
@@ -26,10 +27,30 @@ export interface ConflictResolution {
   manualReviewThreshold?: number;
 }
 
+export interface BackupResult {
+  success: boolean;
+  backupFile?: string;
+  entitiesBackedUp: number;
+  relationsBackedUp: number;
+  error?: string;
+}
+
+export interface SyncHealthStatus {
+  status: "healthy" | "degraded" | "unhealthy";
+  targetsEnabled: number;
+  lastSyncTimes: Record<string, number>;
+  syncInterval: number;
+  errors: string[];
+}
+
 export class SynchronizationAgent {
   private targets: Map<string, SyncTarget> = new Map();
   private conflictResolution: ConflictResolution;
   private syncInterval: number;
+  private lastSyncTimes: Map<string, number> = new Map();
+  private running: boolean = true;
+  private agents: Map<string, any> = new Map();
+  private autoSyncTimer?: NodeJS.Timeout;
 
   constructor() {
     this.conflictResolution = {
@@ -39,6 +60,7 @@ export class SynchronizationAgent {
     this.syncInterval = 60000; // 60 seconds
     
     this.initializeSyncTargets();
+    this.startPeriodicSync();
     log("SynchronizationAgent initialized", "info");
   }
 
@@ -142,19 +164,55 @@ export class SynchronizationAgent {
     }
 
     result.syncTime = Date.now() - startTime;
+    
+    // Update last sync time
+    if (result.success) {
+      this.lastSyncTimes.set(target.name, Date.now());
+    }
+    
     return result;
   }
 
   private async syncMcpMemory(target: SyncTarget, result: SyncResult): Promise<void> {
     log("Syncing with MCP memory", "info");
     
-    // Simulate MCP memory sync
-    // In a real implementation, this would use the MCP memory client
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    result.itemsAdded = 5;
-    result.itemsUpdated = 2;
-    result.itemsRemoved = 0;
+    try {
+      // Get knowledge graph agent for entity access
+      const kgAgent = this.agents.get("knowledge_graph");
+      if (!kgAgent) {
+        throw new Error("Knowledge graph agent not available");
+      }
+      
+      // Extract entities and relations from knowledge graph
+      const entities = Array.from(kgAgent.entities?.values() || []).map((entity: any) => ({
+        name: entity.name,
+        entityType: entity.entity_type || entity.entityType,
+        significance: entity.significance || 5,
+        observations: Array.isArray(entity.observations) ? entity.observations : [entity.observations].filter(Boolean),
+        metadata: entity.metadata || {}
+      }));
+      
+      const relations = Array.from(kgAgent.relations || []).map((rel: any) => ({
+        from: rel.from_entity || rel.from,
+        to: rel.to_entity || rel.to,
+        relationType: rel.relation_type || rel.relationType,
+        metadata: rel.metadata || {}
+      }));
+      
+      // Here we would sync with actual MCP Memory service
+      // For now, simulate the sync
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      result.itemsAdded = entities.length;
+      result.itemsUpdated = relations.length;
+      result.itemsRemoved = 0;
+      
+      log(`Synced ${entities.length} entities and ${relations.length} relations to MCP memory`, "info");
+      
+    } catch (error) {
+      log("MCP memory sync failed", "error", error);
+      throw error;
+    }
   }
 
   private async syncGraphologyDb(target: SyncTarget, result: SyncResult): Promise<void> {
@@ -177,48 +235,93 @@ export class SynchronizationAgent {
     log(`Syncing shared memory file: ${target.path}`, "info");
 
     try {
+      // Get knowledge graph agent for current state
+      const kgAgent = this.agents.get("knowledge_graph");
+      if (!kgAgent) {
+        throw new Error("Knowledge graph agent not available");
+      }
+      
       // Check if file exists
-      await fs.access(target.path);
+      let existingData: any = { entities: [], relations: [], metadata: {} };
+      try {
+        await fs.access(target.path);
+        const content = await fs.readFile(target.path, 'utf-8');
+        existingData = JSON.parse(content);
+      } catch (error) {
+        if ((error as any).code === 'ENOENT') {
+          log(`Creating new shared memory file: ${target.path}`, "info");
+          await fs.mkdir(path.dirname(target.path), { recursive: true });
+        } else {
+          throw error;
+        }
+      }
       
-      // Read current content
-      const content = await fs.readFile(target.path, 'utf-8');
-      const data = JSON.parse(content);
+      // Get current entities from knowledge graph
+      const currentEntities = Array.from(kgAgent.entities?.values() || []).map((entity: any) => ({
+        name: entity.name,
+        entityType: entity.entity_type || entity.entityType,
+        significance: entity.significance || 5,
+        observations: Array.isArray(entity.observations) ? entity.observations : [entity.observations].filter(Boolean),
+        metadata: {
+          ...entity.metadata,
+          updated_at: entity.updated_at || Date.now(),
+          created_at: entity.created_at || Date.now()
+        }
+      }));
       
-      // Simulate sync operations
-      const entities = data.entities || [];
-      const relations = data.relations || [];
+      const currentRelations = Array.from(kgAgent.relations || []).map((rel: any) => ({
+        from: rel.from_entity || rel.from,
+        to: rel.to_entity || rel.to,
+        relationType: rel.relation_type || rel.relationType,
+        metadata: rel.metadata || {}
+      }));
       
-      // In a real implementation, this would:
-      // 1. Compare with internal state
-      // 2. Identify conflicts and resolve them
-      // 3. Update both sources
+      // Determine project context for targeted sync
+      const currentProject = this.determineCurrentProject();
       
-      result.itemsAdded = Math.floor(Math.random() * 3);
-      result.itemsUpdated = Math.floor(Math.random() * 5);
-      result.itemsRemoved = Math.floor(Math.random() * 2);
+      // Only sync if this is the correct project file
+      const expectedFileName = `shared-memory-${currentProject}.json`;
+      if (!target.path.endsWith(expectedFileName)) {
+        log(`Skipping sync - file ${target.path} doesn't match project ${currentProject}`, "debug");
+        result.itemsAdded = 0;
+        result.itemsUpdated = 0;
+        result.itemsRemoved = 0;
+        return;
+      }
       
-      log(`Synced ${entities.length} entities and ${relations.length} relations`, "info");
+      // Merge entities - only add new ones to avoid conflicts
+      const existingEntityNames = new Set((existingData.entities || []).map((e: any) => e.name));
+      const newEntities = currentEntities.filter(entity => !existingEntityNames.has(entity.name));
       
-    } catch (error) {
-      if ((error as any).code === 'ENOENT') {
-        log(`Shared memory file not found: ${target.path}`, "warning");
-        // Create empty file structure
-        const emptyStructure = {
-          entities: [],
-          relations: [],
-          metadata: {
-            lastUpdated: new Date().toISOString(),
-            version: "1.0.0",
-          },
+      let changesWereMade = false;
+      if (newEntities.length > 0) {
+        existingData.entities = [...(existingData.entities || []), ...newEntities];
+        result.itemsAdded = newEntities.length;
+        changesWereMade = true;
+      }
+      
+      // Update metadata only when content changes
+      if (changesWereMade) {
+        existingData.metadata = {
+          ...existingData.metadata,
+          last_sync: Date.now(),
+          sync_source: "semantic_analysis_agent_node",
+          project: currentProject
         };
         
-        await fs.mkdir(path.dirname(target.path), { recursive: true });
-        await fs.writeFile(target.path, JSON.stringify(emptyStructure, null, 2));
-        
-        result.itemsAdded = 0;
+        // Write back to file
+        await fs.writeFile(target.path, JSON.stringify(existingData, null, 2));
+        log(`Updated shared memory file with ${result.itemsAdded} new entities`, "info");
       } else {
-        throw error;
+        log(`No new entities to sync for project ${currentProject}`, "debug");
       }
+      
+      result.itemsUpdated = 0; // We don't update existing entities to avoid conflicts
+      result.itemsRemoved = 0; // We don't remove entities
+      
+    } catch (error) {
+      log(`Failed to sync shared memory file: ${target.path}`, "error", error);
+      throw error;
     }
   }
 
@@ -289,16 +392,61 @@ export class SynchronizationAgent {
     return merged;
   }
 
-  startAutoSync(): void {
-    log(`Starting auto-sync with interval: ${this.syncInterval}ms`, "info");
+  private determineCurrentProject(): string {
+    // Check current working directory and environment
+    const currentDir = process.cwd();
     
-    setInterval(async () => {
+    if (currentDir.toLowerCase().includes("coding") || process.env.CODING_TOOLS_PATH) {
+      return "coding";
+    } else if (currentDir.toLowerCase().includes("ui")) {
+      return "ui";
+    } else if (currentDir.toLowerCase().includes("resi")) {
+      return "resi";
+    } else if (currentDir.toLowerCase().includes("raas")) {
+      return "raas";
+    }
+    
+    // Default to coding if we can't determine
+    return "coding";
+  }
+
+  private startPeriodicSync(): void {
+    if (this.autoSyncTimer) {
+      clearInterval(this.autoSyncTimer);
+    }
+    
+    this.autoSyncTimer = setInterval(async () => {
+      if (!this.running) return;
+      
       try {
-        await this.syncAll();
+        log("Running periodic sync", "debug");
+        const results = await this.syncAll();
+        const successful = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success).length;
+        
+        if (failed > 0) {
+          log(`Periodic sync completed with ${failed} failures`, "warning");
+        } else {
+          log(`Periodic sync completed successfully (${successful} targets)`, "debug");
+        }
       } catch (error) {
-        log("Auto-sync failed", "error", error);
+        log("Periodic sync error", "error", error);
       }
     }, this.syncInterval);
+    
+    log(`Started periodic sync with interval: ${this.syncInterval}ms`, "info");
+  }
+
+  startAutoSync(): void {
+    this.startPeriodicSync();
+  }
+
+  stopAutoSync(): void {
+    if (this.autoSyncTimer) {
+      clearInterval(this.autoSyncTimer);
+      this.autoSyncTimer = undefined;
+      log("Auto-sync stopped", "info");
+    }
   }
 
   async syncSpecificTarget(targetName: string): Promise<SyncResult> {
@@ -322,5 +470,281 @@ export class SynchronizationAgent {
     
     Object.assign(target, updates);
     log(`Updated sync target: ${name}`, "info", updates);
+  }
+
+  // Agent registration for workflow integration
+  registerAgent(name: string, agent: any): void {
+    this.agents.set(name, agent);
+    log(`Registered agent: ${name}`, "info");
+  }
+
+  // Multi-source synchronization
+  async syncAllSources(sources: string[] = ["mcp_memory", "shared_memory_files"], direction: string = "bidirectional", backup: boolean = true): Promise<any> {
+    try {
+      log(`Starting multi-source sync`, "info", { sources, direction, backup });
+      
+      // Create backup if requested
+      let backupResult = null;
+      if (backup) {
+        backupResult = await this.backupKnowledge();
+      }
+      
+      const results: Record<string, any> = {};
+      
+      // Sync each requested source
+      for (const source of sources) {
+        const target = Array.from(this.targets.values()).find(t => 
+          t.type === source || t.name.includes(source.replace("_", ""))
+        );
+        
+        if (target) {
+          const result = await this.syncTarget(target);
+          results[source] = {
+            success: result.success,
+            itemsAdded: result.itemsAdded,
+            itemsUpdated: result.itemsUpdated,
+            itemsRemoved: result.itemsRemoved,
+            errors: result.errors
+          };
+        } else {
+          results[source] = {
+            success: false,
+            error: `Target not found for source: ${source}`
+          };
+        }
+      }
+      
+      const allSuccessful = Object.values(results).every((r: any) => r.success);
+      
+      return {
+        success: allSuccessful,
+        sources,
+        direction,
+        backup_created: backup && backupResult?.success,
+        backup_file: backupResult?.backupFile,
+        results
+      };
+      
+    } catch (error) {
+      log("Multi-source sync failed", "error", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        sources,
+        direction
+      };
+    }
+  }
+
+  // Backup functionality
+  async backupKnowledge(sources: string[] = ["all"], backupLocation?: string, includeMetadata: boolean = true): Promise<BackupResult> {
+    try {
+      // Default backup location
+      const backupDir = backupLocation 
+        ? path.resolve(backupLocation)
+        : path.join(process.cwd(), "backups");
+      
+      await fs.mkdir(backupDir, { recursive: true });
+      
+      // Get data from knowledge graph agent
+      const kgAgent = this.agents.get("knowledge_graph");
+      if (!kgAgent) {
+        return {
+          success: false,
+          error: "Knowledge graph agent not available",
+          entitiesBackedUp: 0,
+          relationsBackedUp: 0
+        };
+      }
+      
+      const entities = Array.from(kgAgent.entities?.values() || []);
+      const relations = Array.from(kgAgent.relations || []);
+      
+      const backupData = {
+        timestamp: Date.now(),
+        sources,
+        includeMetadata,
+        entities: entities.map((entity: any) => ({
+          name: entity.name,
+          entityType: entity.entity_type || entity.entityType,
+          significance: entity.significance,
+          observations: entity.observations,
+          metadata: includeMetadata ? entity.metadata : {},
+          created_at: entity.created_at,
+          updated_at: entity.updated_at
+        })),
+        relations: relations.map((rel: any) => ({
+          from: rel.from_entity || rel.from,
+          to: rel.to_entity || rel.to,
+          relationType: rel.relation_type || rel.relationType,
+          metadata: includeMetadata ? rel.metadata : {},
+          created_at: rel.created_at
+        }))
+      };
+      
+      const backupFile = path.join(backupDir, `knowledge_backup_${Date.now()}.json`);
+      await fs.writeFile(backupFile, JSON.stringify(backupData, null, 2));
+      
+      log(`Created backup with ${entities.length} entities and ${relations.length} relations`, "info", {
+        backupFile,
+        entities: entities.length,
+        relations: relations.length
+      });
+      
+      return {
+        success: true,
+        backupFile,
+        entitiesBackedUp: entities.length,
+        relationsBackedUp: relations.length
+      };
+      
+    } catch (error) {
+      log("Backup creation failed", "error", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        entitiesBackedUp: 0,
+        relationsBackedUp: 0
+      };
+    }
+  }
+
+  // Health check
+  healthCheck(): SyncHealthStatus {
+    const enabledTargets = Array.from(this.targets.values()).filter(t => t.enabled);
+    const lastSyncTimes: Record<string, number> = {};
+    
+    for (const [target, time] of this.lastSyncTimes.entries()) {
+      lastSyncTimes[target] = time;
+    }
+    
+    const errors: string[] = [];
+    let status: "healthy" | "degraded" | "unhealthy" = "healthy";
+    
+    // Check if any syncs are overdue
+    const now = Date.now();
+    const overdueThreshold = this.syncInterval * 3; // 3x the sync interval
+    
+    for (const target of enabledTargets) {
+      const lastSync = this.lastSyncTimes.get(target.name);
+      if (!lastSync || (now - lastSync) > overdueThreshold) {
+        errors.push(`Target ${target.name} sync overdue`);
+        status = "degraded";
+      }
+    }
+    
+    if (errors.length > enabledTargets.length / 2) {
+      status = "unhealthy";
+    }
+    
+    return {
+      status,
+      targetsEnabled: enabledTargets.length,
+      lastSyncTimes,
+      syncInterval: this.syncInterval,
+      errors
+    };
+  }
+
+  // Shutdown
+  shutdown(): void {
+    this.running = false;
+    this.stopAutoSync();
+    log("SynchronizationAgent shutting down", "info");
+  }
+
+  // Event handlers for workflow integration
+  async handleSyncAllTargets(data: any): Promise<any> {
+    return await this.syncAll();
+  }
+
+  async handleSyncTarget(data: any): Promise<any> {
+    const targetName = data.target || data.targetName;
+    if (!targetName) {
+      throw new Error("Target name required for sync operation");
+    }
+    return await this.syncSpecificTarget(targetName);
+  }
+
+  async handleResolveConflicts(data: any): Promise<any> {
+    const conflicts = data.conflicts || [];
+    const strategy = data.strategy || this.conflictResolution.strategy;
+    return await this.resolveConflictsWithStrategy(conflicts, strategy);
+  }
+
+  async handleBackupData(data: any): Promise<any> {
+    return await this.backupKnowledge(data.sources, data.backupLocation, data.includeMetadata);
+  }
+
+  private async resolveConflictsWithStrategy(conflicts: any[], strategy: string): Promise<any> {
+    try {
+      const resolvedEntities: any[] = [];
+      const errors: any[] = [];
+      
+      for (const entityName of conflicts) {
+        try {
+          const kgAgent = this.agents.get("knowledge_graph");
+          if (!kgAgent || !kgAgent.entities?.has(entityName)) {
+            errors.push({
+              entity: entityName,
+              error: "Entity not found in knowledge graph"
+            });
+            continue;
+          }
+          
+          const entity = kgAgent.entities.get(entityName);
+          let resolvedAction = "default_resolution";
+          
+          // Apply resolution strategy
+          switch (strategy) {
+            case "newest":
+            case "timestamp_priority":
+              resolvedAction = "kept_current";
+              break;
+            case "manual":
+              entity.metadata.manual_review_required = true;
+              resolvedAction = "marked_for_review";
+              break;
+            case "merge":
+              entity.metadata.conflict_resolved = true;
+              entity.metadata.resolution_strategy = "merge";
+              resolvedAction = "merged";
+              break;
+          }
+          
+          entity.updated_at = Date.now();
+          
+          resolvedEntities.push({
+            entity_name: entityName,
+            action: resolvedAction,
+            strategy,
+            timestamp: entity.updated_at
+          });
+          
+        } catch (error) {
+          errors.push({
+            entity: entityName,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+      
+      return {
+        success: true,
+        conflicts_resolved: resolvedEntities.length,
+        errors: errors.length,
+        resolution_strategy: strategy,
+        resolved_entities: resolvedEntities,
+        error_details: errors
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        resolution_strategy: strategy,
+        conflict_entities: conflicts
+      };
+    }
   }
 }

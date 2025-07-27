@@ -90,13 +90,32 @@ export class SemanticAnalyzer {
 
     let result: AnalysisResult;
     
-    // Determine which provider to use
-    if (provider === "anthropic" || (provider === "auto" && this.anthropicClient)) {
+    // Determine which provider to use with correct precedence:
+    // 1. If specific provider requested, use it
+    // 2. If auto: prefer Anthropic, fallback to OpenAI
+    if (provider === "anthropic") {
+      if (!this.anthropicClient) {
+        throw new Error("Anthropic client not available");
+      }
       result = await this.analyzeWithAnthropic(prompt);
-    } else if (provider === "openai" || (provider === "auto" && this.openaiClient)) {
+    } else if (provider === "openai") {
+      if (!this.openaiClient) {
+        throw new Error("OpenAI client not available");
+      }
       result = await this.analyzeWithOpenAI(prompt);
+    } else if (provider === "auto") {
+      // Auto mode: prefer Anthropic, fallback to OpenAI
+      if (this.anthropicClient) {
+        log("Using Anthropic client (auto mode preference)", "info");
+        result = await this.analyzeWithAnthropic(prompt);
+      } else if (this.openaiClient) {
+        log("Using OpenAI client (auto mode fallback)", "info");
+        result = await this.analyzeWithOpenAI(prompt);
+      } else {
+        throw new Error("No available LLM provider");
+      }
     } else {
-      throw new Error("No available LLM provider");
+      throw new Error(`Unknown provider: ${provider}`);
     }
 
     return result;
@@ -156,7 +175,7 @@ export class SemanticAnalyzer {
     }
 
     const response = await this.anthropicClient.messages.create({
-      model: "claude-3-sonnet-20240229",
+      model: "claude-3-5-sonnet-20241022",
       max_tokens: 4096,
       temperature: 0.3,
       system: "You are an expert semantic analysis AI specializing in code analysis, technical documentation, and software development patterns. Provide precise, structured, and actionable insights.",
