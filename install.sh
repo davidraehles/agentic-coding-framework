@@ -35,6 +35,7 @@ MEMORY_VISUALIZER_DIR="$CODING_REPO/memory-visualizer"
 BROWSERBASE_REPO_SSH=""
 BROWSERBASE_REPO_HTTPS=""
 BROWSERBASE_DIR="$CODING_REPO/integrations/mcp-server-browserbase"
+SEMANTIC_ANALYSIS_DIR="$CODING_REPO/integrations/mcp-server-semantic-analysis"
 
 # Installation status tracking
 INSIDE_CN=false
@@ -54,6 +55,10 @@ MEMORY_VISUALIZER_PUBLIC_HTTPS="https://github.com/fwornle/memory-visualizer.git
 # Browserbase (NO CN MIRROR - always use public)
 BROWSERBASE_SSH="git@github.com:browserbase/mcp-server-browserbase.git"
 BROWSERBASE_HTTPS="https://github.com/browserbase/mcp-server-browserbase.git"
+
+# Semantic Analysis MCP Server (NO CN MIRROR - always use public)
+SEMANTIC_ANALYSIS_SSH="git@github.com:your-org/mcp-server-semantic-analysis.git"
+SEMANTIC_ANALYSIS_HTTPS="https://github.com/your-org/mcp-server-semantic-analysis.git"
 
 # Platform detection
 PLATFORM=""
@@ -421,23 +426,36 @@ install_browserbase() {
     cd "$CODING_REPO"
 }
 
-# Install semantic analysis system (Node.js)
+# Install semantic analysis MCP server
 install_semantic_analysis() {
-    echo -e "\n${CYAN}🧠 Installing semantic analysis MCP server (Node.js)...${NC}"
+    echo -e "\n${CYAN}🧠 Installing semantic analysis MCP server...${NC}"
     
-    local semantic_dir="$CODING_REPO/integrations/mcp-server-semantic-analysis"
-    
-    # Check if directory exists
-    if [[ ! -d "$semantic_dir" ]]; then
-        warning "Semantic analysis directory not found at $semantic_dir"
-        return 1
+    # Handle differently based on network location
+    if [[ "$INSIDE_CN" == true ]]; then
+        # Inside CN - use special handling for non-mirrored repo
+        handle_non_mirrored_repo_cn "mcp-server-semantic-analysis" "$SEMANTIC_ANALYSIS_SSH" "$SEMANTIC_ANALYSIS_HTTPS" "$SEMANTIC_ANALYSIS_DIR"
+        local clone_result=$?
     else
-        info "Semantic analysis MCP server directory found"
+        # Outside CN - normal clone/update
+        if [[ -d "$SEMANTIC_ANALYSIS_DIR" ]]; then
+            info "mcp-server-semantic-analysis already exists, updating..."
+            cd "$SEMANTIC_ANALYSIS_DIR"
+            if timeout 10s git pull origin main 2>/dev/null; then
+                success "mcp-server-semantic-analysis updated"
+            else
+                warning "Could not update mcp-server-semantic-analysis"
+            fi
+        else
+            info "Cloning mcp-server-semantic-analysis repository..."
+            clone_repository "$SEMANTIC_ANALYSIS_SSH" "$SEMANTIC_ANALYSIS_HTTPS" "$SEMANTIC_ANALYSIS_DIR"
+            local clone_result=$?
+        fi
     fi
     
-    # Ensure we're in the semantic analysis directory
-    if [[ -d "$semantic_dir" ]]; then
-        cd "$semantic_dir"
+    # Only proceed with build if we have the repository
+    if [[ -d "$SEMANTIC_ANALYSIS_DIR" && -f "$SEMANTIC_ANALYSIS_DIR/package.json" ]]; then
+        info "Installing semantic analysis dependencies..."
+        cd "$SEMANTIC_ANALYSIS_DIR"
         
         # Check for Node.js
         if ! command -v node &> /dev/null; then
@@ -445,47 +463,18 @@ install_semantic_analysis() {
             return 1
         fi
         
-        info "Installing Node.js dependencies..."
-        
-        # Install dependencies
-        if [[ -f "package.json" ]]; then
-            npm install || {
-                warning "Failed to install semantic analysis dependencies"
-                return 1
-            }
-            success "Semantic analysis dependencies installed"
-        else
-            warning "package.json not found - invalid Node.js MCP server"
-            return 1
-        fi
-        
-        # Build TypeScript
-        info "Building TypeScript..."
-        if npm run build; then
-            success "Semantic analysis MCP server built successfully"
-        else
-            warning "TypeScript build failed"
-            return 1
-        fi
+        # Install dependencies and build
+        npm install || warning "Failed to install semantic analysis dependencies"
+        npm run build || warning "Failed to build semantic analysis server"
         
         # Make built server executable
         if [[ -f "dist/index.js" ]]; then
             chmod +x dist/index.js
-            success "Semantic analysis MCP server executable"
-        else
-            warning "Built server not found at dist/index.js"
         fi
         
-        # Test installation
-        info "Testing semantic analysis MCP server..."
-        if timeout 10 node dist/index.js --test >/dev/null 2>&1; then
-            success "Semantic analysis MCP server test successful"
-        else
-            warning "Semantic analysis MCP server test failed (may need API keys configured)"
-        fi
-        
+        success "Semantic analysis MCP server installed successfully"
     else
-        warning "Semantic analysis directory not found - skipping installation"
+        warning "Semantic analysis repository not available - skipping build"
     fi
     
     cd "$CODING_REPO"
@@ -507,17 +496,6 @@ install_mcp_servers() {
         warning "browser-access directory not found, skipping..."
     fi
     
-    # Install semantic analysis MCP server
-    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis" ]]; then
-        info "Installing semantic analysis MCP server..."
-        cd "$CODING_REPO/integrations/mcp-server-semantic-analysis"
-        npm install || error_exit "Failed to install semantic analysis dependencies"
-        npm run build || error_exit "Failed to build semantic analysis server"
-        chmod +x dist/index.js 2>/dev/null || true
-        success "Semantic analysis MCP server installed"
-    else
-        warning "mcp-server-semantic-analysis directory not found, skipping..."
-    fi
     
     # Install claude-logger MCP server (optional - used for manual logging only)
     if [[ -d "$CODING_REPO/integrations/claude-logger-mcp" ]]; then

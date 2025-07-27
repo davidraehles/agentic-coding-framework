@@ -57,6 +57,7 @@ install.log
 memory-visualizer/
 .activate
 integrations/mcp-server-browserbase/
+integrations/mcp-server-semantic-analysis/
 
 # VSCode extension build artifacts
 integrations/vscode-km-copilot/*.vsix
