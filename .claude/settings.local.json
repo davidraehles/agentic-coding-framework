@@ -131,7 +131,9 @@
       "mcp__semantic-analysis__test_connection",
       "Bash(./start-services.sh:*)",
       "Bash(journalctl:*)",
-      "Bash(open http://localhost:8080)"
+      "Bash(open http://localhost:8080)",
+      "Bash(git commit:*)",
+      "Bash(git -C /Users/q284340/Agentic/tmp/mcp-server-semantic-analysis log --oneline -5)"
     ],
     "deny": []
   }

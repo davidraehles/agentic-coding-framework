@@ -17,7 +17,7 @@
     },
     "semantic-analysis": {
       "command": "node",
-      "args": ["{{CODING_TOOLS_PATH}}/integrations/mcp-server-semantic-analysis-node/dist/index.js"],
+      "args": ["{{CODING_TOOLS_PATH}}/integrations/mcp-server-semantic-analysis/dist/index.js"],
       "env": {
         "CODING_TOOLS_PATH": "{{CODING_TOOLS_PATH}}",
         "ANTHROPIC_API_KEY": "{{ANTHROPIC_API_KEY}}",

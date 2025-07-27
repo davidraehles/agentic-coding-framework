@@ -56,9 +56,11 @@ MEMORY_VISUALIZER_PUBLIC_HTTPS="https://github.com/fwornle/memory-visualizer.git
 BROWSERBASE_SSH="git@github.com:browserbase/mcp-server-browserbase.git"
 BROWSERBASE_HTTPS="https://github.com/browserbase/mcp-server-browserbase.git"
 
-# Semantic Analysis MCP Server (NO CN MIRROR - always use public)
-SEMANTIC_ANALYSIS_SSH="git@github.com:your-org/mcp-server-semantic-analysis.git"
-SEMANTIC_ANALYSIS_HTTPS="https://github.com/your-org/mcp-server-semantic-analysis.git"
+# Semantic Analysis MCP Server (HAS CN MIRROR)
+SEMANTIC_ANALYSIS_CN_SSH="git@cc-github.bmwgroup.net:frankwoernle/mcp-server-semantic-analysis.git"
+SEMANTIC_ANALYSIS_CN_HTTPS="https://cc-github.bmwgroup.net/frankwoernle/mcp-server-semantic-analysis.git"
+SEMANTIC_ANALYSIS_PUBLIC_SSH="git@github.com:fwornle/mcp-server-semantic-analysis.git"
+SEMANTIC_ANALYSIS_PUBLIC_HTTPS="https://github.com/fwornle/mcp-server-semantic-analysis.git"
 
 # Platform detection
 PLATFORM=""
@@ -147,6 +149,9 @@ detect_network_and_set_repos() {
         # Memory Visualizer: Use CN mirror (has modifications)
         MEMORY_VISUALIZER_REPO_SSH="$MEMORY_VISUALIZER_CN_SSH"
         MEMORY_VISUALIZER_REPO_HTTPS="$MEMORY_VISUALIZER_CN_HTTPS"
+        # Semantic Analysis: Use CN mirror (has corporate modifications)
+        SEMANTIC_ANALYSIS_REPO_SSH="$SEMANTIC_ANALYSIS_CN_SSH"
+        SEMANTIC_ANALYSIS_REPO_HTTPS="$SEMANTIC_ANALYSIS_CN_HTTPS"
         # Browserbase: Use public repo (no CN mirror)
         BROWSERBASE_REPO_SSH="$BROWSERBASE_SSH"
         BROWSERBASE_REPO_HTTPS="$BROWSERBASE_HTTPS"
@@ -163,6 +168,8 @@ detect_network_and_set_repos() {
         # All repositories: Use public repos
         MEMORY_VISUALIZER_REPO_SSH="$MEMORY_VISUALIZER_PUBLIC_SSH"
         MEMORY_VISUALIZER_REPO_HTTPS="$MEMORY_VISUALIZER_PUBLIC_HTTPS"
+        SEMANTIC_ANALYSIS_REPO_SSH="$SEMANTIC_ANALYSIS_PUBLIC_SSH"
+        SEMANTIC_ANALYSIS_REPO_HTTPS="$SEMANTIC_ANALYSIS_PUBLIC_HTTPS"
         BROWSERBASE_REPO_SSH="$BROWSERBASE_SSH"
         BROWSERBASE_REPO_HTTPS="$BROWSERBASE_HTTPS"
     fi
@@ -170,6 +177,7 @@ detect_network_and_set_repos() {
     # Log selected repositories
     info "Selected repositories:"
     info "  Memory Visualizer: $(echo "$MEMORY_VISUALIZER_REPO_SSH" | sed 's/git@//' | sed 's/.git$//')"
+    info "  Semantic Analysis: $(echo "$SEMANTIC_ANALYSIS_REPO_SSH" | sed 's/git@//' | sed 's/.git$//')"
     info "  Browserbase: $(echo "$BROWSERBASE_REPO_SSH" | sed 's/git@//' | sed 's/.git$//')"
     
     return 0
@@ -430,26 +438,21 @@ install_browserbase() {
 install_semantic_analysis() {
     echo -e "\n${CYAN}🧠 Installing semantic analysis MCP server...${NC}"
     
-    # Handle differently based on network location
-    if [[ "$INSIDE_CN" == true ]]; then
-        # Inside CN - use special handling for non-mirrored repo
-        handle_non_mirrored_repo_cn "mcp-server-semantic-analysis" "$SEMANTIC_ANALYSIS_SSH" "$SEMANTIC_ANALYSIS_HTTPS" "$SEMANTIC_ANALYSIS_DIR"
-        local clone_result=$?
-    else
-        # Outside CN - normal clone/update
-        if [[ -d "$SEMANTIC_ANALYSIS_DIR" ]]; then
-            info "mcp-server-semantic-analysis already exists, updating..."
-            cd "$SEMANTIC_ANALYSIS_DIR"
-            if timeout 10s git pull origin main 2>/dev/null; then
-                success "mcp-server-semantic-analysis updated"
-            else
-                warning "Could not update mcp-server-semantic-analysis"
-            fi
+    # Use dynamically set repository URLs
+    if [[ -d "$SEMANTIC_ANALYSIS_DIR" ]]; then
+        info "mcp-server-semantic-analysis already exists, updating..."
+        cd "$SEMANTIC_ANALYSIS_DIR"
+        
+        # Simple update - no remote manipulation
+        info "Updating from current remote: $(git remote get-url origin 2>/dev/null || echo 'unknown')"
+        if timeout 10s git pull origin main 2>/dev/null; then
+            success "mcp-server-semantic-analysis updated"
         else
-            info "Cloning mcp-server-semantic-analysis repository..."
-            clone_repository "$SEMANTIC_ANALYSIS_SSH" "$SEMANTIC_ANALYSIS_HTTPS" "$SEMANTIC_ANALYSIS_DIR"
-            local clone_result=$?
+            warning "Could not update mcp-server-semantic-analysis, using existing version"
         fi
+    else
+        info "Cloning mcp-server-semantic-analysis repository..."
+        clone_repository "$SEMANTIC_ANALYSIS_REPO_SSH" "$SEMANTIC_ANALYSIS_REPO_HTTPS" "$SEMANTIC_ANALYSIS_DIR"
     fi
     
     # Only proceed with build if we have the repository
