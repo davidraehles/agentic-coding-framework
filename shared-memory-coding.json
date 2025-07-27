@@ -265,7 +265,7 @@
         },
         {
           "type": "workflow",
-          "content": "Session start \u2192 Pattern queries \u2192 Development \u2192 Knowledge capture \u2192 Git sharing",
+          "content": "Session start → Pattern queries → Development → Knowledge capture → Git sharing",
           "date": "2025-06-19T11:11:34Z"
         },
         {
@@ -338,6 +338,38 @@
         "created_by": "knowledge-api",
         "version": "2.0.0",
         "last_updated": "2025-06-20T07:24:30.512Z"
+      }
+    },
+    {
+      "id": "2fac5948-7a44-4163-b565-291785e25244",
+      "name": "SemanticAnalysisWorkflowIssue",
+      "entityType": "TechnicalIssue",
+      "observations": [
+        "MCP coordinator workflow returns placeholder responses instead of executing full 8-agent pipeline. Server connected but coordinator not fully implemented. Expected outputs (MD, PUML, PNG files, shared-memory updates) not generated."
+      ],
+      "significance": "8",
+      "created": "2025-07-27T13:29:29.084Z",
+      "updated": "2025-07-27T13:29:29.084Z",
+      "metadata": {
+        "created_by": "ukb-cli",
+        "version": "2.0.0",
+        "team": "coding"
+      }
+    },
+    {
+      "id": "1a278acf-65b8-4884-b7f9-cb8c76e07eaf",
+      "name": "SemanticAnalysis8AgentSystemImplementation",
+      "entityType": "SystemImplementation",
+      "observations": [
+        "Successfully implemented the complete 8-agent semantic analysis system. Replaced mock workflow handler with real coordinator execution engine. Implemented agent integration including RepositoryAnalyzer, SemanticAnalyzer, WebSearchAgent, KnowledgeManager, SynchronizationAgent, DeduplicationAgent, DocumentationAgent, and QA validation. System now executes real workflows with step-by-step coordination, quality assurance, and artifact generation. Key achievement: transformed placeholder responses into fully functional multi-agent pipeline."
+      ],
+      "significance": "9",
+      "created": "2025-07-27T13:44:08.271Z",
+      "updated": "2025-07-27T13:44:08.271Z",
+      "metadata": {
+        "created_by": "ukb-cli",
+        "version": "2.0.0",
+        "team": "coding"
       }
     }
   ],
@@ -491,10 +523,58 @@
       "metadata": {
         "created_by": "knowledge-api"
       }
+    },
+    {
+      "id": "c875107b-746d-4cbb-ba96-8a1e266a3c7b",
+      "from": "CollectiveKnowledge",
+      "to": "SemanticAnalysisWorkflowIssue",
+      "relationType": "contains",
+      "significance": 8,
+      "created": "2025-07-27T13:29:29.086Z",
+      "metadata": {
+        "created_by": "knowledge-api",
+        "auto_created": true
+      }
+    },
+    {
+      "id": "3722867d-228c-4884-85f2-335a7c3ba3ee",
+      "from": "Coding",
+      "to": "SemanticAnalysisWorkflowIssue",
+      "relationType": "contains",
+      "significance": 7,
+      "created": "2025-07-27T13:29:29.090Z",
+      "metadata": {
+        "created_by": "knowledge-api",
+        "auto_created": true
+      }
+    },
+    {
+      "id": "bf322968-2315-4098-b357-d1b6550bd01d",
+      "from": "CollectiveKnowledge",
+      "to": "SemanticAnalysis8AgentSystemImplementation",
+      "relationType": "contains",
+      "significance": 8,
+      "created": "2025-07-27T13:44:08.272Z",
+      "metadata": {
+        "created_by": "knowledge-api",
+        "auto_created": true
+      }
+    },
+    {
+      "id": "2d0c97b4-95f5-4978-919d-f8079585a7c3",
+      "from": "Coding",
+      "to": "SemanticAnalysis8AgentSystemImplementation",
+      "relationType": "contains",
+      "significance": 7,
+      "created": "2025-07-27T13:44:08.275Z",
+      "metadata": {
+        "created_by": "knowledge-api",
+        "auto_created": true
+      }
     }
   ],
   "metadata": {
-    "last_updated": "2025-06-29T07:12:32.374Z",
+    "last_updated": "2025-07-27T13:44:08.275Z",
     "total_entities": 9,
     "total_relations": 20,
     "team": "coding",
