@@ -14,8 +14,8 @@ The unified semantic analysis system consists of **8 specialized agents** that w
 
 ### 2. **Specialized Agent Roles**
 - Each agent has a specific responsibility
-- Agents communicate via MQTT for async operations
-- JSON-RPC for synchronous method calls
+- Direct Node.js/TypeScript function calls for optimal performance
+- No messaging overhead - agents communicate via direct method invocation
 - Coordinator orchestrates complex workflows
 
 ### 3. **Fault Tolerance & Resilience**
@@ -149,24 +149,32 @@ interface DocumentationAgent {
 
 ## Agent Communication Architecture
 
-### MQTT Message Bus (Asynchronous)
-```
-Topic Structure:
-- agents/semantic/analysis/request
-- agents/knowledge/entity/created
-- agents/web/search/completed
-- agents/sync/conflict/detected
-- agents/coordinator/workflow/status
+### Direct Node.js Function Calls (High Performance)
+```typescript
+// Direct method invocation - no messaging overhead
+const workflow = await coordinator.startWorkflow('repository-analysis', params);
+const analysis = await semantic.analyzeRepository(repository);
+const entities = await knowledge.createEntity(entity);
+const syncResult = await sync.resolveConflicts(conflicts);
+const docs = await documentation.generateMarkdown(content);
 ```
 
-### JSON-RPC Server (Synchronous)
-```
-Method Structure:
-- coordinator.startWorkflow
-- semantic.analyzeRepository
-- knowledge.createEntity
-- sync.resolveConflicts
-- documentation.generateMarkdown
+### Agent Interface Pattern
+```typescript
+interface Agent {
+  name: string;
+  capabilities: string[];
+  execute(task: Task): Promise<Result>;
+  validate(input: any): Promise<boolean>;
+}
+
+// All agents implement this interface for consistency
+class CoordinatorAgent implements Agent {
+  async execute(task: Task): Promise<Result> {
+    // Direct function calls to other agents
+    return await this.orchestrateWorkflow(task);
+  }
+}
 ```
 
 ## Unified Command Workflows
@@ -274,37 +282,44 @@ sequenceDiagram
 
 ## Infrastructure Components
 
-### MQTT Broker
+### MCP Server (Node.js/TypeScript)
 ```yaml
 # Configuration
-broker:
-  host: localhost
-  port: 1883
-  keepalive: 60
-  qos: 1
-  retain: false
+server:
+  protocol: stdio  # MCP protocol over stdio
+  runtime: node.js
+  language: typescript
+  entrypoint: dist/index.js
   
-topics:
-  agents: agents/+/+/+
-  workflows: workflows/+/+
-  health: health/+
+agents:
+  - coordinator
+  - semantic-analyzer
+  - repository-analyzer
+  - knowledge-manager
+  - web-search
+  - synchronization
+  - deduplication
+  - documentation
 ```
 
-### JSON-RPC Server
-```yaml
-# Configuration
-rpc:
-  host: localhost
-  port: 8080
-  timeout: 30000
-  maxConcurrent: 10
-  
-methods:
-  - coordinator.*
-  - semantic.*
-  - knowledge.*
-  - sync.*
-  - documentation.*
+### Tool Registry
+```typescript
+// MCP tool registration
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: object;
+  handler: (params: any) => Promise<any>;
+}
+
+// 12 registered MCP tools
+const tools: MCPTool[] = [
+  'heartbeat', 'test_connection',
+  'determine_insights', 'analyze_code', 'analyze_repository', 'extract_patterns',
+  'create_ukb_entity_with_insight', 'execute_workflow',
+  'generate_documentation', 'create_insight_report', 
+  'generate_plantuml_diagrams', 'generate_lessons_learned'
+];
 ```
 
 ### Health Monitoring
@@ -325,8 +340,8 @@ interface SystemHealth {
   overall: 'healthy' | 'degraded' | 'unhealthy';
   agents: AgentHealth[];
   infrastructure: {
-    mqtt: { status: string; latency: number };
-    rpc: { status: string; latency: number };
+    mcp: { status: string; latency: number };
+    llmProviders: { status: string; provider: string }[];
   };
   lastCheck: string;
 }
@@ -403,44 +418,47 @@ semantic:
 
 ## Deployment Architecture
 
-### Single Machine Deployment
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  mqtt-broker:
-    image: eclipse-mosquitto:2.0
-    ports:
-      - "1883:1883"
-      
-  agent-system:
-    build: ./semantic-analysis-system
-    depends_on:
-      - mqtt-broker
-    environment:
-      - MQTT_BROKER=mqtt://mqtt-broker:1883
-      - RPC_PORT=8080
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    volumes:
-      - ./shared-memory.json:/app/shared-memory.json
-      - ./logs:/app/logs
+### MCP Server Deployment
+```bash
+# Simple installation and startup
+cd integrations/mcp-server-semantic-analysis
+npm install
+npm run build
+
+# Configure environment
+echo "ANTHROPIC_API_KEY=sk-ant-your-key" > .env
+echo "OPENAI_API_KEY=sk-your-key" >> .env
+
+# Start MCP server (used by Claude Code)
+npm run dev
 ```
 
-### Distributed Deployment
-```yaml
-# Each agent can run on separate machines
-coordinator:
-  image: semantic-analysis/coordinator
-  environment:
-    - MQTT_BROKER=mqtt://broker.example.com:1883
-    - AGENT_ID=coordinator-01
-    
-semantic:
-  image: semantic-analysis/semantic
-  environment:
-    - MQTT_BROKER=mqtt://broker.example.com:1883
-    - AGENT_ID=semantic-01
-    - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+### Integration with Claude Code
+```json
+// claude-code-mcp.json configuration
+{
+  "mcpServers": {
+    "semantic-analysis": {
+      "command": "node",
+      "args": ["/path/to/integrations/mcp-server-semantic-analysis/dist/index.js"],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-your-key"
+      }
+    }
+  }
+}
+```
+
+### Production Deployment
+```dockerfile
+# Dockerfile for production
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY dist/ ./dist/
+COPY templates/ ./templates/
+CMD ["node", "dist/index.js"]
 ```
 
 ## Performance and Scaling
@@ -461,31 +479,33 @@ interface PerformanceMetrics {
     concurrent: number;
   };
   communication: {
-    mqttLatency: number;
-    rpcLatency: number;
-    messageRate: number;
+    mcpLatency: number;
+    functionCallLatency: number;
+    requestRate: number;
   };
 }
 ```
 
 ### Scaling Strategies
-1. **Horizontal Scaling**: Run multiple instances of resource-intensive agents
-2. **Load Balancing**: Distribute requests across agent instances
-3. **Caching**: Cache frequently accessed entities and results
-4. **Async Processing**: Use MQTT for non-blocking operations
+1. **Horizontal Scaling**: Run multiple MCP server instances with load balancing
+2. **Load Balancing**: Distribute MCP requests across server instances
+3. **Caching**: Cache frequently accessed entities and LLM responses
+4. **Async Processing**: Use Node.js async/await for non-blocking operations
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. Agent Communication Failures
+#### 1. Agent Execution Failures
 **Symptoms**: Agents not responding, workflow timeouts
 **Diagnosis**:
 ```bash
-# Check MQTT broker
-mosquitto_sub -t "agents/+/+/+"
+# Check MCP server logs
+tail -f integrations/mcp-server-semantic-analysis/logs/server.log
+# Test MCP connection
+mcp__semantic-analysis__test_connection()
 # Check agent health
-curl http://localhost:8080/health
+mcp__semantic-analysis__heartbeat()
 ```
 
 #### 2. Synchronization Conflicts

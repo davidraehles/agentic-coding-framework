@@ -1,6 +1,6 @@
 # Unified Semantic Analysis System
 
-🚀 **Unified 7-Agent Semantic Analysis System** serving both Claude Code and GitHub CoPilot with single infrastructure and SynchronizationAgent authority.
+🚀 **Unified 8-Agent Semantic Analysis System** serving both Claude Code and GitHub CoPilot with single infrastructure and SynchronizationAgent authority.
 
 ## Overview
 
@@ -10,7 +10,7 @@ The Semantic Analysis System is a comprehensive distributed agent framework desi
 
 ### Core Capabilities
 - **Multi-agent Architecture**: Specialized agents for different analysis and management tasks
-- **Hybrid Communication**: MQTT for events, JSON-RPC for commands  
+- **Direct Node.js Calls**: High-performance direct function calls, no messaging overhead  
 - **Code Analysis**: Deep git repository analysis with commit history processing
 - **Pattern Extraction**: Automated identification of architectural and design patterns
 - **Knowledge Integration**: Seamless integration with multiple knowledge management systems
