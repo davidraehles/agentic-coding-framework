@@ -65,19 +65,21 @@ if [[ -d "$CODING_REPO/integrations/mcp-server-browserbase" ]]; then
     echo "  Removed mcp-server-browserbase"
 fi
 
-# Remove semantic analysis system (preserving knowledge data)
+# Remove semantic analysis MCP server (Node.js)
 if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis" ]]; then
-    echo "  Removing semantic analysis system..."
+    echo "  Removing semantic analysis MCP server..."
     
-    # Remove Python virtual environment
-    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/venv" ]]; then
-        rm -rf "$CODING_REPO/integrations/mcp-server-semantic-analysis/venv"
-        echo "    Removed Python virtual environment"
+    # Remove node_modules
+    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/node_modules" ]]; then
+        rm -rf "$CODING_REPO/integrations/mcp-server-semantic-analysis/node_modules"
+        echo "    Removed Node.js dependencies"
     fi
     
-    # Remove Python cache directories
-    find "$CODING_REPO/integrations/mcp-server-semantic-analysis" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-    find "$CODING_REPO/integrations/mcp-server-semantic-analysis" -name "*.pyc" -delete 2>/dev/null || true
+    # Remove built dist directory
+    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/dist" ]]; then
+        rm -rf "$CODING_REPO/integrations/mcp-server-semantic-analysis/dist"
+        echo "    Removed built TypeScript files"
+    fi
     
     # Remove logs directory
     if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/logs" ]]; then
@@ -85,18 +87,12 @@ if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis" ]]; then
         echo "    Removed semantic analysis logs"
     fi
     
-    # Remove reports directory
-    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis/reports" ]]; then
-        rm -rf "$CODING_REPO/integrations/mcp-server-semantic-analysis/reports"
-        echo "    Removed analysis reports"
-    fi
-    
     # Note: We preserve the source code since it might be a local development environment
-    echo "  Semantic analysis system cleaned (source code preserved)"
+    echo "  Semantic analysis MCP server cleaned (source code preserved)"
 fi
 
 # Clean up node_modules in MCP servers
-for dir in "integrations/browser-access" "integrations/claude-logger-mcp" "mcp-memory-server"; do
+for dir in "integrations/browser-access" "integrations/claude-logger-mcp" "integrations/mcp-server-semantic-analysis" "mcp-memory-server"; do
     if [[ -d "$CODING_REPO/$dir/node_modules" ]]; then
         rm -rf "$CODING_REPO/$dir/node_modules"
         echo "  Removed $dir/node_modules"

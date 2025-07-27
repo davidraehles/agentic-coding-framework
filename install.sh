@@ -421,9 +421,9 @@ install_browserbase() {
     cd "$CODING_REPO"
 }
 
-# Install semantic analysis system
+# Install semantic analysis system (Node.js)
 install_semantic_analysis() {
-    echo -e "\n${CYAN}🧠 Installing semantic analysis system...${NC}"
+    echo -e "\n${CYAN}🧠 Installing semantic analysis MCP server (Node.js)...${NC}"
     
     local semantic_dir="$CODING_REPO/integrations/mcp-server-semantic-analysis"
     
@@ -432,77 +432,57 @@ install_semantic_analysis() {
         warning "Semantic analysis directory not found at $semantic_dir"
         return 1
     else
-        info "Semantic analysis system directory already exists"
+        info "Semantic analysis MCP server directory found"
     fi
     
     # Ensure we're in the semantic analysis directory
     if [[ -d "$semantic_dir" ]]; then
         cd "$semantic_dir"
         
-        # Check for Python
-        if ! command -v python3 &> /dev/null; then
-            warning "Python 3 not found. Please install Python 3.8+ to use semantic analysis."
+        # Check for Node.js
+        if ! command -v node &> /dev/null; then
+            warning "Node.js not found. Please install Node.js 18+ to use semantic analysis."
             return 1
         fi
         
-        info "Setting up Python virtual environment..."
-        
-        # Create virtual environment if it doesn't exist
-        if [[ ! -d "venv" ]]; then
-            python3 -m venv venv || {
-                warning "Failed to create virtual environment"
-                return 1
-            }
-        fi
-        
-        # Activate virtual environment
-        source venv/bin/activate || {
-            warning "Failed to activate virtual environment"
-            return 1
-        }
-        
-        # Upgrade pip
-        info "Upgrading pip..."
-        pip install --upgrade pip || warning "Failed to upgrade pip"
+        info "Installing Node.js dependencies..."
         
         # Install dependencies
-        if [[ -f "pyproject.toml" ]]; then
-            info "Installing semantic analysis dependencies..."
-            pip install -e . || {
+        if [[ -f "package.json" ]]; then
+            npm install || {
                 warning "Failed to install semantic analysis dependencies"
                 return 1
             }
             success "Semantic analysis dependencies installed"
         else
-            warning "pyproject.toml not found - manual dependency installation required"
+            warning "package.json not found - invalid Node.js MCP server"
             return 1
         fi
         
-        # Install additional development dependencies if requirements-dev.txt exists
-        if [[ -f "requirements-dev.txt" ]]; then
-            info "Installing development dependencies..."
-            pip install -r requirements-dev.txt || warning "Failed to install dev dependencies"
+        # Build TypeScript
+        info "Building TypeScript..."
+        if npm run build; then
+            success "Semantic analysis MCP server built successfully"
+        else
+            warning "TypeScript build failed"
+            return 1
         fi
         
-        # Make sal command executable
-        local sal_command="$CODING_REPO/bin/sal"
-        if [[ -f "$sal_command" ]]; then
-            chmod +x "$sal_command"
-            success "sal command made executable"
+        # Make built server executable
+        if [[ -f "dist/index.js" ]]; then
+            chmod +x dist/index.js
+            success "Semantic analysis MCP server executable"
         else
-            warning "sal command not found at $sal_command"
+            warning "Built server not found at dist/index.js"
         fi
         
         # Test installation
-        info "Testing semantic analysis installation..."
-        if python -c "import semantic_analysis; print('✅ Semantic analysis import successful')" 2>/dev/null; then
-            success "Semantic analysis system installed successfully"
+        info "Testing semantic analysis MCP server..."
+        if timeout 10 node dist/index.js --test >/dev/null 2>&1; then
+            success "Semantic analysis MCP server test successful"
         else
-            warning "Semantic analysis system installation verification failed"
+            warning "Semantic analysis MCP server test failed (may need API keys configured)"
         fi
-        
-        # Deactivate virtual environment
-        deactivate
         
     else
         warning "Semantic analysis directory not found - skipping installation"
@@ -525,6 +505,18 @@ install_mcp_servers() {
         success "Browser-access MCP server installed"
     else
         warning "browser-access directory not found, skipping..."
+    fi
+    
+    # Install semantic analysis MCP server
+    if [[ -d "$CODING_REPO/integrations/mcp-server-semantic-analysis" ]]; then
+        info "Installing semantic analysis MCP server..."
+        cd "$CODING_REPO/integrations/mcp-server-semantic-analysis"
+        npm install || error_exit "Failed to install semantic analysis dependencies"
+        npm run build || error_exit "Failed to build semantic analysis server"
+        chmod +x dist/index.js 2>/dev/null || true
+        success "Semantic analysis MCP server installed"
+    else
+        warning "mcp-server-semantic-analysis directory not found, skipping..."
     fi
     
     # Install claude-logger MCP server (optional - used for manual logging only)

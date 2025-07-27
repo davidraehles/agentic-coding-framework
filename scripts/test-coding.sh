@@ -754,6 +754,40 @@ else
     print_fixed "Browserbase server installed"
 fi
 
+print_check "Semantic analysis MCP server"
+if dir_exists "$CODING_ROOT/integrations/mcp-server-semantic-analysis"; then
+    print_pass "Semantic analysis MCP server found"
+    
+    print_check "Semantic analysis dependencies"
+    if [ -d "$CODING_ROOT/integrations/mcp-server-semantic-analysis/node_modules" ]; then
+        print_pass "Semantic analysis dependencies installed"
+    else
+        print_repair "Installing semantic analysis dependencies..."
+        cd "$CODING_ROOT/integrations/mcp-server-semantic-analysis" && npm install
+        print_fixed "Semantic analysis dependencies installed"
+    fi
+    
+    print_check "Semantic analysis build"
+    if [ -d "$CODING_ROOT/integrations/mcp-server-semantic-analysis/dist" ]; then
+        print_pass "Semantic analysis server built"
+        
+        print_check "Semantic analysis server test"
+        cd "$CODING_ROOT/integrations/mcp-server-semantic-analysis"
+        if timeout 10 node dist/index.js --test >/dev/null 2>&1; then
+            print_pass "Semantic analysis server test successful"
+        else
+            print_warning "Semantic analysis server test failed (may need API keys)"
+        fi
+    else
+        print_repair "Building semantic analysis server..."
+        cd "$CODING_ROOT/integrations/mcp-server-semantic-analysis" && npm run build
+        print_fixed "Semantic analysis server built"
+    fi
+else
+    print_fail "Semantic analysis MCP server not found"
+    print_info "Should be located at integrations/mcp-server-semantic-analysis"
+fi
+
 # =============================================================================
 # PHASE 6: FALLBACK SERVICES FOR NON-CLAUDE AGENTS
 # =============================================================================
