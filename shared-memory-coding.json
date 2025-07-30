@@ -371,6 +371,36 @@
         "version": "2.0.0",
         "team": "coding"
       }
+    },
+    {
+      "id": "analysis_1753854572913",
+      "name": "ComprehensiveSemanticAnalysis",
+      "entityType": "AnalysisInsight",
+      "significance": 5,
+      "observations": [
+        {
+          "type": "insight",
+          "content": "ComprehensiveSemanticAnalysis - System Analysis",
+          "date": "2025-07-30T05:49:32.913Z",
+          "metadata": {
+            "generatedAt": "2025-07-30T05:49:32.847Z",
+            "analysisTypes": [
+              "git-history"
+            ],
+            "patternCount": 0
+          }
+        }
+      ],
+      "relationships": [],
+      "metadata": {
+        "created_at": "2025-07-30T05:49:32.913Z",
+        "last_updated": "2025-07-30T05:49:32.913Z",
+        "source": "semantic-analysis-workflow",
+        "context": "comprehensive-analysis-git-history",
+        "tags": [
+          "git-history"
+        ]
+      }
     }
   ],
   "relations": [
@@ -571,14 +601,29 @@
         "created_by": "knowledge-api",
         "auto_created": true
       }
+    },
+    {
+      "from": "ComprehensiveSemanticAnalysis",
+      "to": "CollectiveKnowledge",
+      "relationType": "contributes to"
+    },
+    {
+      "from": "ComprehensiveSemanticAnalysis",
+      "to": "Coding",
+      "relationType": "implemented in"
     }
   ],
   "metadata": {
-    "last_updated": "2025-07-27T13:44:08.275Z",
-    "total_entities": 9,
-    "total_relations": 20,
+    "last_updated": "2025-07-30T05:49:32.936Z",
+    "total_entities": 12,
+    "total_relations": 27,
     "team": "coding",
     "last_sync": 1751866375.778333,
-    "sync_source": "semantic_analysis_agent"
+    "sync_source": "semantic_analysis_agent",
+    "lastGitAnalysis": "2025-07-30T05:31:48.734Z",
+    "lastVibeAnalysis": "2025-07-30T05:49:32.356Z",
+    "lastSuccessfulWorkflowCompletion": "2025-07-30T05:49:32.934Z",
+    "lastCompletedWorkflow": "complete-analysis",
+    "successfulWorkflowCount": 1
   }
 }
