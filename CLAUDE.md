@@ -65,6 +65,12 @@ node /path/to/post-session-logger.js
 
 **MANDATORY**: At the start of EVERY session, check the previous session log for continuity and context. This ensures seamless cross-session workflow and prevents losing track of progress.
 
+**⚠️ CRITICAL: Proper Session File Sorting**
+- **NEVER** use alphabetical sorting for session files (e.g., `ls | sort`)
+- **ALWAYS** use time-based sorting: `ls -lt` or `find -exec ls -lt {} +`
+- **WHY**: Alphabetical sorting makes "2025-07-20" appear after "2025-07-31" (wrong!)
+- **USE**: `./scripts/find-latest-session.js` helper for reliable session finding
+
 **PROCESS**:
 
 1. **Manual check**: User will be reminded to ask Claude to read the most recent session log in `.specstory/history/`
