@@ -400,3 +400,7 @@ This system is designed for team use:
 3. **Check `.specstory/history/` for past conversations**
 4. **The MCP memory persists across sessions when started correctly**
 5. **Post-session logging is now working** - conversations are automatically saved after sessions complete
+
+## 🚨 Semantic Analysis Workflow Rule
+
+- **ALWAYS perform semantic analysis by executing the workflow of the MCP server semantic-analysis**
