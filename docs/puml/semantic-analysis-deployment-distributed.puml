@@ -16,13 +16,13 @@ node "Control Node" as control {
 node "Agent Node 1" as node1 {
   component [Semantic Analysis] as sa
   component [Web Search] as ws
-  component [RPC Server\nPort 3001] as rpc1
+  component [RPC Server
 }
 
 node "Agent Node 2" as node2 {
   component [Knowledge Graph] as kg
   component [Coordinator] as ca
-  component [RPC Server\nPort 3002] as rpc2
+  component [RPC Server
 }
 
 cloud "External Services" as ext {

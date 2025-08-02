@@ -11,14 +11,14 @@ node "Host Machine" as host {
   component [MCP Server] as mcp
   
   package "Infrastructure" {
-    component [MQTT Broker\nPort 1883] as mqtt
-    component [JSON-RPC Server\nPort 3001] as rpc
+    component [MQTT Broker
+    component [JSON-RPC Server
   }
   
   package "Agents" {
-    component [Semantic\nAnalysis] as sa
-    component [Web\nSearch] as ws
-    component [Knowledge\nGraph] as kg
+    component [Semantic
+    component [Web
+    component [Knowledge
     component [Coordinator] as ca
   }
   
