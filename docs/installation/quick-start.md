@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Git, Node.js, npm, Python 3, and jq installed
+- Git, Node.js, npm, and jq installed
 - macOS, Linux, or Windows (via WSL/Git Bash)
 - Network access for repository cloning
 
@@ -46,7 +46,7 @@ The installation script sets up:
 ```bash
 # Install prerequisites (if needed)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install git node python3 jq
+brew install git node jq
 
 # Clone and install
 git clone <repository-url> ~/coding
@@ -58,7 +58,7 @@ cd ~/coding
 ```bash
 # Install prerequisites
 sudo apt update
-sudo apt install git nodejs npm python3 jq
+sudo apt install git nodejs npm jq
 
 # Clone and install
 git clone <repository-url> ~/coding
@@ -229,8 +229,7 @@ chmod +x knowledge-management/*
 node --version  # Should be v16+ 
 npm --version
 
-# Check Python
-python3 --version  # Should be 3.8+
+# Python no longer required - system now uses Node.js exclusively
 
 # Check jq
 jq --version

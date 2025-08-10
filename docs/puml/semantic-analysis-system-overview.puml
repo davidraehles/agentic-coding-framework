@@ -1,21 +1,7 @@
 @startuml semantic-analysis-system-overview
-!theme plain
-skinparam backgroundColor white
-skinparam defaultFontName Arial
-skinparam defaultFontSize 12
+!include _standard-style.puml
 
 title Semantic Analysis System - Complete Architecture Overview
-
-skinparam component {
-  BackgroundColor<<api>> #E8F4FD
-  BackgroundColor<<agent>> #E6F3FF
-  BackgroundColor<<infra>> #FFF2E6
-  BackgroundColor<<cli>> #FFE8F4
-  BackgroundColor<<storage>> #FFF9E6
-  BackgroundColor<<external>> #F5F5F5
-  FontSize 12
-  FontColor #000000
-}
 
 package "User Interfaces" {
   actor "Claude Code" as Claude <<external>>
