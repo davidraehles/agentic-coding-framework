@@ -411,78 +411,78 @@ semantic-cli workflow cancel <workflow-id>
 
 ## Communication Issues
 
-### MQTT Broker Problems
+### MCP Protocol Problems
 
-#### Issue: Agents not communicating
+#### Issue: Tools not available in Claude Code
 
 **Symptoms:**
-- Agents appear online but don't respond
-- Events not propagating
-- Workflow coordination failures
+- MCP tools missing in Claude Code
+- "Tool not found" errors
+- Connection timeouts
 
 **Causes:**
-- MQTT broker offline
-- Network connectivity issues
-- Authentication failures
+- MCP server not running
+- Configuration issues
+- Network connectivity problems
 
 **Solutions:**
 
-1. **Check MQTT broker status:**
+1. **Check MCP server status:**
 ```bash
-# Test MQTT connectivity
-mosquitto_sub -h localhost -p 1883 -t "system/heartbeat" -C 1
+# Test MCP server connectivity
+echo '{"jsonrpc": "2.0", "method": "heartbeat", "id": 1}' | node /path/to/mcp-server/dist/index.js
 
-# Check broker logs
-tail -f /var/log/mosquitto/mosquitto.log
+# Check if server starts successfully
+npm run dev
 ```
 
-2. **Restart MQTT broker:**
+2. **Verify Claude Code configuration:**
 ```bash
-# Using systemd
-sudo systemctl restart mosquitto
+# Check MCP configuration
+cat ~/.claude.json | jq '.mcpServers["semantic-analysis"]'
 
-# Using Docker
-docker restart semantic-analysis-mqtt
-
-# Manual start
-mosquitto -c /etc/mosquitto/mosquitto.conf -d
+# Test with simple MCP client
+claude-mcp
 ```
 
-3. **Verify agent subscriptions:**
+3. **Debug agent coordination:**
 ```bash
-# Monitor agent topics
-mosquitto_sub -h localhost -p 1883 -t "agent/+/heartbeat" -v
+# Check agent logs
+tail -f logs/coordinator.log
 
-# Check for authentication issues
-mosquitto_sub -h localhost -p 1883 -u <username> -P <password> -t "#"
+# Test individual agents
+node -e "const agent = require('./dist/agents/semantic-analysis-agent'); console.log(agent.name);"
 ```
 
-### JSON-RPC Server Issues
+### Agent Execution Issues
 
-#### Issue: RPC calls failing
+#### Issue: Agent methods failing
 
 **Symptoms:**
-- Connection refused errors
-- Method not found errors
-- Request timeouts
+- Agent execution errors
+- Function call failures
+- Undefined method errors
 
 **Causes:**
-- RPC server not running
-- Port conflicts
-- Method registration failures
+- Agent initialization failures
+- Missing dependencies
+- TypeScript compilation errors
 
 **Solutions:**
 
-1. **Check RPC server status:**
+1. **Check agent implementation:**
 ```bash
-# Check if port is listening
-netstat -an | grep :3001
-lsof -i :3001
+# Verify TypeScript compilation
+npm run build
 
-# Test RPC connectivity
-curl -X POST http://localhost:3001/rpc \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"system.ping","id":"1"}'
+# Test agent loading
+node -e "
+const agent = require('./dist/agents/semantic-analysis-agent');
+console.log('Agent loaded:', agent.constructor.name);
+"
+
+# Check for missing dependencies
+npm list --depth=0
 ```
 
 2. **Restart RPC server:**

@@ -1,146 +1,109 @@
 @startuml semantic-analysis-enhanced-architecture
 !include _standard-style.puml
 
-title Enhanced Semantic Analysis System Architecture
+title Current Semantic Analysis System - 10 Agent Architecture
 
-package "Client Layer" {
-  [CLI Interface] as CLI <<cli>>
-  [MCP Client] as MCP_CLIENT <<api>>
-  [HTTP Client] as HTTP_CLIENT <<api>>
-  [Web Dashboard] as WEB_UI <<util>>
+package "MCP Integration" {
+  [Claude Code] as CLAUDE <<external>>
+  [MCP Protocol Handler] as MCP_SERVER <<api>>
+  [12 MCP Tools] as TOOLS <<api>>
 }
 
-package "API Layer" {
-  [MCP Server] as MCP_SERVER <<api>>
-  [REST API] as REST_API <<api>>
-  [GraphQL API] as GRAPHQL_API <<api>>
-}
-
-package "Enhanced Agent Layer" {
-  package "Core Agents" {
+package "Agent Layer - 10 Agents" {
+  package "Core Analysis Agents (8)" {
+    [Git History\nAgent] as GIT_AGENT <<agent>>
+    [Vibe History\nAgent] as VIBE_AGENT <<agent>>
     [Semantic Analysis\nAgent] as SEMANTIC_AGENT <<agent>>
-    [Knowledge Graph\nAgent ✨] as KNOWLEDGE_AGENT <<agent>>
-    [Coordinator\nAgent] as COORDINATOR_AGENT <<agent>>
-  }
-  
-  package "Infrastructure Agents ⭐ NEW" {
-    [Synchronization\nAgent ✨] as SYNC_AGENT <<agent>>
-    [Deduplication\nAgent ✨] as DEDUP_AGENT <<agent>>
-    [Documentation\nAgent] as DOC_AGENT <<agent>>
-  }
-  
-  package "Utility Agents" {
     [Web Search\nAgent] as SEARCH_AGENT <<agent>>
+    [Insight Generation\nAgent] as INSIGHT_AGENT <<agent>>
+    [Observation Generation\nAgent] as OBS_AGENT <<agent>>
     [Quality Assurance\nAgent] as QA_AGENT <<agent>>
+    [Persistence\nAgent] as PERSIST_AGENT <<agent>>
+  }
+  
+  package "Infrastructure Agents (2)" {
+    [Synchronization\nAgent] as SYNC_AGENT <<agent>>
+    [Deduplication\nAgent] as DEDUP_AGENT <<agent>>
+  }
+  
+  package "Orchestration Service" {
+    [Coordinator\nService] as COORDINATOR <<infra>>
   }
 }
 
-package "Communication Layer" {
-  [MQTT Broker\n(Event Bus)] as MQTT_BROKER <<infra>>
-  [JSON-RPC Server\n(Commands)] as RPC_SERVER <<infra>>
-  [Event Processing] as EVENT_BUS <<infra>>
-}
-
-package "Enhanced Storage Layer ✨" {
-  package "Graph Databases" {
-    database [MCP Memory\nService] as MCP_MEMORY <<storage>>
-    database [Graphology\nDatabase] as GRAPHOLOGY_DB <<storage>>
-  }
-  
-  package "File Storage" {
-    database [shared-memory-\ncoding.json] as JSON_CODING <<storage>>
-    database [shared-memory-\nui.json] as JSON_UI <<storage>>
-    database [shared-memory-\nresi.json] as JSON_RESI <<storage>>
-  }
-  
-  package "Version Control ⭐ NEW" {
-    database [Version\nStorage] as VERSION_STORAGE <<storage>>
-    database [Backup\nStorage] as BACKUP_STORAGE <<storage>>
-  }
+package "Knowledge Storage" {
+  database [MCP Memory\nService] as MCP_MEMORY <<storage>>
+  database [Graphology\nDatabase] as GRAPHOLOGY_DB <<storage>>
+  database [shared-memory-\ncoding.json] as JSON_FILES <<storage>>
 }
 
 package "External Services" {
-  cloud [Claude API] as CLAUDE_API <<external>>
-  cloud [OpenAI API] as OPENAI_API <<external>>
-  cloud [Google Search] as GOOGLE_SEARCH <<external>>
-  [UKB System] as UKB_SYSTEM <<external>>
+  cloud [Anthropic\nClaude] as ANTHROPIC_API <<external>>
+  cloud [OpenAI\nGPT] as OPENAI_API <<external>>
+  cloud [Web Search\nAPIs] as WEB_APIS <<external>>
 }
 
-' Client connections
-CLI SYNC_LINE REST_API
-MCP_CLIENT SYNC_LINE MCP_SERVER
-HTTP_CLIENT SYNC_LINE REST_API
-WEB_UI SYNC_LINE GRAPHQL_API
+' MCP Integration Flow
+CLAUDE SYNC_LINE MCP_SERVER
+MCP_SERVER SYNC_LINE TOOLS
+TOOLS SYNC_LINE COORDINATOR
 
-' API to Agent connections
-MCP_SERVER SYNC_LINE KNOWLEDGE_AGENT
-REST_API SYNC_LINE COORDINATOR_AGENT
-GRAPHQL_API SYNC_LINE COORDINATOR_AGENT
+' Agent Coordination (Direct Function Calls)
+COORDINATOR CONTROL_LINE GIT_AGENT
+COORDINATOR CONTROL_LINE VIBE_AGENT
+COORDINATOR CONTROL_LINE SEMANTIC_AGENT
+COORDINATOR CONTROL_LINE SEARCH_AGENT
+COORDINATOR CONTROL_LINE INSIGHT_AGENT
+COORDINATOR CONTROL_LINE OBS_AGENT
+COORDINATOR CONTROL_LINE QA_AGENT
+COORDINATOR CONTROL_LINE PERSIST_AGENT
+COORDINATOR CONTROL_LINE SYNC_AGENT
+COORDINATOR CONTROL_LINE DEDUP_AGENT
 
-' Agent interconnections
-COORDINATOR_AGENT ASYNC_LINE EVENT_BUS
-SEMANTIC_AGENT ASYNC_LINE EVENT_BUS
-KNOWLEDGE_AGENT ASYNC_LINE EVENT_BUS
-SYNC_AGENT ASYNC_LINE EVENT_BUS
-DEDUP_AGENT ASYNC_LINE EVENT_BUS
-DOC_AGENT ASYNC_LINE EVENT_BUS
-SEARCH_AGENT ASYNC_LINE EVENT_BUS
-QA_AGENT ASYNC_LINE EVENT_BUS
+' Agent Workflow Sequence
+GIT_AGENT ASYNC_LINE VIBE_AGENT
+VIBE_AGENT ASYNC_LINE SEMANTIC_AGENT
+SEMANTIC_AGENT ASYNC_LINE SEARCH_AGENT
+SEARCH_AGENT ASYNC_LINE INSIGHT_AGENT
+INSIGHT_AGENT ASYNC_LINE OBS_AGENT
+OBS_AGENT ASYNC_LINE QA_AGENT
+QA_AGENT ASYNC_LINE PERSIST_AGENT
+PERSIST_AGENT ASYNC_LINE SYNC_AGENT
+SYNC_AGENT ASYNC_LINE DEDUP_AGENT
 
-' Communication layer
-EVENT_BUS CONTROL_LINE MQTT_BROKER
-EVENT_BUS CONTROL_LINE RPC_SERVER
-
-' Enhanced storage connections
+' Storage Connections
 SYNC_AGENT DATA_LINE MCP_MEMORY
 SYNC_AGENT DATA_LINE GRAPHOLOGY_DB
-SYNC_AGENT DATA_LINE JSON_CODING
-SYNC_AGENT DATA_LINE JSON_UI
-SYNC_AGENT DATA_LINE JSON_RESI
-SYNC_AGENT DATA_LINE VERSION_STORAGE
+SYNC_AGENT DATA_LINE JSON_FILES
+PERSIST_AGENT DATA_LINE MCP_MEMORY
 
-KNOWLEDGE_AGENT DATA_LINE MCP_MEMORY
-DEDUP_AGENT DATA_LINE MCP_MEMORY
-
-' External service connections
-SEMANTIC_AGENT OPTIONAL_LINE CLAUDE_API
+' External API Connections
+SEMANTIC_AGENT OPTIONAL_LINE ANTHROPIC_API
 SEMANTIC_AGENT OPTIONAL_LINE OPENAI_API
-DEDUP_AGENT OPTIONAL_LINE OPENAI_API
-SEARCH_AGENT OPTIONAL_LINE GOOGLE_SEARCH
-KNOWLEDGE_AGENT DATA_LINE UKB_SYSTEM
+SEARCH_AGENT OPTIONAL_LINE WEB_APIS
+INSIGHT_AGENT OPTIONAL_LINE ANTHROPIC_API
 
-' Backup and versioning
-SYNC_AGENT DATA_LINE BACKUP_STORAGE
-VERSION_STORAGE OPTIONAL_LINE BACKUP_STORAGE
+note right of COORDINATOR
+  **Workflow Orchestration**
+  • Coordinates all 10 agents
+  • Direct function calls (no MQTT)
+  • Quality assurance pipeline
+  • Error handling and retry logic
+end note
 
 note right of SYNC_AGENT
-  **✨ Enhanced Synchronization Agent**
-  • Bidirectional sync between graph DBs and JSON files
-  • Real-time file watching with debouncing
-  • Conflict resolution (latest-wins, merge, manual)
-  • Version management with rollback capabilities
-  • Multi-adapter support (MCP/Graphology)
-  • Checksum validation prevents infinite loops
+  **Data Synchronization**
+  • Multi-source data sync
+  • Real-time file watching
+  • Conflict resolution
+  • Cross-session persistence
 end note
 
-note right of DEDUP_AGENT
-  **✨ Semantic Deduplication Agent**
-  • Embedding-based similarity detection
-  • Multiple similarity metrics (cosine, euclidean, etc.)
-  • Configurable merge strategies with thresholds
-  • Batch processing with auto-merge capabilities
-  • Entity grouping for visualization
-  • Performance optimization with caching
-end note
-
-note right of KNOWLEDGE_AGENT
-  **✨ Enhanced Knowledge Graph Agent**
-  • Automatic relation creation to CollectiveKnowledge
-  • Entity validation with comprehensive checks
-  • Duplicate detection before creation
-  • Type-based relations (Patterns, Documentation, Insights)
-  • Technology-based relations from metadata
-  • Team-specific knowledge organization
+note bottom of GIT_AGENT
+  **8-Agent Sequential Workflow:**
+  Git History → Vibe History → Semantic Analysis
+  → Web Search → Insight Generation → Observation
+  → Quality Assurance → Persistence
 end note
 
 @enduml

@@ -1,6 +1,6 @@
 # Unified Semantic Analysis System
 
-🚀 **Unified 8-Agent Semantic Analysis System** serving both Claude Code and GitHub CoPilot with single infrastructure and SynchronizationAgent authority.
+🚀 **Unified 10-Agent Semantic Analysis System** serving both Claude Code and GitHub CoPilot with single infrastructure and intelligent coordination.
 
 ## Overview
 
@@ -31,7 +31,7 @@ The Semantic Analysis System is a comprehensive distributed agent framework desi
 claude-mcp
 
 # The semantic analysis server starts automatically
-# Access all 12 tools and 7 agents through Claude Code
+# Access all 12 tools and 10 agents through Claude Code
 ```
 
 > **📋 Standalone Server**: The semantic analysis system is now available as a [standalone Node.js MCP server](../../../integrations/mcp-server-semantic-analysis/) with comprehensive documentation.
@@ -40,47 +40,55 @@ claude-mcp
 
 ```mermaid
 graph TB
-    subgraph "Agent Layer"
+    subgraph "10-Agent Analysis System"
+        GH[Git History Agent]
+        VH[Vibe History Agent]  
         SA[Semantic Analysis Agent]
         WS[Web Search Agent]
-        KG[Knowledge Graph Agent ✨]
-        CO[Coordinator Agent]
-        SY[Synchronization Agent 🆕]
-        DD[Deduplication Agent 🆕]
-        DA[Documentation Agent 🆕]
+        IG[Insight Generation Agent]
+        OG[Observation Generation Agent]
+        QA[Quality Assurance Agent]
+        PA[Persistence Agent]
+        SY[Synchronization Agent]
+        DD[Deduplication Agent]
     end
     
-    subgraph "Infrastructure"
-        MQTT[MQTT Broker]
-        RPC[JSON-RPC Server]
-        EB[Event Bus]
+    subgraph "MCP Infrastructure"
+        MCP[MCP Protocol Handler]
+        TOOLS[12 MCP Tools]
+        COORD[Coordinator Agent]
     end
     
-    subgraph "Enhanced Storage"
+    subgraph "Knowledge Storage"
         JSON[JSON Files]
-        MCP[MCP Memory]
-        GDB[Graphology DB]
-        VER[Version Storage 🆕]
+        MEMORY[MCP Memory]
+        GRAPH[Knowledge Graph]
+        INSIGHTS[Insight Files]
     end
     
-    SA --> EB
-    WS --> EB
-    KG --> EB
-    CO --> EB
-    SY --> EB
-    DD --> EB
-    DA --> EB
-    
-    EB --> MQTT
-    EB --> RPC
+    MCP --> COORD
+    COORD --> GH
+    COORD --> VH
+    COORD --> SA
+    COORD --> WS
+    COORD --> IG
+    COORD --> OG
+    COORD --> QA
+    COORD --> PA
+    COORD --> SY
+    COORD --> DD
     
     SY <--> JSON
-    SY <--> MCP  
-    SY <--> GDB
-    SY --> VER
+    SY <--> MEMORY  
+    PA --> INSIGHTS
+    DD --> MEMORY
     
-    KG <--> MCP
-    DD <--> MCP
+    GH --> SA
+    VH --> SA
+    SA --> IG
+    IG --> OG
+    OG --> QA
+    QA --> PA
 ```
 
 ## 📚 Documentation
@@ -97,56 +105,53 @@ graph TB
 ### Integration Guides
 - **[MCP Server Setup](mcp-server-setup.md)** - Claude Code integration
 
-## 🤖 Enhanced Agent System
+## 🤖 10-Agent Analysis System
 
-### Core Agents
+### 8 Core Analysis Agents (Sequential Workflow)
 
-#### Semantic Analysis Agent
-Analyzes code repositories and extracts meaningful patterns from commit history with enhanced LLM support.
+#### 1. Git History Agent
+Analyzes Git commit history from checkpoint, extracts meaningful changes and patterns from repository evolution.
 
-#### Knowledge Graph Agent ✨ (Enhanced)
-- **Automatic relation creation** to CollectiveKnowledge and project nodes
-- **Entity validation** with comprehensive checks
-- **Duplicate detection** before entity creation
-- **Type-based relations** (Patterns, Documentation, Insights hubs)
-- **Technology relations** based on metadata
+#### 2. Vibe History Agent  
+Processes conversation history from `.specstory/history` files, extracting context and insights from previous sessions.
 
-#### Coordinator Agent
-Orchestrates workflows across multiple agents and manages task scheduling with quality assurance.
+#### 3. Semantic Analysis Agent
+Performs deep code analysis, correlating Git changes with conversation context to identify patterns and architectural insights.
 
-#### Web Search Agent
-Performs context-aware web searches to validate references and discover documentation.
+#### 4. Web Search Agent
+Conducts context-aware web searches to validate references, discover documentation, and research external patterns.
 
-### 🆕 Infrastructure Agents (New)
+#### 5. Insight Generation Agent
+Generates comprehensive insights and creates PlantUML diagrams based on analysis results with LLM support.
 
-#### Synchronization Agent
+#### 6. Observation Generation Agent
+Creates structured, UKB-compatible observations from insights, ensuring proper knowledge base integration.
+
+#### 7. Quality Assurance Agent
+Validates all outputs with auto-correction capabilities, ensuring accuracy and completeness of analysis results.
+
+#### 8. Persistence Agent
+Handles knowledge base persistence, creates checkpoints, and manages the storage of validated insights.
+
+### 2 Infrastructure Agents (Supporting Services)
+
+#### 9. Synchronization Agent
 **Purpose**: Ensures bidirectional sync between graph databases and JSON files
 
 **Key Features**:
-- ✅ **Multi-adapter support**: MCP Memory Service + Graphology Database
-- ✅ **File watching**: Real-time change detection with debouncing
-- ✅ **Conflict resolution**: Latest-wins, merge, manual strategies
+- ✅ **Multi-adapter support**: MCP Memory Service + file systems
+- ✅ **Real-time sync**: Change detection with conflict resolution
 - ✅ **Version management**: Rollback capabilities with history
-- ✅ **Checksum validation**: Prevents infinite sync loops
+- ✅ **Data integrity**: Checksum validation and consistency checks
 
-#### Deduplication Agent
+#### 10. Deduplication Agent
 **Purpose**: Detects and merges semantically similar entities
 
 **Key Features**:
-- ✅ **Embedding generation**: OpenAI, sentence-transformers, local TF-IDF
-- ✅ **Similarity detection**: Cosine, Euclidean, Manhattan, Pearson, Jaccard
-- ✅ **Automatic merging**: Configurable strategies and thresholds
-- ✅ **Batch processing**: Periodic deduplication with performance optimization
-- ✅ **Entity grouping**: Visualization support for similar entities
-
-#### Documentation Agent (Planned)
-**Purpose**: Automated insight document generation
-
-**Planned Features**:
-- Markdown document generation
-- PlantUML/Mermaid diagram creation
-- Code snippet integration
-- Reference validation and enrichment
+- ✅ **AI-powered similarity**: Semantic embedding analysis
+- ✅ **Smart merging**: Configurable strategies and thresholds  
+- ✅ **Batch processing**: Efficient duplicate detection and removal
+- ✅ **Entity grouping**: Visualization support for similar patterns
 
 ## 🔗 Integration
 

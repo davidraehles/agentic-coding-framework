@@ -99,10 +99,10 @@ graph TB
         end
     end
     
-    subgraph "Communication Layer"
-        MQTT[MQTT Broker]
-        RPC[JSON-RPC Server]
-        EB[Event Bus]
+    subgraph "MCP Integration Layer"
+        MCP_SERVER[MCP Protocol Handler]
+        STDIO[Stdio Transport]
+        DIRECT_CALLS[Direct Function Calls]
     end
     
     subgraph "Enhanced Storage Layer ✨"
@@ -132,17 +132,14 @@ graph TB
     REST --> CO
     GQL --> CO
     
-    SA --> EB
-    KG --> EB
-    CO --> EB
-    SY --> EB
-    DD --> EB
-    DA --> EB
-    WS --> EB
-    QA --> EB
-    
-    EB --> MQTT
-    EB --> RPC
+    MCP_SERVER --> CO
+    CO --> SA
+    CO --> KG
+    CO --> SY
+    CO --> DD
+    CO --> DA
+    CO --> WS
+    CO --> QA
     
     SY <--> MEM
     SY <--> GDB

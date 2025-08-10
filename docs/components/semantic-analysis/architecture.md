@@ -38,7 +38,7 @@ The semantic analysis system implements a **Node.js-based MCP server architectur
 #### MCP Protocol Layer
 - **MCP Server Implementation**: Node.js/TypeScript MCP server
 - **Tool Registry**: Registration and dispatch of 12 available tools
-- **Request Processing**: JSON-RPC 2.0 protocol handling
+- **Request Processing**: MCP protocol message handling
 - **Response Formatting**: Standardized MCP response format
 
 #### Tool Layer (12 Tools)
@@ -150,8 +150,8 @@ Request → Primary Provider (Custom/Anthropic) → Fallback (OpenAI) → Error 
 
 ### Previous System (Deprecated)
 - Python-based semantic analysis system
-- MQTT event bus communication
-- JSON-RPC API endpoints
+- MCP protocol communication
+- Direct function call coordination
 - Complex multi-process architecture
 
 ### Current Benefits
