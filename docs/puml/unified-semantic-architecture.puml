@@ -13,15 +13,26 @@ package "Unified Interface Layer" {
   [HTTP API Server\nVSCode Integration] <<api>> as http
 }
 
-package "Single Agent System Infrastructure (8 Agents)" {
-  [Coordinator Agent\n(Orchestrates workflows)] <<agent>> as coordinator
-  [Semantic Analysis Agent\n(Code & conversation analysis)] <<agent>> as semantic
-  [Repository Analyzer\n(Repository structure analysis)] <<agent>> as repo
-  [Knowledge Graph Agent\n(Entity & relationship extraction)] <<agent>> as knowledge
-  [Web Search Agent\n(Documentation research)] <<agent>> as web
-  [SynchronizationAgent\n(SINGLE SOURCE OF TRUTH)] <<agent>> as sync
-  [Deduplication Agent\n(Prevents duplicate insights)] <<agent>> as dedup
-  [Documentation Agent\n(Creates structured docs)] <<agent>> as docs
+package "Single Agent System Infrastructure (11 Agents)" {
+  package "Orchestration Agent (1)" {
+    [CoordinatorAgent\n(Orchestrates workflows)] <<agent>> as coordinator
+  }
+  
+  package "Core Analysis Agents (8)" {
+    [GitHistoryAgent\n(Git history analysis)] <<agent>> as githistory
+    [VibeHistoryAgent\n(Conversation analysis)] <<agent>> as vibehistory
+    [SemanticAnalysisAgent\n(Code & pattern analysis)] <<agent>> as semantic
+    [WebSearchAgent\n(Documentation research)] <<agent>> as web
+    [InsightGenerationAgent\n(Generate structured insights)] <<agent>> as insights
+    [ObservationGenerationAgent\n(Create observations)] <<agent>> as observations
+    [QualityAssuranceAgent\n(Validation & QA)] <<agent>> as quality
+    [PersistenceAgent\n(Knowledge storage)] <<agent>> as persistence
+  }
+  
+  package "Infrastructure Agents (2)" {
+    [SynchronizationAgent\n(SINGLE SOURCE OF TRUTH)] <<agent>> as sync
+    [DeduplicationAgent\n(Prevents duplicate insights)] <<agent>> as dedup
+  }
 }
 
 package "Multi-Database Storage" {
@@ -52,14 +63,19 @@ mcp --> coordinator : "Start workflows"
 http --> coordinator : "API requests"
 
 ' Agent system internal communication (Node.js direct calls)
-coordinator --> semantic : "Analyze code/conversation"
-coordinator --> repo : "Scan repository"
-coordinator --> knowledge : "Extract entities"
-coordinator --> web : "Research topics"
+' Sequential workflow: GH → VH → SA → WS → IG → OG → QA → PA
+coordinator --> githistory : "1. Analyze git history"
+githistory --> vibehistory : "2. Analyze conversations"
+vibehistory --> semantic : "3. Semantic analysis"
+semantic --> web : "4. Research topics"
+web --> insights : "5. Generate insights"
+insights --> observations : "6. Create observations"
+observations --> quality : "7. Quality validation"
+quality --> persistence : "8. Store knowledge"
+
+' Infrastructure agents
 coordinator --> sync : "Ensure consistency"
-semantic --> dedup : "Check duplicates"
-repo --> knowledge : "Structure analysis"
-knowledge --> docs : "Generate documentation"
+persistence --> dedup : "Check duplicates"
 
 ' SynchronizationAgent is the single authority
 sync --> mcpmem : "Sync to MCP"
@@ -86,7 +102,7 @@ end note
 
 note bottom of coordinator
   **UNIFIED**: Both Claude Code and CoPilot use
-  the SAME 8-agent system for all analysis,
+  the SAME 11-agent system for all analysis,
   ensuring consistent results regardless of AI assistant
 end note
 
@@ -116,12 +132,12 @@ note right of custom
   • Graceful degradation
 end note
 
-note right of anthropic
-  **Node.js Architecture**:
-  • Direct TypeScript calls
-  • No MQTT/JSON-RPC overhead
-  • Stable connections
-  • Provider fallback chain
+note bottom of githistory
+  **11-Agent Sequential Workflow**:
+  1. GitHistory → 2. VibeHistory → 3. SemanticAnalysis
+  → 4. WebSearch → 5. InsightGeneration → 6. ObservationGeneration
+  → 7. QualityAssurance → 8. Persistence
+  + Infrastructure: Synchronization & Deduplication
 end note
 
 @enduml
