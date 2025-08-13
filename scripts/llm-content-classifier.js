@@ -31,28 +31,29 @@ class LLMContentClassifier {
     // Extract a sample of the content for classification (first 1000 chars for speed)
     const contentSample = content.substring(0, 1000);
     
-    const classificationPrompt = `Analyze this conversation excerpt and determine if it's primarily about the "coding" project's INFRASTRUCTURE or about developing a specific application project.
+    const classificationPrompt = `Analyze this conversation excerpt and determine if it's primarily about the "coding" project's INFRASTRUCTURE/TOOLING or about developing a specific application project.
 
-CODING INFRASTRUCTURE includes:
-- ukb, vkb commands and knowledge management tools
-- MCP servers, semantic analysis systems, claude-mcp
-- Session logging, post-session logging, conversation capture
-- Knowledge base management, shared-memory files
+CODING INFRASTRUCTURE includes ONLY:
+- ukb, vkb commands and knowledge management tools (ukb.js, vkb.js)
+- MCP servers, semantic analysis systems, claude-mcp launcher
+- Post-session logging, conversation capture systems
+- Knowledge base management, shared-memory-coding.json files
 - /Agentic/coding repository tools and scripts
-- Development workflows, logging systems, insight capture
-- Cross-project patterns, architectural patterns
-- MCP integration, browser automation tools
-- Session management, conversation analysis
-- Auto-insight triggers, pattern detection systems
+- MCP integration development, MCP server creation
+- Session management systems, auto-insight triggers
 - Knowledge graph management and synchronization
+- Infrastructure for the coding toolset itself
 
 PROJECT-SPECIFIC includes:
+- Any educational content, learning materials, courses
 - React/Vue/Angular applications and components
 - Timeline visualization, UI components, web apps
 - Database schemas, API development for specific apps
 - Kotlin, Compose Multiplatform application development
 - Business logic, authentication, domain-specific features
 - Application deployment, specific project configuration
+- Nano-degree content, educational exercises, tutorials
+- Any work done within project directories other than /Agentic/coding
 
 Conversation excerpt:
 ${contentSample}
@@ -219,32 +220,39 @@ Respond with ONLY one word: "coding" if this is about coding infrastructure/know
   fallbackClassification(content) {
     const lowerContent = content.toLowerCase();
     
-    // Comprehensive coding infrastructure keywords based on repository analysis
+    // VERY SPECIFIC coding infrastructure keywords - must be precise to avoid false positives
     const codingKeywords = [
-      // Core tools
+      // Core tools (exact commands)
       'ukb command', 'vkb command', 'ukb --', 'vkb --', 'ukb.js', 'vkb.js',
-      // MCP infrastructure
-      'mcp__memory__', 'mcp server', 'semantic-analysis system', 'claude-mcp',
-      // Session & logging systems
-      'post-session-logger', 'session logging', 'conversation capture', 'session management',
-      'multi-topic session', 'session-review', 'logging-system', 'gracefully shutting down mcp',
-      // Knowledge management
-      'shared-memory-coding.json', 'shared-memory.json', 'knowledge-management/',
-      'knowledge base', 'knowledge graph', 'insight capture', 'pattern detection',
-      // Repository & infrastructure
-      'coding repo', '/agentic/coding', 'coding infrastructure', 'development workflows',
-      // Service management
-      'mcp services', 'semantic analysis mcp server', 'vkb server', 'stdio transport',
-      'services startup', 'service status', 'cleanup existing processes'
+      // MCP infrastructure (specific to coding toolset)
+      'mcp__memory__', 'semantic-analysis system', 'claude-mcp',
+      // Session & logging systems (specific to coding infrastructure)
+      'post-session-logger.js', 'post-session logging', 'coding repo',
+      // Repository & infrastructure (exact paths)
+      '/agentic/coding', 'coding infrastructure', 'shared-memory-coding.json',
+      // Service management (specific services)
+      'semantic analysis mcp server', 'vkb server', 'cleanup existing processes',
+      // Specific file patterns
+      'knowledge-management/', 'coding/.specstory/'
     ];
     
-    // Count occurrences
+    // Count occurrences but be more strict
     const keywordCount = codingKeywords.reduce((count, keyword) => {
       return count + (lowerContent.split(keyword).length - 1);
     }, 0);
     
-    // Lower threshold since we have comprehensive keywords now
-    return keywordCount >= 2 ? 'coding' : 'project';
+    // Check for exclusion patterns (educational content)
+    const exclusionPatterns = [
+      'nano-degree', 'nano degree', 'learning', 'tutorial', 'exercise',
+      'course', 'lesson', 'education', 'training', 'module '
+    ];
+    
+    const hasEducationalContent = exclusionPatterns.some(pattern => 
+      lowerContent.includes(pattern)
+    );
+    
+    // Be more conservative - require multiple specific infrastructure keywords AND no educational content
+    return (keywordCount >= 3 && !hasEducationalContent) ? 'coding' : 'project';
   }
 }
 

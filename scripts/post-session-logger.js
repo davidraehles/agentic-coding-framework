@@ -181,11 +181,16 @@ class PostSessionLogger {
       
       // VERY SPECIFIC coding infrastructure keywords - must be precise to avoid false positives
       const codingKeywords = [
-        'ukb command', 'vkb command', 'ukb --', 'vkb --',
-        'mcp__memory__', 'mcp server', 'semantic-analysis system',
-        'post-session-logger', 'claude-mcp command',
-        'shared-memory-coding.json', 'knowledge-management/',
-        'coding repo', '/agentic/coding', 'ukb.js', 'vkb.js'
+        'ukb command', 'vkb command', 'ukb --', 'vkb --', 'ukb.js', 'vkb.js',
+        'mcp__memory__', 'semantic-analysis system', 'claude-mcp command',
+        'post-session-logger.js', 'shared-memory-coding.json', 'knowledge-management/',
+        'coding repo', '/agentic/coding', 'coding infrastructure'
+      ];
+      
+      // Check for exclusion patterns (educational content)
+      const exclusionPatterns = [
+        'nano-degree', 'nano degree', 'learning', 'tutorial', 'exercise',
+        'course', 'lesson', 'education', 'training', 'module '
       ];
       
       // Count occurrences to prevent false positives
@@ -193,8 +198,12 @@ class PostSessionLogger {
         return count + (lowerContent.split(keyword).length - 1);
       }, 0);
       
-      // Require multiple specific infrastructure keywords
-      return keywordCount >= 3;
+      const hasEducationalContent = exclusionPatterns.some(pattern => 
+        lowerContent.includes(pattern)
+      );
+      
+      // Require multiple specific infrastructure keywords AND no educational content
+      return keywordCount >= 4 && !hasEducationalContent;
     }
   }
 
