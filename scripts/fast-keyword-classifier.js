@@ -407,6 +407,28 @@ class FastKeywordClassifier {
         
         return result;
       }
+    } else {
+      // 🚨 NEW FIX: If NO file modifications detected, default to 'project' to avoid keyword false positives
+      console.log(`🎯 NO-MODIFICATION CLASSIFICATION: Zero file modifications detected -> PROJECT (avoiding keyword false positives)`);
+      
+      const result = {
+        classification: 'project',
+        confidence: 95, // High confidence when no files are modified
+        score: 0, // Project classification gets 0 score (not coding)
+        totalMatches: 0,
+        matches: { noModifications: true },
+        fileModificationAnalysis,
+        topicBlocksAnalyzed: topicBlocks.length,
+        userRequestsAnalyzed: userRequests.length,
+        processingTimeMs: Date.now() - startTime,
+        reasoning: `No-modification classification: Zero file modifications detected, avoiding keyword false positives -> project`
+      };
+      
+      if (showBlockDetails && blockAnalysis.length > 0) {
+        result.blockAnalysis = blockAnalysis;
+      }
+      
+      return result;
     }
     
     // Fallback to keyword-based classification if no clear file modifications
