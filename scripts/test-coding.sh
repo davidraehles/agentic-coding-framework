@@ -841,6 +841,65 @@ else
     print_info "Should be located at integrations/mcp-server-semantic-analysis"
 fi
 
+print_check "Constraint monitor system"
+if dir_exists "$CODING_ROOT/integrations/constraint-monitor"; then
+    print_pass "Constraint monitor system found"
+    
+    print_check "Constraint monitor dependencies"
+    if [ -d "$CODING_ROOT/integrations/constraint-monitor/node_modules" ]; then
+        print_pass "Constraint monitor dependencies installed"
+    else
+        print_repair "Installing constraint monitor dependencies..."
+        cd "$CODING_ROOT/integrations/constraint-monitor" && npm install
+        print_fixed "Constraint monitor dependencies installed"
+    fi
+    
+    print_check "Constraint monitor configuration"
+    if [ -f "$CODING_ROOT/integrations/constraint-monitor/config/constraints.yaml" ]; then
+        print_pass "Constraint monitor configuration found"
+    else
+        print_repair "Setting up constraint monitor configuration..."
+        cd "$CODING_ROOT/integrations/constraint-monitor" && npm run setup
+        print_fixed "Constraint monitor configuration created"
+    fi
+    
+    print_check "Constraint monitor database setup"
+    if [ -d "$CODING_ROOT/integrations/constraint-monitor/data" ]; then
+        print_pass "Constraint monitor data directory exists"
+    else
+        print_repair "Creating constraint monitor data directory..."
+        mkdir -p "$CODING_ROOT/integrations/constraint-monitor/data"
+        print_fixed "Constraint monitor data directory created"
+    fi
+    
+    print_check "Constraint monitor environment variables"
+    if [ -n "${GROQ_API_KEY:-}" ]; then
+        print_pass "GROQ_API_KEY configured"
+    else
+        print_warning "GROQ_API_KEY not set - constraint monitor will use limited functionality"
+    fi
+    
+    print_check "Docker services for constraint monitor"
+    if command -v docker >/dev/null 2>&1; then
+        if docker ps -q -f name=constraint-monitor-qdrant >/dev/null 2>&1; then
+            print_pass "Qdrant database running"
+        else
+            print_warning "Qdrant database not running - start with: cd integrations/constraint-monitor && docker-compose up -d"
+        fi
+        
+        if docker ps -q -f name=constraint-monitor-redis >/dev/null 2>&1; then
+            print_pass "Redis cache running"
+        else
+            print_warning "Redis cache not running - start with: cd integrations/constraint-monitor && docker-compose up -d"
+        fi
+    else
+        print_warning "Docker not available - constraint monitor requires Docker for Qdrant and Redis"
+    fi
+else
+    print_fail "Constraint monitor system not found"
+    print_info "Should be located at integrations/constraint-monitor"
+fi
+
 # =============================================================================
 # PHASE 6: FALLBACK SERVICES FOR NON-CLAUDE AGENTS
 # =============================================================================

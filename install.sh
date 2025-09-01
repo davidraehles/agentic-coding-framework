@@ -513,6 +513,17 @@ install_mcp_servers() {
     else
         warning "integrations/claude-logger-mcp directory not found, skipping..."
     fi
+    
+    # Install constraint-monitor (real-time constraint violation detection)
+    if [[ -d "$CODING_REPO/integrations/constraint-monitor" ]]; then
+        info "Installing constraint-monitor system..."
+        cd "$CODING_REPO/integrations/constraint-monitor"
+        npm install || error_exit "Failed to install constraint-monitor dependencies"
+        npm run setup || warning "Constraint monitor database setup completed with warnings (check Docker services)"
+        success "Constraint monitor system installed"
+    else
+        warning "integrations/constraint-monitor directory not found, skipping..."
+    fi
 }
 
 # Create universal command wrappers
@@ -816,6 +827,10 @@ CODING_TOOLS_PATH=/path/to/coding/repo
 # For claude-logger MCP server
 # No specific environment variables required
 
+# For constraint-monitor system
+GROQ_API_KEY=your-groq-api-key
+OPENAI_API_KEY=your-openai-api-key
+
 # Custom paths (optional)
 # CODING_REPO=/path/to/coding/repo (legacy, now uses CODING_TOOLS_PATH)
 # MEMORY_VISUALIZER_DIR=/path/to/memory-visualizer
@@ -851,6 +866,10 @@ CLAUDE_PROJECT_PATH=$CODING_REPO
 # Knowledge Base path - where shared-memory-*.json files are located
 # Default: same directory as the coding project
 CODING_KB_PATH=$CODING_REPO
+
+# For constraint-monitor system
+GROQ_API_KEY=
+OPENAI_API_KEY=
 
 # Default knowledge views to display in VKB viewer
 KNOWLEDGE_VIEW=coding,ui
@@ -918,6 +937,12 @@ verify_installation() {
         success "Claude-logger MCP server is built"
     else
         warning "Claude-logger MCP server not built"
+    fi
+    
+    if [[ -d "$CODING_REPO/integrations/constraint-monitor" && -f "$CODING_REPO/integrations/constraint-monitor/package.json" ]]; then
+        success "Constraint monitor system installed"
+    else
+        warning "Constraint monitor system not installed"
     fi
     
     
