@@ -1,0 +1,129 @@
+@startuml constraint-monitor-components
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam roundCorner 10
+
+title Constraint Monitor Component Details
+
+package "Capture Layer" as capture {
+  component [UniversalAgentMonitor] as monitor {
+    port "Event Output" as monitor_out
+    port "Adapter Input" as monitor_in
+  }
+  
+  component [ClaudeCodeAdapter] as claude_adapter {
+    port "Transcript Input" as adapter_in
+    port "Event Output" as adapter_out
+  }
+  
+  component [EventProcessor] as processor {
+    port "Event Input" as proc_in
+    port "Analysis Output" as proc_out
+  }
+}
+
+package "Analysis Layer" as analysis {
+  component [GroqSemanticEngine] as groq {
+    port "Text Input" as groq_in
+    port "Analysis Output" as groq_out
+    note bottom : <50ms analysis\nmixtral-8x7b model
+  }
+  
+  component [ConstraintDetector] as detector {
+    port "Event Input" as det_in
+    port "Violation Output" as det_out
+    note bottom : Pattern matching +\nSemantic analysis
+  }
+}
+
+package "Storage Layer" as storage {
+  component [QdrantDatabase] as qdrant {
+    port "Vector Input" as q_in
+    port "Search Output" as q_out
+    note bottom : <3ms queries\nHNSW + quantization
+  }
+  
+  component [DuckDBAnalytics] as duckdb {
+    port "Event Input" as d_in
+    port "Metrics Output" as d_out
+    note bottom : <5ms analytics\nColumnar storage
+  }
+  
+  component [RedisCache] as redis {
+    port "Cache Input" as r_in
+    port "Cache Output" as r_out
+    note bottom : Sub-millisecond\nanalysis cache
+  }
+}
+
+package "Intervention Layer" as intervention {
+  component [LiveGuideRails] as rails {
+    port "Violation Input" as rails_in
+    port "Intervention Output" as rails_out
+  }
+  
+  component [RiskAssessor] as risk {
+    port "Event Input" as risk_in
+    port "Risk Score Output" as risk_out
+  }
+}
+
+package "API Layer" as api {
+  component [HTTPServer] as http {
+    port "Request Input" as http_in
+    port "Response Output" as http_out
+  }
+  
+  component [WebSocketServer] as ws {
+    port "Connection Input" as ws_in
+    port "Broadcast Output" as ws_out
+  }
+  
+  component [MCPServer] as mcp {
+    port "Tool Input" as mcp_in
+    port "Tool Output" as mcp_out
+  }
+}
+
+' Connections within capture layer
+adapter_out --> monitor_in
+monitor_out --> proc_in
+
+' Capture to analysis
+proc_out --> groq_in
+proc_out --> det_in
+
+' Analysis to storage  
+groq_out --> q_in : embeddings
+det_out --> d_in : violations
+groq_out --> r_in : cache results
+
+' Analysis to intervention
+det_out --> rails_in
+proc_out --> risk_in
+
+' Storage queries
+det_in <--> q_out : similarity search
+rails_in <--> d_out : metrics query
+groq_in <--> r_out : cache lookup
+
+' Intervention to API
+rails_out --> http_out
+risk_out --> ws_out
+
+' API connections
+http_in <--> mcp_out : tool calls
+ws_in <--> http_out : dashboard data
+
+' External interfaces
+cloud "File System" as fs
+cloud "Groq API" as groq_api  
+cloud "Claude Code" as cc
+
+adapter_in <-- fs : transcript files
+groq_in <-- groq_api : LLM inference
+http_in <-- cc : hooks & MCP
+ws_in <-- cc : dashboard
+
+@enduml

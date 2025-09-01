@@ -35,7 +35,16 @@
     },
     "mcp-git-ingest": {
         "command": "uvx",
-        "args": ["--from", "git+https://github.com/adhikasp/mcp-git-ingest", "mcp-git-ingest"],
+        "args": ["--from", "git+https://github.com/adhikasp/mcp-git-ingest", "mcp-git-ingest"]
+    },
+    "constraint-monitor": {
+      "command": "node",
+      "args": ["{{CODING_TOOLS_PATH}}/integrations/constraint-monitor/src/mcp/constraint-monitor-server.js"],
+      "env": {
+        "GROQ_API_KEY": "{{GROQ_API_KEY}}",
+        "ANTHROPIC_API_KEY": "{{ANTHROPIC_API_KEY}}",
+        "CODING_TOOLS_PATH": "{{CODING_TOOLS_PATH}}"
+      }
     }
   }
 }

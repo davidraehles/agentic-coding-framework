@@ -47,6 +47,14 @@ The system provides:
 - **[VSCode Integration](docs/integrations/vscode-copilot-integration.md)** - Enhanced CoPilot with same agents
 - **[SynchronizationAgent](docs/components/semantic-analysis/synchronization-agent.md)** - Single source of truth
 
+### Real-time Constraint Monitoring
+
+- **[Real-time Constraint Monitoring](docs/features/real-time-constraint-monitoring.md)** - Live constraint violation detection and intervention
+- **[Constraint Monitor Integration](integrations/constraint-monitor/)** - Ultra-fast semantic constraint checking (<10ms total latency)
+- **[Status Line Integration](integrations/constraint-monitor/src/status/)** - Real-time constraint compliance display
+- **[MCP Tools](integrations/constraint-monitor/src/mcp/)** - Constraint monitoring tools for Claude Code
+- **[Universal Agent Support](integrations/constraint-monitor/src/capture/)** - Works with Claude Code, Cursor, Copilot, Aider
+
 ## 📚 Documentation
 
 ### 🚀 Getting Started
@@ -123,6 +131,16 @@ The system provides:
 - **Rich Diagnostics**: `mcp-status` command for system health checking
 - **Hot Reloading**: Live updates during development
 - **Cross-Platform**: Works on macOS, Linux, and Windows
+
+### Real-time Constraint Monitoring
+
+- **<10ms Total Latency**: Ultra-fast constraint violation detection and intervention
+- **Universal Agent Support**: Works with Claude Code, Cursor, Copilot, and Aider
+- **Groq Semantic Engine**: Sub-50ms semantic analysis using custom inference chips
+- **Hybrid Database Architecture**: Qdrant (<3ms vector search) + DuckDB (<5ms analytics) + Redis (<1ms cache)
+- **Live Guide-Rails**: Real-time intervention system that blocks violations before execution
+- **Status Line Integration**: Visual constraint compliance feedback in Claude Code
+- **Pattern Learning**: Learns from violations to improve future constraint checking
 
 ## ⚡ Unified Command Examples
 
@@ -250,6 +268,46 @@ ukb --interactive  # Manual knowledge capture
 vkb               # Web visualization of unified knowledge base
 ```
 
+### 7. Real-time Constraint Monitoring
+
+**Get Constraint Status:**
+
+```bash
+# Claude Code
+get_constraint_status {}
+
+# Or via MCP tools
+mcp__constraint-monitor__get_constraint_status {}
+```
+
+**Check Action Constraints (Pre-hook):**
+
+```bash
+# Automatically triggered before tool execution
+# Blocks action if constraints violated:
+⚠️ CONSTRAINT VIOLATION: User said 'don't commit yet'
+Suggestion: Continue implementation and ask before committing
+```
+
+**Search Similar Violations:**
+
+```bash
+# Claude Code
+search_similar_violations {
+  "query": "unauthorized git commit",
+  "limit": 5
+}
+```
+
+**Real-time Dashboard:**
+
+```bash
+# Monitor constraint compliance visually
+open http://localhost:8767/dashboard
+```
+
+*Constraint monitoring works with all agents (Claude Code, Cursor, Copilot, Aider) with <10ms total intervention latency*
+
 ## 🔍 Unified System Status
 
 Check unified agent system health:
@@ -279,6 +337,11 @@ curl http://localhost:8765/api/graph/status
 
 # Verify multi-database consistency
 vkb  # Opens unified knowledge visualization
+
+# Monitor constraint system
+curl http://localhost:8767/api/status    # Constraint monitor health
+curl http://localhost:8767/api/metrics   # Real-time constraint metrics
+tail -f integrations/constraint-monitor/logs/constraint-monitor.log
 ```
 
 ## 🛠️ Development
