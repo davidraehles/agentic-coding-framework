@@ -1,0 +1,3 @@
+[submodule "integrations/mcp-constraint-monitor"]
+	path = integrations/mcp-constraint-monitor
+	url = git@github.com:fwornle/mcp-constraint-monitor.git
