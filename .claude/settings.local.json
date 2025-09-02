@@ -157,7 +157,8 @@
       "Read(/Users/q284340/Agentic/mcp-constraint-monitor/**)",
       "Bash(./scripts/status-line.js)",
       "Bash(./scripts/combined-status-line.js:*)",
-      "Read(/Users/q284340/**)"
+      "Read(/Users/q284340/**)",
+      "Bash(open http://localhost:3001/dashboard)"
     ],
     "deny": []
   },
