@@ -65,11 +65,20 @@ class CombinedStatusLine {
       });
       
       const constraintData = JSON.parse(result);
+      
+      // Extract actual compliance score from the text if possible
+      let actualCompliance = 8.5;
+      const complianceMatch = constraintData.text.match(/🛡️\s*(\d+\.?\d*)/);
+      if (complianceMatch) {
+        actualCompliance = parseFloat(complianceMatch[1]);
+      }
+      
       return { 
         status: 'operational', 
         text: constraintData.text,
-        compliance: 8.5,
-        violations: 0 
+        compliance: actualCompliance,
+        violations: constraintData.text.includes('⚠️') ? 1 : 0,
+        rawData: constraintData
       };
     } catch (error) {
       return { status: 'offline', compliance: 0, violations: 0, error: error.message };
@@ -100,54 +109,105 @@ class CombinedStatusLine {
   buildCombinedStatus(constraint, semantic) {
     const parts = [];
     let overallColor = 'green';
-    
-    // ANSI color codes for Claude Code status line
-    const colors = {
-      green: '\x1b[32m',
-      yellow: '\x1b[33m', 
-      red: '\x1b[31m',
-      reset: '\x1b[0m'
-    };
 
-    // Constraint Monitor Status
+    // Constraint Monitor Status - use original constraint status text to preserve trajectory
     if (constraint.status === 'operational') {
-      if (constraint.text) {
-        parts.push(constraint.text);
+      if (constraint.rawData && constraint.rawData.text) {
+        // Use the original constraint monitor text which includes trajectory
+        parts.push(constraint.rawData.text);
       } else {
-        parts.push('🛡️ 8.5');  // Added space for better rendering
+        const score = constraint.compliance.toFixed(1);
+        const violationsCount = constraint.violations || 0;
+        
+        if (violationsCount > 0) {
+          parts.push(`🛡️ ${score} ⚠️${violationsCount}`);
+          overallColor = 'yellow';
+        } else {
+          parts.push(`🛡️ ${score} 🔍EX`); // Add back trajectory
+        }
       }
     } else if (constraint.status === 'degraded') {
-      parts.push('🛡️ ⚠️');   // Added space for better rendering
+      parts.push('🛡️ ⚠️');
       overallColor = 'yellow';
     } else {
-      parts.push('🛡️ ❌');   // Added space for better rendering
+      parts.push('🛡️ ❌');
       overallColor = 'red';
     }
 
     // Semantic Analysis Status
     if (semantic.status === 'operational') {
-      parts.push('🧠 ✅');  // Added space for better rendering
+      parts.push('🧠 ✅');
     } else if (semantic.status === 'degraded') {
-      parts.push('🧠 ⚠️'); // Added space for better rendering
+      parts.push('🧠 ⚠️');
       if (overallColor === 'green') overallColor = 'yellow';
     } else {
-      parts.push('🧠 ❌'); // Added space for better rendering
+      parts.push('🧠 ❌');
       overallColor = 'red';
     }
 
     const statusText = parts.join(' ');
-    const colorCode = colors[overallColor] || colors.green;
     
+    // Since Claude Code doesn't support tooltips/clicks natively,
+    // we'll provide the text and have users run ./bin/status for details
     return {
-      text: `${colorCode}${statusText}${colors.reset}`,
-      color: overallColor
+      text: statusText,
+      color: overallColor,
+      helpCommand: './bin/status'
     };
+  }
+
+  buildCombinedTooltip(constraint, semantic) {
+    const lines = ['⚙️ System Status Dashboard'];
+    lines.push('━'.repeat(30));
+    
+    // Constraint Monitor Section
+    lines.push('🛡️  CONSTRAINT MONITOR');
+    if (constraint.status === 'operational') {
+      lines.push(`   ✅ Status: Operational`);
+      lines.push(`   📊 Compliance: ${constraint.compliance}/10.0`);
+      if (constraint.violations === 0) {
+        lines.push(`   🟢 Violations: None active`);
+      } else {
+        lines.push(`   ⚠️  Violations: ${constraint.violations} active`);
+      }
+    } else if (constraint.status === 'degraded') {
+      lines.push(`   ⚠️  Status: Degraded`);
+      lines.push(`   📊 Compliance: Checking...`);
+    } else {
+      lines.push(`   ❌ Status: Offline`);
+      lines.push(`   📊 Compliance: N/A`);
+    }
+    
+    lines.push('');
+    
+    // Semantic Analysis Section
+    lines.push('🧠 SEMANTIC ANALYSIS');
+    if (semantic.status === 'operational') {
+      lines.push(`   ✅ Status: Operational`);
+      lines.push(`   🔍 Analysis: Ready`);
+      lines.push(`   📈 Insights: Available`);
+    } else if (semantic.status === 'degraded') {
+      lines.push(`   ⚠️  Status: Degraded`);
+      lines.push(`   🔍 Analysis: Limited`);
+    } else {
+      lines.push(`   ❌ Status: Offline`);
+      lines.push(`   🔍 Analysis: Unavailable`);
+    }
+    
+    lines.push('');
+    lines.push('━'.repeat(30));
+    lines.push('🖱️  Click to open constraint dashboard');
+    lines.push('🔄 Updates every 5 seconds');
+    
+    return lines.join('\n');
   }
 
   getErrorStatus(error) {
     return {
-      text: '\x1b[31m⚠️SYS:ERR\x1b[0m',
-      color: 'red'
+      text: '⚠️SYS:ERR',
+      color: 'red',
+      tooltip: `System error: ${error.message || 'Unknown error'}`,
+      onClick: 'open-dashboard'
     };
   }
 }
@@ -165,8 +225,8 @@ async function main() {
     
     clearTimeout(timeout);
     
-    // Claude Code expects plain text output, not JSON
-    // First line of stdout becomes the status line text
+    // Claude Code status line expects plain text output
+    // Rich features like tooltips may need different configuration
     console.log(status.text);
     process.exit(0);
   } catch (error) {

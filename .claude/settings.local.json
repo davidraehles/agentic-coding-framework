@@ -163,7 +163,7 @@
     "deny": []
   },
   "statusLine": {
-    "type": "command",
+    "type": "command", 
     "command": "node ./scripts/combined-status-line.js"
   }
 }
