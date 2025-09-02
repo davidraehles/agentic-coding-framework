@@ -154,7 +154,10 @@
       "Bash(git add:*)",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Read(/Users/q284340/Agentic/mcp-constraint-monitor/**)"
+      "Read(/Users/q284340/Agentic/mcp-constraint-monitor/**)",
+      "Bash(./scripts/status-line.js)",
+      "Bash(./scripts/combined-status-line.js:*)",
+      "Read(/Users/q284340/**)"
     ],
     "deny": []
   },
