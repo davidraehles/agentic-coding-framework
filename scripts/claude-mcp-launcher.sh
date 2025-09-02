@@ -93,8 +93,9 @@ if [[ -x "$VALIDATION_SCRIPT" ]]; then
     echo -e "${GREEN}✅ MCP services validated successfully${NC}"
 fi
 
-# Set up post-session conversation logging
-POST_SESSION_LOGGER="$CODING_REPO_DIR/scripts/simple-post-session-logger.js"
+# Set up enhanced post-session conversation logging
+POST_SESSION_LOGGER="$CODING_REPO_DIR/scripts/enhanced-post-session-logger.js"
+FALLBACK_LOGGER="$CODING_REPO_DIR/scripts/simple-post-session-logger.js"
 if [[ -f "$POST_SESSION_LOGGER" ]]; then
     
     # Set up trap to trigger post-session logging on exit
@@ -126,11 +127,16 @@ if [[ -f "$POST_SESSION_LOGGER" ]]; then
         
         echo -e "${GREEN}✅ MCP services shutdown complete${NC}"
         
-        # Run post-session logging with multi-topic splitting
+        # Run enhanced post-session logging with fallback
         if [[ -f "$POST_SESSION_LOGGER" ]]; then
             echo ""  # Add spacing before post-session messages
-            echo -e "${BLUE}📝 Running post-session logger...${NC}"
-            MULTI_TOPIC_LOGGING=true node "$POST_SESSION_LOGGER" "$(pwd)" "$CODING_REPO_DIR" || echo -e "${YELLOW}⚠️  Post-session logging encountered an issue${NC}"
+            echo -e "${BLUE}📝 Running enhanced post-session logger...${NC}"
+            if ! MULTI_TOPIC_LOGGING=true node "$POST_SESSION_LOGGER" "$(pwd)" "$CODING_REPO_DIR" 2>/dev/null; then
+                echo -e "${YELLOW}⚠️  Enhanced logger failed, falling back to simple logger${NC}"
+                if [[ -f "$FALLBACK_LOGGER" ]]; then
+                    MULTI_TOPIC_LOGGING=true node "$FALLBACK_LOGGER" "$(pwd)" "$CODING_REPO_DIR" || echo -e "${RED}❌ Both loggers failed${NC}"
+                fi
+            fi
         fi
     }
     # Register trap for multiple signals to ensure it runs

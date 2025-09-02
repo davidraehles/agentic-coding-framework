@@ -159,7 +159,8 @@
       "Bash(./scripts/combined-status-line.js:*)",
       "Read(/Users/q284340/**)",
       "Bash(open http://localhost:3001/dashboard)",
-      "Bash(./bin/log-session:*)"
+      "Bash(./bin/log-session:*)",
+      "Bash(./scripts/generate-plantuml-pngs.sh:*)"
     ],
     "deny": []
   },

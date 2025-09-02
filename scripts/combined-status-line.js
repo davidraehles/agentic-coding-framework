@@ -10,6 +10,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { getGlobalCoordinator } from './live-logging-coordinator.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -33,12 +34,34 @@ class CombinedStatusLine {
       
       const status = this.buildCombinedStatus(constraintStatus, semanticStatus);
       
+      // Capture this status generation as a tool interaction for live logging
+      await this.captureStatusGeneration(status);
+      
       this.statusCache = status;
       this.lastUpdate = now;
       
       return status;
     } catch (error) {
       return this.getErrorStatus(error);
+    }
+  }
+
+  async captureStatusGeneration(status) {
+    try {
+      const coordinator = await getGlobalCoordinator();
+      await coordinator.captureManualInteraction(
+        'StatusLine',
+        { type: 'status_generation', services: ['constraint-monitor', 'semantic-analysis'] },
+        status,
+        { 
+          timestamp: Date.now(), 
+          source: 'statusLine',
+          workingDirectory: process.cwd()
+        }
+      );
+    } catch (error) {
+      // Silent fail - logging is optional
+      console.debug('Status generation capture failed:', error.message);
     }
   }
 
