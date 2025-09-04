@@ -11,6 +11,7 @@ FORCE_AGENT=""
 ARGS=()
 VERBOSE=false
 CONFIG_FILE=""
+PROJECT_DIR=""
 
 # Helper functions
 log() {
@@ -37,6 +38,7 @@ OPTIONS:
   --copilot          Force CoPilot (same as --agent copilot)
   --copilot-stop     Stop all CoPilot fallback services
   --config FILE      Use specific config file
+  --project DIR      Set target project directory (default: current dir)
   --verbose          Enable verbose logging
   --help             Show this help
 
@@ -45,6 +47,7 @@ EXAMPLES:
   coding-agent --copilot          # Force CoPilot
   coding-agent --copilot-stop     # Stop CoPilot services
   coding-agent --claude           # Force Claude Code
+  coding-agent --project /path/to/project  # Work in specific project
   coding-agent suggest "add tests" # Pass command to agent
 
 AGENTS:
@@ -78,6 +81,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --config)
       CONFIG_FILE="$2"
+      shift 2
+      ;;
+    --project)
+      PROJECT_DIR="$2"
       shift 2
       ;;
     --verbose)
@@ -127,9 +134,34 @@ case "$AGENT" in
     ;;
 esac
 
+# Capture the directory where coding was invoked from (before any cd operations)
+INVOKED_FROM_DIR="$(pwd)"
+CODING_REPO_PATH="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Validate and set project directory
+if [ -n "$PROJECT_DIR" ]; then
+  # Explicit project directory was specified with --project
+  if [ ! -d "$PROJECT_DIR" ]; then
+    error "Project directory does not exist: $PROJECT_DIR"
+  fi
+  PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"  # Get absolute path
+  log "Using explicit project directory: $PROJECT_DIR"
+else
+  # No explicit project specified, use the directory where coding was invoked
+  PROJECT_DIR="$INVOKED_FROM_DIR"
+  
+  # Check if we're in the coding repo itself
+  if [ "$PROJECT_DIR" = "$CODING_REPO_PATH" ]; then
+    log "Working in coding repository itself"
+  else
+    log "Working in project: $(basename "$PROJECT_DIR") (from: $PROJECT_DIR)"
+  fi
+fi
+
 # Set environment variables
 export CODING_AGENT="$AGENT"
 export CODING_TOOLS_PATH="$SCRIPT_DIR/.."
+export CODING_PROJECT_DIR="$PROJECT_DIR"
 
 # Launch appropriate agent
 case "$AGENT" in

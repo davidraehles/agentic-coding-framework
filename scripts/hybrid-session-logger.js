@@ -388,8 +388,9 @@ ${sessionInfo.classification === 'coding-related' ?
 
   // Static utility method for integration
   static async createFromCurrentContext() {
-    const projectPath = process.cwd();
-    const codingRepo = projectPath.includes('/coding') ? projectPath : '/Users/q284340/Agentic/coding';
+    // Use environment variables set by the coding launcher if available
+    const projectPath = process.env.CODING_TARGET_PROJECT || process.cwd();
+    const codingRepo = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
     
     return new HybridSessionLogger({
       projectPath,
