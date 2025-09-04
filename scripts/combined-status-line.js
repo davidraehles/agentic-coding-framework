@@ -87,26 +87,52 @@ class CombinedStatusLine {
 
   async getCurrentLiveLogTarget() {
     try {
-      // 1. Check for today's most recent live session files first
+      // 1. Check for today's most recent live session files in BOTH coding and current project
       const today = new Date().toISOString().split('T')[0];
-      const historyDir = join(rootDir, '.specstory/history');
       
-      if (existsSync(historyDir)) {
-        const files = fs.readdirSync(historyDir)
-          .filter(f => f.includes(today) && (f.includes('-session.md') || f.includes('live-transcript') || f.includes('live-session')))
-          .map(f => {
-            const filePath = join(historyDir, f);
-            const stats = fs.statSync(filePath);
-            return { file: f, mtime: stats.mtime };
-          })
-          .sort((a, b) => b.mtime - a.mtime); // Most recent first by modification time
+      // Check both coding repo and current working directory
+      const checkDirs = [
+        join(rootDir, '.specstory/history'),           // Coding repo
+        join(process.cwd(), '.specstory/history')      // Current project
+      ];
+      
+      let allFiles = [];
+      
+      for (const historyDir of checkDirs) {
+        if (existsSync(historyDir)) {
+          const files = fs.readdirSync(historyDir)
+            .filter(f => f.includes(today) && (f.includes('-session.md') || f.includes('live-transcript') || f.includes('live-session')))
+            .map(f => {
+              const filePath = join(historyDir, f);
+              const stats = fs.statSync(filePath);
+              return { file: f, mtime: stats.mtime, location: historyDir };
+            });
+          allFiles = allFiles.concat(files);
+        }
+      }
+      
+      // Sort all files by modification time (most recent first)
+      // For files with same timestamp, prefer later session times
+      allFiles.sort((a, b) => {
+        const timeDiff = b.mtime - a.mtime;
+        if (timeDiff !== 0) return timeDiff;
         
-        if (files.length > 0) {
-          const mostRecent = files[0].file;
+        // Same timestamp - extract session times for secondary sort
+        const aTimeMatch = a.file.match(/(\d{4})-(\d{4})-session/);
+        const bTimeMatch = b.file.match(/(\d{4})-(\d{4})-session/);
+        
+        if (aTimeMatch && bTimeMatch) {
+          const aEndTime = parseInt(aTimeMatch[2]);
+          const bEndTime = parseInt(bTimeMatch[2]);
+          return bEndTime - aEndTime; // Prefer later session end time
+        }
+        
+        return 0;
+      });
+        
+        if (allFiles.length > 0) {
+          const mostRecent = allFiles[0].file;
           
-          if (process.env.DEBUG_STATUS) {
-            console.error(`Most recent live file: ${mostRecent}`);
-          }
           
           // Show appropriate filename format based on type
           if (mostRecent.includes('-session.md')) {
@@ -115,6 +141,7 @@ class CombinedStatusLine {
             if (timeMatch) {
               const timeRange = timeMatch[1];
               const remainingMinutes = this.calculateTimeRemaining(timeRange);
+              
               
               // Add color coding based on time remaining
               let sessionDisplay = `${timeRange}-session`;
@@ -136,7 +163,6 @@ class CombinedStatusLine {
           // Fallback: show full filename
           return mostRecent.replace('.md', '');
         }
-      }
       
       // 2. Check current transcript to predict target filename
       const os = await import('os');

@@ -219,7 +219,14 @@ class TranscriptMonitor {
 
     for (const message of messages) {
       if (message.type === 'user' && message.message?.role === 'user') {
-        // Start new exchange with user message
+        // Skip tool result messages - these are not actual user prompts
+        if (Array.isArray(message.message.content) && 
+            message.message.content.length > 0 && 
+            message.message.content[0].type === 'tool_result') {
+          continue; // Skip tool result messages
+        }
+        
+        // Start new exchange with actual user message
         if (currentExchange) {
           exchanges.push(currentExchange);
         }
@@ -273,17 +280,50 @@ class TranscriptMonitor {
   }
 
   /**
-   * Extract text content from message content array
+   * Extract text content from message content (string, array, or mixed)
    */
   extractTextContent(content) {
+    // Direct string content (common for user messages)
     if (typeof content === 'string') {
       return content;
-    } else if (Array.isArray(content)) {
-      return content
-        .filter(item => item.type === 'text')
+    } 
+    
+    // Array content (mixed text and tool results)
+    if (Array.isArray(content)) {
+      const parts = [];
+      
+      // Extract text items
+      const textItems = content
+        .filter(item => item && item.type === 'text')
         .map(item => item.text)
-        .join('\n');
+        .filter(text => text && text.trim()); // Remove empty/null text
+        
+      if (textItems.length > 0) {
+        parts.push(...textItems);
+      }
+      
+      // Handle image items
+      const imageItems = content
+        .filter(item => item && item.type === 'image');
+        
+      if (imageItems.length > 0) {
+        parts.push(`[Image message: ${imageItems.length} image${imageItems.length > 1 ? 's' : ''}]`);
+      }
+      
+      // If we have content, return it
+      if (parts.length > 0) {
+        return parts.join('\n');
+      }
+      
+      // Fallback: check for tool results (but these are usually Claude responses, not user prompts)
+      const toolResults = content
+        .filter(item => item && item.type === 'tool_result' && item.content)
+        .map(item => item.content)
+        .filter(content => content && typeof content === 'string' && content.trim());
+        
+      return toolResults.join('\n');
     }
+    
     return '';
   }
 
@@ -422,6 +462,7 @@ class TranscriptMonitor {
    */
   async getRoutedSessionFile(exchange, toolCall) {
     const shouldRouteToCoding = await this.shouldRouteToCodingRepo(exchange, toolCall);
+    const exchangeTime = new Date(exchange.timestamp);
     
     if (shouldRouteToCoding) {
       // Route to coding repo
@@ -430,7 +471,7 @@ class TranscriptMonitor {
       
       // Temporarily switch to coding repo path
       this.config.projectPath = codingRepo;
-      const sessionFile = await this.getCurrentSessionFile();
+      const sessionFile = await this.getCurrentSessionFile(exchangeTime);
       
       // Restore original path
       this.config.projectPath = originalProjectPath;
@@ -439,8 +480,8 @@ class TranscriptMonitor {
       return sessionFile;
     }
     
-    // Use default project path
-    return await this.getCurrentSessionFile();
+    // Use default project path with exchange timestamp
+    return await this.getCurrentSessionFile(exchangeTime);
   }
 
   /**
@@ -456,7 +497,7 @@ class TranscriptMonitor {
     
     const content = `### ${toolCall.name} - ${exchangeTime}
 
-**User Request:** ${exchange.userMessage?.slice(0, 150) || 'No context'}${exchange.userMessage?.length > 150 ? '...' : ''}
+**User Request:** ${exchange.userMessage || 'No context'}
 
 **Tool:** ${toolCall.name}  
 **Input:** \`\`\`json
@@ -482,11 +523,12 @@ ${result?.content ? `**Output:** \`\`\`\n${typeof result.content === 'string' ? 
 
   /**
    * Get current session file path (create new session if needed)
+   * @param {Date} exchangeTime - Optional exchange timestamp, defaults to current time
    */
-  async getCurrentSessionFile() {
-    const now = new Date();
+  async getCurrentSessionFile(exchangeTime = null) {
+    const now = exchangeTime || new Date();
     
-    // Calculate current time tranche
+    // Calculate time tranche for the given timestamp
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const totalMinutes = hours * 60 + minutes;
