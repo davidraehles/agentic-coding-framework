@@ -425,7 +425,7 @@ class TranscriptMonitor {
 
   /**
    * Determine if content should be routed to coding repo
-   * ONLY route if actually modifying files in the coding project
+   * Route if interacting with coding files, running coding tools, or discussing coding concepts
    */
   async shouldRouteToCodingRepo(exchange, toolCall) {
     // Always use local repo if we're already in the coding repo
@@ -433,8 +433,8 @@ class TranscriptMonitor {
       return false;
     }
 
-    // Only route if we're actually modifying files in the coding repo
     const toolInputStr = JSON.stringify(toolCall.input || {});
+    const userMessage = exchange.userMessage || '';
     const codingPathPatterns = [
       '/Users/q284340/Agentic/coding/',
       'coding/scripts/',
@@ -444,13 +444,87 @@ class TranscriptMonitor {
       'coding/integrations/'
     ];
 
-    // Check if tool is modifying/creating files in coding repo
+    // 1. File modification/creation in coding repo (original logic)
     if (toolCall.name === 'Edit' || toolCall.name === 'Write' || toolCall.name === 'MultiEdit') {
       const filePath = toolCall.input?.file_path || '';
       for (const pattern of codingPathPatterns) {
         if (filePath.includes(pattern)) {
           return true;
         }
+      }
+    }
+
+    // 2. File reading from coding repo
+    if (toolCall.name === 'Read') {
+      const filePath = toolCall.input?.file_path || '';
+      for (const pattern of codingPathPatterns) {
+        if (filePath.includes(pattern)) {
+          return true;
+        }
+      }
+    }
+
+    // 3. Bash commands affecting coding repo files
+    if (toolCall.name === 'Bash') {
+      const command = toolCall.input?.command || '';
+      
+      // Copy/move operations with coding paths
+      if ((command.includes('cp ') || command.includes('mv ') || command.includes('rm ')) && 
+          codingPathPatterns.some(pattern => command.includes(pattern))) {
+        return true;
+      }
+      
+      // Directory operations in coding repo
+      if ((command.includes('ls ') || command.includes('find ') || command.includes('mkdir ')) &&
+          codingPathPatterns.some(pattern => command.includes(pattern))) {
+        return true;
+      }
+    }
+
+    // 4. Grep/search operations in coding repo
+    if (toolCall.name === 'Grep' || toolCall.name === 'Glob') {
+      const path = toolCall.input?.path || '';
+      for (const pattern of codingPathPatterns) {
+        if (path.includes(pattern)) {
+          return true;
+        }
+      }
+    }
+
+    // 5. MCP tools that are located in coding/integrations
+    if (toolCall.name.startsWith('mcp__')) {
+      // Check if this MCP server exists in coding/integrations
+      const fs = require('fs');
+      const path = require('path');
+      const integrationsDir = '/Users/q284340/Agentic/coding/integrations';
+      
+      try {
+        const dirs = fs.readdirSync(integrationsDir);
+        // Extract the MCP server name from the tool call (e.g., mcp__semantic-analysis__tool -> semantic-analysis)
+        const mcpServerName = toolCall.name.split('__')[1];
+        
+        // Check if any directory in integrations contains this MCP server name
+        for (const dir of dirs) {
+          if (dir.includes(mcpServerName) || mcpServerName.includes(dir.replace('mcp-server-', '').replace('mcp-', ''))) {
+            return true;
+          }
+        }
+      } catch (error) {
+        // If we can't read the directory, don't route to coding
+        return false;
+      }
+    }
+
+    // 6. User message explicitly mentions coding tool paths
+    const codingToolPaths = [
+      'coding/bin/coding',
+      'coding/scripts/transcript-monitor',
+      '/Users/q284340/Agentic/coding'
+    ];
+    
+    for (const toolPath of codingToolPaths) {
+      if (userMessage.includes(toolPath)) {
+        return true;
       }
     }
 
