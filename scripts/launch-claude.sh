@@ -11,6 +11,64 @@ log() {
   echo "[Claude] $1"
 }
 
+ensure_statusline_config() {
+  local target_project="$1"
+  local coding_repo="$2"
+  local claude_dir="$target_project/.claude"
+  local settings_file="$claude_dir/settings.local.json"
+  
+  # Skip if we're in the coding repo itself (already has config)
+  if [ "$target_project" = "$coding_repo" ]; then
+    return 0
+  fi
+  
+  # Create .claude directory if it doesn't exist
+  if [ ! -d "$claude_dir" ]; then
+    mkdir -p "$claude_dir"
+    log "Created .claude directory in project"
+  fi
+  
+  # Check if settings file exists
+  if [ ! -f "$settings_file" ]; then
+    # Create minimal settings file with statusLine config
+    cat > "$settings_file" << EOF
+{
+  "permissions": {
+    "allow": [
+      "CODING_REPO=$coding_repo node $coding_repo/scripts/combined-status-line.js"
+    ],
+    "additionalDirectories": []
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "CODING_REPO=$coding_repo node $coding_repo/scripts/combined-status-line.js"
+  }
+}
+EOF
+    log "Created .claude/settings.local.json with statusLine config"
+  else
+    # Check if statusLine is missing and add it
+    if ! grep -q '"statusLine"' "$settings_file" 2>/dev/null; then
+      # Use jq to add statusLine config if jq is available
+      if command -v jq >/dev/null 2>&1; then
+        local temp_file=$(mktemp)
+        jq ". + {\"statusLine\": {\"type\": \"command\", \"command\": \"CODING_REPO=$coding_repo node $coding_repo/scripts/combined-status-line.js\"}}" "$settings_file" > "$temp_file"
+        mv "$temp_file" "$settings_file"
+        log "Added statusLine config to existing settings"
+      else
+        # Fallback: add statusLine before the closing brace
+        sed -i.backup 's/}$/,\n  "statusLine": {\n    "type": "command",\n    "command": "CODING_REPO='"$coding_repo"' node '"$coding_repo"'\/scripts\/combined-status-line.js"\n  }\n}/' "$settings_file"
+        log "Added statusLine config to existing settings (fallback method)"
+      fi
+    fi
+    
+    # Ensure the permission is present
+    if ! grep -q "CODING_REPO.*combined-status-line.js" "$settings_file" 2>/dev/null; then
+      log "Warning: statusLine permission may need to be added manually to .claude/settings.local.json"
+    fi
+  fi
+}
+
 # Use target project directory if specified, otherwise use coding repo
 if [ -n "$CODING_PROJECT_DIR" ]; then
   TARGET_PROJECT_DIR="$CODING_PROJECT_DIR"
@@ -20,6 +78,9 @@ else
   TARGET_PROJECT_DIR="$CODING_REPO"
   log "Working in coding repository: $TARGET_PROJECT_DIR"
 fi
+
+# Ensure statusLine config is present in target project
+ensure_statusline_config "$TARGET_PROJECT_DIR" "$CODING_REPO"
 
 show_session_reminder() {
   # Check target project directory first
