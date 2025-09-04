@@ -1,6 +1,7 @@
 {
   "statusLine": {
-    "toolInteractionHook": "{{CODING_TOOLS_PATH}}/.mcp-sync/tool-interaction-hook.js"
+    "toolInteractionHook": "{{CODING_TOOLS_PATH}}/.mcp-sync/tool-interaction-hook.cjs",
+    "postSessionHook": "{{CODING_TOOLS_PATH}}/scripts/post-session-logger.js"
   },
   "mcpServers": {
     "memory": {

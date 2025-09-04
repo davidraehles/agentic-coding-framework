@@ -166,12 +166,13 @@
       "Read(/Users/q284340/.claude/**)",
       "Bash(git log:*)",
       "mcp__mcp-git-ingest__git_directory_structure",
-      "mcp__mcp-git-ingest__git_read_important_files"
+      "mcp__mcp-git-ingest__git_read_important_files",
+      "Read(/tmp/**)"
     ],
     "deny": []
   },
   "statusLine": {
     "type": "command",
-    "command": "node ./scripts/live-logging-status.js"
+    "command": "node ./scripts/combined-status-line.js"
   }
 }
