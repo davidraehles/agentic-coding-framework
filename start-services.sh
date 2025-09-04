@@ -225,12 +225,30 @@ else
     CONSTRAINT_MONITOR_WARNING="Docker not running - no learning/persistence"
 fi
 
-# Start Live Logging Coordinator
-echo "🟢 Starting Live Logging Coordinator..."
+# Start Live Logging System (with proper transcript monitoring)
+echo "🟢 Starting Live Logging System..."
 cd "$CODING_DIR"
+
+# Kill any existing transcript monitor or live-logging processes
+echo "🧹 Stopping existing live-logging processes..."
+pkill -f "transcript-monitor.js" 2>/dev/null || true
+pkill -f "start-live-logging.js" 2>/dev/null || true
+sleep 2
+
+# Start the transcript monitor (this handles session transitions)
+echo "📋 Starting Transcript Monitor with session transitions..."
+nohup node scripts/transcript-monitor.js > transcript-monitor.log 2>&1 &
+TRANSCRIPT_PID=$!
+echo "   Transcript Monitor PID: $TRANSCRIPT_PID"
+
+# Start the live-logging coordinator (this handles MCP integration) 
+echo "🔄 Starting Live Logging Coordinator..."
 nohup node scripts/start-live-logging.js > live-logging.log 2>&1 &
 LIVE_LOGGING_PID=$!
-echo "   PID: $LIVE_LOGGING_PID"
+echo "   Live Logging Coordinator PID: $LIVE_LOGGING_PID"
+
+# Log startup
+echo "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ") - Live Logging System started: Transcript Monitor PID $TRANSCRIPT_PID, Coordinator PID $LIVE_LOGGING_PID" >> live-logging.log
 
 # Start VKB Server
 echo "🟢 Starting VKB Server (port 8080)..."
@@ -254,9 +272,16 @@ sleep 5
 echo "🔍 Verifying services..."
 services_running=0
 
-# Check Live Logging Coordinator
+# Check Live Logging System
+if ps -p $TRANSCRIPT_PID > /dev/null 2>&1; then
+    echo "✅ Transcript Monitor running (PID: $TRANSCRIPT_PID)"
+    services_running=$((services_running + 1))
+else
+    echo "❌ Transcript Monitor NOT running"
+fi
+
 if ps -p $LIVE_LOGGING_PID > /dev/null 2>&1; then
-    echo "✅ Live Logging Coordinator running (PID: $LIVE_LOGGING_PID)"
+    echo "✅ Live Logging Coordinator running (PID: $LIVE_LOGGING_PID)"  
     services_running=$((services_running + 1))
 else
     echo "❌ Live Logging Coordinator NOT running"
@@ -304,6 +329,7 @@ cat > .services-running.json << EOF
     "redis": 6379
   },
   "pids": {
+    "transcript-monitor": $TRANSCRIPT_PID,
     "live-logging": $LIVE_LOGGING_PID,
     "vkb-server": $VKB_PID,
     "semantic-analysis": "$SEMANTIC_PID"
@@ -322,10 +348,10 @@ echo "════════════════════════�
 echo "📊 SERVICES STATUS SUMMARY"
 echo "═══════════════════════════════════════════════════════════════════════"
 echo ""
-if [ $services_running -ge 3 ]; then
-    echo "✅ Core services started successfully! ($services_running/3 running)"
+if [ $services_running -ge 4 ]; then
+    echo "✅ Core services started successfully! ($services_running/4 running)"
 else
-    echo "⚠️  Some core services not running ($services_running/3). Check logs for issues."
+    echo "⚠️  Some core services not running ($services_running/4). Check logs for issues."
 fi
 echo ""
 echo "🛡️ CONSTRAINT MONITOR: $CONSTRAINT_MONITOR_STATUS"

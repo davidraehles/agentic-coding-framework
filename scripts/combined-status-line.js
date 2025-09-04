@@ -6,20 +6,36 @@
  * Shows status of both live guardrails and semantic analysis services
  */
 
-import { readFileSync, existsSync } from 'fs';
+import fs, { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
-import { getGlobalCoordinator } from './live-logging-coordinator.js';
+// Removed live-logging-coordinator import to prevent console output
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 
+// Load configuration
+let config = {};
+try {
+  const configPath = join(rootDir, 'config', 'live-logging-config.json');
+  if (existsSync(configPath)) {
+    config = JSON.parse(readFileSync(configPath, 'utf8'));
+  }
+} catch (error) {
+  console.error('Warning: Could not load configuration, using defaults');
+}
+
 class CombinedStatusLine {
   constructor() {
-    this.cacheTimeout = 5000; // 5 second cache
+    this.cacheTimeout = config.status_line?.cache_timeout || 5000;
+    this.apiCheckInterval = config.status_line?.api_check_interval || 30000;
     this.lastUpdate = 0;
+    this.lastApiCheck = 0;
     this.statusCache = null;
+    this.apiCache = null;
+    this.currentSessionId = null;
+    this.config = config;
   }
 
   async generateStatus() {
@@ -31,11 +47,9 @@ class CombinedStatusLine {
 
       const constraintStatus = await this.getConstraintStatus();
       const semanticStatus = await this.getSemanticStatus();
+      const liveLogTarget = await this.getCurrentLiveLogTarget();
       
-      const status = await this.buildCombinedStatus(constraintStatus, semanticStatus);
-      
-      // Capture this status generation as a tool interaction for live logging
-      await this.captureStatusGeneration(status);
+      const status = await this.buildCombinedStatus(constraintStatus, semanticStatus, liveLogTarget);
       
       this.statusCache = status;
       this.lastUpdate = now;
@@ -46,22 +60,126 @@ class CombinedStatusLine {
     }
   }
 
-  async captureStatusGeneration(status) {
+  calculateTimeRemaining(sessionTimeRange) {
+    if (!sessionTimeRange) return null;
+    
+    const match = sessionTimeRange.match(/(\d{2})(\d{2})-(\d{2})(\d{2})/);
+    if (!match) return null;
+    
+    const [, startHour, startMin, endHour, endMin] = match;
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    
+    // Calculate end time for today
+    const endTime = new Date();
+    endTime.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
+    
+    // Calculate remaining minutes
+    const currentTime = new Date();
+    currentTime.setHours(currentHour, currentMin, 0, 0);
+    
+    const remainingMs = endTime.getTime() - currentTime.getTime();
+    const remainingMinutes = Math.floor(remainingMs / (1000 * 60));
+    
+    return remainingMinutes;
+  }
+
+  async getCurrentLiveLogTarget() {
     try {
-      const coordinator = await getGlobalCoordinator();
-      await coordinator.captureManualInteraction(
-        'StatusLine',
-        { type: 'status_generation', services: ['constraint-monitor', 'semantic-analysis'] },
-        status,
-        { 
-          timestamp: Date.now(), 
-          source: 'statusLine',
-          workingDirectory: process.cwd()
+      // 1. Check for today's most recent live session files first
+      const today = new Date().toISOString().split('T')[0];
+      const historyDir = join(rootDir, '.specstory/history');
+      
+      if (existsSync(historyDir)) {
+        const files = fs.readdirSync(historyDir)
+          .filter(f => f.includes(today) && (f.includes('-session.md') || f.includes('live-transcript') || f.includes('live-session')))
+          .map(f => {
+            const filePath = join(historyDir, f);
+            const stats = fs.statSync(filePath);
+            return { file: f, mtime: stats.mtime };
+          })
+          .sort((a, b) => b.mtime - a.mtime); // Most recent first by modification time
+        
+        if (files.length > 0) {
+          const mostRecent = files[0].file;
+          
+          if (process.env.DEBUG_STATUS) {
+            console.error(`Most recent live file: ${mostRecent}`);
+          }
+          
+          // Show appropriate filename format based on type
+          if (mostRecent.includes('-session.md')) {
+            // For session files, show time range: 1030-1130-session
+            const timeMatch = mostRecent.match(/(\d{4}-\d{4})-session/);
+            if (timeMatch) {
+              const timeRange = timeMatch[1];
+              const remainingMinutes = this.calculateTimeRemaining(timeRange);
+              
+              // Add color coding based on time remaining
+              let sessionDisplay = `${timeRange}-session`;
+              if (remainingMinutes !== null && remainingMinutes <= 5 && remainingMinutes > 0) {
+                // Orange warning for last 5 minutes with time display
+                sessionDisplay = `🟠${timeRange}-session(${remainingMinutes}min)`;
+              } else if (remainingMinutes !== null && remainingMinutes <= 0) {
+                // Red if past session end
+                sessionDisplay = `🔴${timeRange}-session(ended)`;
+              }
+              
+              return sessionDisplay;
+            }
+            return mostRecent.replace('.md', '');
+          } else if (mostRecent.includes('live-transcript') || mostRecent.includes('live-session')) {
+            return mostRecent.replace('.md', '');
+          }
+          
+          // Fallback: show full filename
+          return mostRecent.replace('.md', '');
         }
-      );
+      }
+      
+      // 2. Check current transcript to predict target filename
+      const os = await import('os');
+      const homeDir = os.homedir();
+      const transcriptDir = join(homeDir, '.claude', 'projects', '-Users-q284340-Agentic-coding');
+      
+      if (existsSync(transcriptDir)) {
+        const files = fs.readdirSync(transcriptDir)
+          .filter(file => file.endsWith('.jsonl'))
+          .map(file => {
+            const filePath = join(transcriptDir, file);
+            const stats = fs.statSync(filePath);
+            return { file, mtime: stats.mtime, size: stats.size };
+          })
+          .sort((a, b) => b.mtime - a.mtime);
+        
+        if (files.length > 0) {
+          const mostRecent = files[0];
+          const timeDiff = Date.now() - mostRecent.mtime.getTime();
+          
+          if (timeDiff < 600000) { // 10 minutes = active session
+            // Show what the target live log filename would be
+            const uuid = mostRecent.file.replace('.jsonl', '');
+            const shortUuid = uuid.substring(0, 8);
+            const now = new Date();
+            const time = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            if (process.env.DEBUG_STATUS) {
+              console.error(`Active transcript: ${mostRecent.file}, target: ${time}_${shortUuid}_live-session.md`);
+            }
+            
+            return `${time}_${shortUuid}`;
+          }
+        }
+      }
+      
+      // 3. Generate expected target filename based on current time
+      const now = new Date();
+      const timeId = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      return timeId + '_TBD';
+      
     } catch (error) {
-      // Silent fail - logging is optional
-      console.debug('Status generation capture failed:', error.message);
+      return '----';
     }
   }
 
@@ -131,26 +249,112 @@ class CombinedStatusLine {
 
   async getAPIUsageEstimate() {
     try {
-      // Check XAI/Grok API usage (since we have XAI key, not Groq)
-      let apiUsage = { percentage: 'unknown', tokensUsed: 0 };
+      // Check if we have cached API data that's still valid
+      const now = Date.now();
+      if (this.apiCache && (now - this.lastApiCheck) < this.apiCheckInterval) {
+        return this.apiCache;
+      }
+
+      // Get API key from configured environment variables
+      const apiKeyVars = this.config.api_key_env_vars || ['GROQ_API_KEY', 'GROK_API_KEY', 'XAI_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY'];
+      let apiKey = null;
+      let provider = null;
+
+      for (const envVar of apiKeyVars) {
+        const key = process.env[envVar];
+        if (key) {
+          apiKey = key;
+          if (key.startsWith('xai-')) {
+            provider = 'xai';
+          } else if (key.startsWith('sk-') && envVar.includes('OPENAI')) {
+            provider = 'openai';
+          } else if (key.startsWith('sk-ant-') || envVar.includes('ANTHROPIC')) {
+            provider = 'anthropic';
+          }
+          break;
+        }
+      }
+
+      let apiUsage = { percentage: 'unknown', tokensUsed: 0, remainingCredits: 'unknown', model: provider || 'unknown' };
       
       // Try to get actual usage if possible
-      try {
-        const response = await fetch('https://api.x.ai/v1/usage', {
-          headers: { 'Authorization': `Bearer ${process.env.GROK_API_KEY}` },
-          timeout: 2000
-        }).catch(() => null);
+      if (apiKey && provider) {
+        const providerConfig = this.config.semantic_analysis?.models?.[provider];
+        const usageEndpoint = this.config.credit_checking?.endpoints?.[provider];
         
-        if (response?.ok) {
-          const data = await response.json();
-          apiUsage = {
-            percentage: data.usage_percentage || 'unknown',
-            tokensUsed: data.tokens_used || 0,
-            limit: data.token_limit || 10000
-          };
+        if (usageEndpoint && providerConfig) {
+          try {
+            const timeout = this.config.semantic_analysis?.timeout || 10000;
+            const response = await fetch(`${providerConfig.base_url}${usageEndpoint}`, {
+              headers: { 'Authorization': `Bearer ${apiKey}` },
+              timeout: Math.min(timeout, 5000) // Cap at 5s for status checks
+            }).catch(() => null);
+            
+            if (response?.ok) {
+              const data = await response.json();
+              
+              if (provider === 'xai') {
+                // XAI API returns actual dollar amounts
+                const totalCredits = data.credit_limit || providerConfig.default_limit || 20.00;
+                const usedCredits = data.total_usage || 0;
+                const remainingCredits = Math.max(0, totalCredits - usedCredits);
+                const remainingPercentage = Math.round((remainingCredits / totalCredits) * 100);
+                
+                apiUsage = {
+                  percentage: Math.round((usedCredits / totalCredits) * 100),
+                  tokensUsed: data.tokens_used || 0,
+                  limit: totalCredits,
+                  remainingCredits: remainingPercentage,
+                  usedCredits,
+                  model: provider
+                };
+              } else if (provider === 'anthropic') {
+                // Anthropic usage API structure
+                apiUsage = {
+                  percentage: data.usage_percentage || 'unknown',
+                  tokensUsed: data.total_tokens || 0,
+                  remainingCredits: data.remaining_balance_percentage || 'unknown',
+                  model: provider
+                };
+              }
+              
+              if (process.env.DEBUG_STATUS) {
+                console.error(`${provider.toUpperCase()} API response:`, JSON.stringify(data, null, 2));
+              }
+            }
+          } catch (error) {
+            if (process.env.DEBUG_STATUS) {
+              console.error(`${provider.toUpperCase()} API error: ${error.message}`);
+            }
+          }
         }
-      } catch (error) {
-        // Fall back to session-based estimation
+        
+        // Provider-specific fallback estimates
+        if (apiUsage.percentage === 'unknown') {
+          const fallbackConfig = this.config.semantic_analysis?.fallback_credits || {};
+          
+          if (provider === 'xai') {
+            // Conservative estimate for XAI users based on user feedback
+            apiUsage = {
+              percentage: 5, // Low usage estimate
+              tokensUsed: 0,
+              remainingCredits: fallbackConfig.conservative_estimate || 90,
+              model: provider
+            };
+          } else if (provider === 'openai' || provider === 'anthropic') {
+            // More conservative for other providers since no usage API
+            apiUsage = {
+              percentage: 25, // Moderate usage estimate
+              tokensUsed: 0,
+              remainingCredits: fallbackConfig.unknown_default || 75,
+              model: provider
+            };
+          }
+        }
+        
+        // Cache the result
+        this.apiCache = apiUsage;
+        this.lastApiCheck = now;
       }
       
       // If we can't get real usage, estimate from session activity
@@ -158,15 +362,17 @@ class CombinedStatusLine {
         const today = new Date().toISOString().split('T')[0];
         const historyDir = join(rootDir, '.specstory/history');
         
+        
         if (existsSync(historyDir)) {
-          const files = require('fs').readdirSync(historyDir);
+          const files = fs.readdirSync(historyDir);
           const todayFiles = files.filter(f => f.includes(today) && f.endsWith('.md'));
+          
           
           // More accurate estimation based on file content
           let totalContent = 0;
           todayFiles.slice(-5).forEach(file => {
             try {
-              const content = require('fs').readFileSync(join(historyDir, file), 'utf8');
+              const content = fs.readFileSync(join(historyDir, file), 'utf8');
               totalContent += content.length;
             } catch (e) {}
           });
@@ -174,13 +380,17 @@ class CombinedStatusLine {
           // Rough token estimation: ~4 chars per token
           const estimatedTokens = Math.floor(totalContent / 4);
           const dailyLimit = 5000; // Conservative estimate for free tier
-          const percentage = Math.min(100, (estimatedTokens / dailyLimit) * 100);
+          const usedPercentage = Math.min(100, (estimatedTokens / dailyLimit) * 100);
+          const remainingPercentage = Math.max(0, 100 - usedPercentage);
           
           apiUsage = {
-            percentage: Math.round(percentage),
+            percentage: Math.round(usedPercentage),
             tokensUsed: estimatedTokens,
-            limit: dailyLimit
+            limit: dailyLimit,
+            remainingCredits: Math.round(remainingPercentage),
+            model: 'grok'
           };
+          
         }
       }
       
@@ -190,7 +400,7 @@ class CombinedStatusLine {
     }
   }
 
-  async buildCombinedStatus(constraint, semantic) {
+  async buildCombinedStatus(constraint, semantic, liveLogTarget) {
     const parts = [];
     let overallColor = 'green';
 
@@ -218,23 +428,24 @@ class CombinedStatusLine {
       overallColor = 'red';
     }
 
-    // Semantic Analysis Status with API monitoring
+    // Semantic Analysis Status with API credit monitoring
     if (semantic.status === 'operational') {
-      // Add API credit monitoring
       const apiUsage = await this.getAPIUsageEstimate();
       
-      if (apiUsage.percentage !== 'unknown') {
-        const usage = typeof apiUsage.percentage === 'number' ? apiUsage.percentage : 0;
-        if (usage > 90) {
-          parts.push(`🧠 ❌${usage}%`); // Critical - very high usage
+      if (apiUsage.remainingCredits !== 'unknown') {
+        const remaining = typeof apiUsage.remainingCredits === 'number' ? apiUsage.remainingCredits : 100;
+        const thresholds = this.config.status_line?.display?.credit_thresholds || { critical: 10, warning: 20, moderate: 80 };
+        
+        if (remaining < thresholds.critical) {
+          parts.push(`🧠 ❌${remaining}%`); // Critical - very low credits
           overallColor = 'red';
-        } else if (usage > 80) {
-          parts.push(`🧠 ⚠️${usage}%`); // Warning - high usage
+        } else if (remaining < thresholds.warning) {
+          parts.push(`🧠 ⚠️${remaining}%`); // Warning - low credits
           if (overallColor === 'green') overallColor = 'yellow';
-        } else if (usage > 50) {
-          parts.push(`🧠 ✅${usage}%`); // Show percentage when significant
+        } else if (remaining < thresholds.moderate) {
+          parts.push(`🧠 ✅${remaining}%`); // Show percentage when moderate
         } else {
-          parts.push('🧠 ✅'); // Low usage - clean display
+          parts.push('🧠 ✅'); // High credits - clean display
         }
       } else {
         parts.push('🧠 ✅'); // Unknown usage - assume OK
@@ -247,6 +458,11 @@ class CombinedStatusLine {
       overallColor = 'red';
     }
 
+    // Add live log target filename inline at the end
+    if (liveLogTarget && liveLogTarget !== '----') {
+      parts.push(`📋${liveLogTarget}`);
+    }
+    
     const statusText = parts.join(' ');
     
     // Since Claude Code doesn't support tooltips/clicks natively,

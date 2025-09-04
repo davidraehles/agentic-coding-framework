@@ -1,20 +1,31 @@
 #!/usr/bin/env node
 
 /**
- * Grok Analyzer for Live Logging
- * Fast AI analysis of tool interactions using Grok
+ * Semantic Analyzer for Live Logging
+ * AI analysis of tool interactions using configurable LLM providers (XAI/Grok, etc.)
  */
 
-import Groq from 'groq-sdk'; // Note: Using for XAI/Grok API compatibility
+// Semantic analysis with multiple provider support - direct HTTP approach
 
-export class GrokAnalyzer {
-  constructor(apiKey, model = 'llama-3.1-8b-instant') {
+export class SemanticAnalyzer {
+  constructor(apiKey, model = null) {
     if (!apiKey) {
-      throw new Error('GROK_API_KEY is required');
+      throw new Error('Semantic API key is required');
     }
     
-    this.client = new Groq({ apiKey });
-    this.model = model;
+    // Detect API type based on key prefix
+    if (apiKey.startsWith('xai-')) {
+      this.apiType = 'xai';
+      this.baseURL = 'https://api.x.ai/v1';
+      // Use the correct XAI model name - try common ones
+      this.model = model || 'grok-2-1212';
+    } else {
+      this.apiType = 'openai';
+      this.baseURL = 'https://api.openai.com/v1';
+      this.model = model || 'gpt-4o-mini';
+    }
+    
+    this.apiKey = apiKey;
     this.timeout = 10000; // 10 second timeout
   }
 
@@ -25,7 +36,7 @@ export class GrokAnalyzer {
     try {
       const prompt = this.buildAnalysisPrompt(interaction, context);
       
-      const response = await this.client.chat.completions.create({
+      const requestBody = {
         messages: [
           {
             role: 'system',
@@ -38,11 +49,26 @@ export class GrokAnalyzer {
         ],
         model: this.model,
         temperature: 0.7,
-        max_tokens: 200,
-        timeout: this.timeout
+        max_tokens: 200
+      };
+
+      const response = await fetch(`${this.baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(this.timeout)
       });
 
-      const content = response.choices[0]?.message?.content?.trim();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`${response.status} ${JSON.stringify(errorData)}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content?.trim();
       if (!content) {
         return { insight: 'Analysis completed', category: 'info' };
       }

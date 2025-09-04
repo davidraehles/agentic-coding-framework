@@ -167,7 +167,13 @@
       "Bash(git log:*)",
       "mcp__mcp-git-ingest__git_directory_structure",
       "mcp__mcp-git-ingest__git_read_important_files",
-      "Read(/tmp/**)"
+      "Read(/tmp/**)",
+      "Bash(DEBUG_STATUS=1 node scripts/combined-status-line.js)",
+      "Bash(DEBUG_STATUS=1 node /Users/q284340/Agentic/coding/scripts/combined-status-line.js)",
+      "Read(/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/**)",
+      "Read(/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/**)",
+      "Bash(TRANSCRIPT_DEBUG=true node scripts/transcript-monitor.js --test)",
+      "WebSearch"
     ],
     "deny": []
   },

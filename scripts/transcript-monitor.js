@@ -9,26 +9,53 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { GrokAnalyzer } from '../src/live-logging/GroqAnalyzer.js';
+import { SemanticAnalyzer } from '../src/live-logging/SemanticAnalyzer.js';
+
+// Load configuration
+let globalConfig = {};
+try {
+  const configPath = path.join(process.cwd(), 'config', 'live-logging-config.json');
+  if (fs.existsSync(configPath)) {
+    globalConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  }
+} catch (error) {
+  console.error('Warning: Could not load configuration, using defaults');
+}
 
 class TranscriptMonitor {
   constructor(config = {}) {
+    // Merge global configuration with local overrides
+    const apiKeyVars = globalConfig.api_key_env_vars || ['GROQ_API_KEY', 'GROK_API_KEY', 'XAI_API_KEY'];
+    let apiKey = null;
+    for (const envVar of apiKeyVars) {
+      if (process.env[envVar]) {
+        apiKey = process.env[envVar];
+        break;
+      }
+    }
+
     this.config = {
-      grokApiKey: config.grokApiKey || process.env.GROK_API_KEY,
-      checkInterval: config.checkInterval || 5000, // Check every 5 seconds
+      semanticApiKey: config.semanticApiKey || apiKey,
+      checkInterval: config.checkInterval || globalConfig.live_logging?.transcript_monitoring?.polling_interval || 5000,
       maxProcessBatch: config.maxProcessBatch || 10,
       projectPath: config.projectPath || process.cwd(),
       debug: config.debug || process.env.TRANSCRIPT_DEBUG === 'true',
+      sessionDuration: globalConfig.live_logging?.session_duration || 3600000, // 60 minutes
       ...config
     };
+    
+    this.globalConfig = globalConfig;
 
     this.transcriptPath = this.findCurrentTranscript();
     this.lastProcessedUuid = null;
     this.lastFileSize = 0;
     this.isProcessing = false;
+    this.currentSessionFile = null;
+    this.sessionStartTime = null;
+    this.sessionDuration = this.config.sessionDuration;
     
-    // Initialize Grok analyzer if API key available
-    this.grok = this.config.grokApiKey ? new GrokAnalyzer(this.config.grokApiKey) : null;
+    // Initialize semantic analyzer if API key available
+    this.semanticAnalyzer = this.config.semanticApiKey ? new SemanticAnalyzer(this.config.semanticApiKey) : null;
     
     // Secret redaction patterns
     this.secretPatterns = [
@@ -79,7 +106,7 @@ class TranscriptMonitor {
       const mostRecent = files[0];
       const timeDiff = Date.now() - mostRecent.mtime.getTime();
       
-      if (timeDiff < 3600000) { // 1 hour
+      if (timeDiff < this.config.sessionDuration) { // Configurable session duration
         this.debug(`Using transcript: ${mostRecent.path}`);
         return mostRecent.path;
       }
@@ -326,9 +353,9 @@ class TranscriptMonitor {
           // Find corresponding result
           const result = exchange.toolResults.find(r => r.tool_use_id === toolCall.id);
           
-          // Analyze with Grok if available
+          // Analyze with semantic analyzer if available
           let analysis = null;
-          if (this.grok && !result?.is_error) {
+          if (this.semanticAnalyzer && !result?.is_error) {
             const interaction = {
               toolName: toolCall.name,
               toolInput: toolCall.input,
@@ -341,7 +368,7 @@ class TranscriptMonitor {
               previousActions: []
             };
 
-            analysis = await this.grok.analyzeToolInteraction(interaction, context);
+            analysis = await this.semanticAnalyzer.analyzeToolInteraction(interaction, context);
           }
 
           // Generate log entry
@@ -360,39 +387,14 @@ class TranscriptMonitor {
    * Log exchange to session file
    */
   async logExchange(exchange, toolCall, result, analysis) {
-    const sessionDir = path.join(this.config.projectPath, '.specstory', 'history');
-    if (!fs.existsSync(sessionDir)) {
-      fs.mkdirSync(sessionDir, { recursive: true });
-    }
-
-    const now = new Date();
-    const timestamp = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
-    const filename = `${timestamp}_live-transcript.md`;
-    const filepath = path.join(sessionDir, filename);
-
-    let content = '';
-    if (fs.existsSync(filepath)) {
-      content = fs.readFileSync(filepath, 'utf-8');
-    } else {
-      content = `# Live Transcript Session
-
-**Started:** ${now.toISOString()}  
-**Source:** Claude Code Transcript Monitor  
-**Project:** ${path.basename(this.config.projectPath)}  
-
----
-
-## Exchanges
-
-`;
-    }
-
+    const sessionFile = this.getCurrentSessionFile();
+    
     // Generate exchange entry
     const exchangeTime = new Date(exchange.timestamp).toISOString();
     const toolSuccess = result && !result.is_error;
     const analysisInsight = analysis?.insight || 'No analysis available';
     
-    content += `### ${toolCall.name} - ${exchangeTime}
+    const content = `### ${toolCall.name} - ${exchangeTime}
 
 **User Request:** ${exchange.userMessage?.slice(0, 150) || 'No context'}${exchange.userMessage?.length > 150 ? '...' : ''}
 
@@ -410,8 +412,69 @@ ${result?.content ? `**Output:** \`\`\`\n${typeof result.content === 'string' ? 
 
 `;
 
-    fs.writeFileSync(filepath, content);
-    this.debug(`Logged exchange to: ${filename}`);
+    // Append to current 60-minute session file
+    fs.appendFileSync(sessionFile, content);
+    
+    const sessionFileName = path.basename(sessionFile);
+    console.log(`[TranscriptMonitor] ${exchangeTime} Logged exchange to: ${sessionFileName}`);
+    this.debug(`Logged exchange to: ${sessionFileName}`);
+  }
+
+  /**
+   * Get current session file path (create new session if needed)
+   */
+  getCurrentSessionFile() {
+    const now = new Date();
+    
+    // Calculate current time tranche
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const totalMinutes = hours * 60 + minutes;
+    const trancheStart = Math.floor((totalMinutes + 30) / 60) * 60 - 30;
+    const trancheEnd = trancheStart + 60;
+    const startHour = Math.floor(trancheStart / 60);
+    const startMin = trancheStart % 60;
+    const endHour = Math.floor(trancheEnd / 60);
+    const endMin = trancheEnd % 60;
+    const formatTime = (h, m) => `${h.toString().padStart(2, '0')}${m.toString().padStart(2, '0')}`;
+    const currentTranche = `${formatTime(startHour, startMin)}-${formatTime(endHour, endMin)}`;
+    
+    // Check if we need a new session (no current session or different tranche)
+    const needNewSession = !this.currentSessionFile || 
+                           !this.currentSessionFile.includes(currentTranche);
+    
+    if (needNewSession) {
+      
+      // Create new session using calculated tranche
+      const date = now.toISOString().split('T')[0];
+      const sessionFileName = `${date}_${currentTranche}-session.md`;
+      
+      this.currentSessionFile = path.join(this.config.projectPath, '.specstory', 'history', sessionFileName);
+      this.sessionStartTime = now;
+      
+      // Create session header if file doesn't exist
+      if (!fs.existsSync(this.currentSessionFile)) {
+        const sessionHeader = `# WORK SESSION (${currentTranche})\n\n` +
+          `**Generated:** ${now.toISOString()}\n` +
+          `**Work Period:** ${currentTranche}\n` +
+          `**Focus:** Live session logging\n` +
+          `**Duration:** ~60 minutes\n\n` +
+          `---\n\n## Session Overview\n\n` +
+          `This session captures real-time tool interactions and exchanges.\n\n` +
+          `---\n\n## Key Activities\n\n`;
+        
+        // Ensure directory exists
+        const dir = path.dirname(this.currentSessionFile);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        
+        fs.writeFileSync(this.currentSessionFile, sessionHeader);
+        console.log(`📝 Started new 60-minute session: ${path.basename(this.currentSessionFile)}`);
+      }
+    }
+    
+    return this.currentSessionFile;
   }
 
   /**
@@ -426,7 +489,7 @@ ${result?.content ? `**Output:** \`\`\`\n${typeof result.content === 'string' ? 
     console.log(`🚀 Starting transcript monitor for: ${path.basename(this.transcriptPath)}`);
     console.log(`📁 Logging to: ${this.config.projectPath}/.specstory/history/`);
     console.log(`🔍 Check interval: ${this.config.checkInterval}ms`);
-    console.log(`🧠 Semantic analysis: ${this.grok ? '✅ Enabled' : '❌ Disabled (no GROK_API_KEY)'}`);
+    console.log(`🧠 Semantic analysis: ${this.semanticAnalyzer ? '✅ Enabled' : '❌ Disabled (no API key)'}`);
 
     this.intervalId = setInterval(async () => {
       if (this.isProcessing) {
@@ -493,7 +556,7 @@ ${result?.content ? `**Output:** \`\`\`\n${typeof result.content === 'string' ? 
       lastProcessedUuid: this.lastProcessedUuid,
       lastFileSize: this.lastFileSize,
       isProcessing: this.isProcessing,
-      hasGrokAnalyzer: !!this.grok,
+      hasSemanticAnalyzer: !!this.semanticAnalyzer,
       projectPath: this.config.projectPath
     };
   }

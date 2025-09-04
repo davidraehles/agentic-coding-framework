@@ -39,6 +39,22 @@ class PostSessionLogger {
 
       console.log(`🔍 Capturing conversation for session: ${sessionData.sessionId}`);
 
+      // Check if live session logs exist and are plausible
+      const liveSessionCheck = await this.checkLiveSessionPlausibility(sessionData.sessionId);
+      
+      if (liveSessionCheck.exists && liveSessionCheck.plausible) {
+        console.log('✅ Live session complete and plausible - skipping post-session logging');
+        sessionData.needsLogging = false;
+        sessionData.loggedAt = new Date().toISOString();
+        sessionData.logFile = `Live session: ${liveSessionCheck.filePath}`;
+        fs.writeFileSync(this.sessionFile, JSON.stringify(sessionData, null, 2));
+        return;
+      } else if (liveSessionCheck.exists && !liveSessionCheck.plausible) {
+        console.log('⚠️  Live session exists but incomplete - creating post-session backup');
+      } else {
+        console.log('📝 Live session missing - creating post-session backup');
+      }
+
       // Get conversation history using Claude's internal history
       // This is a workaround since we can't directly access Claude's conversation buffer
       const conversationContent = await this.extractConversationFromHistory();
@@ -162,6 +178,78 @@ class PostSessionLogger {
     }
 
     return content || null;
+  }
+
+  /**
+   * Check if live session logs exist and are plausible for the given session
+   */
+  async checkLiveSessionPlausibility(sessionId) {
+    try {
+      const historyDir = path.join(this.projectPath, '.specstory', 'history');
+      if (!fs.existsSync(historyDir)) {
+        return { exists: false, plausible: false, filePath: null };
+      }
+
+      // Look for live session files from today's session
+      const today = new Date().toISOString().split('T')[0];
+      const files = fs.readdirSync(historyDir);
+      
+      // Find files that could be from this session
+      const sessionFiles = files.filter(file => {
+        return (file.includes(today) && 
+                (file.includes('live-transcript') || 
+                 file.includes('live-session') ||
+                 file.includes('project-session') ||
+                 file.includes('coding-session'))) &&
+               file.endsWith('.md');
+      });
+
+      if (sessionFiles.length === 0) {
+        return { exists: false, plausible: false, filePath: null };
+      }
+
+      // Check the most recent session file for plausibility
+      const mostRecent = sessionFiles
+        .map(file => {
+          const filePath = path.join(historyDir, file);
+          const stats = fs.statSync(filePath);
+          return { file, path: filePath, mtime: stats.mtime };
+        })
+        .sort((a, b) => b.mtime - a.mtime)[0];
+
+      const content = fs.readFileSync(mostRecent.path, 'utf8');
+      
+      // Plausibility checks
+      const plausibilityResults = {
+        hasContent: content.length > 100,
+        hasExchanges: content.includes('Exchange') || content.includes('Tool:') || content.includes('**User:**'),
+        hasTimestamp: content.includes('2025-') && content.includes(':'),
+        isRecent: Date.now() - mostRecent.mtime.getTime() < 3600000, // Within 1 hour
+        hasToolInteractions: content.includes('```json') || content.includes('Tool:') || content.includes('Input:')
+      };
+
+      const plausibilityScore = Object.values(plausibilityResults).filter(Boolean).length;
+      const isPlausible = plausibilityScore >= 3; // At least 3 out of 5 checks pass
+
+      console.log(`🔍 Live session check: ${mostRecent.file}`);
+      console.log(`📊 Plausibility: ${plausibilityScore}/5 - ${isPlausible ? 'PLAUSIBLE' : 'INCOMPLETE'}`);
+      
+      if (process.env.DEBUG_SESSION) {
+        console.log('Debug - Plausibility details:', plausibilityResults);
+      }
+
+      return {
+        exists: true,
+        plausible: isPlausible,
+        filePath: mostRecent.file,
+        score: plausibilityScore,
+        details: plausibilityResults
+      };
+
+    } catch (error) {
+      console.warn('⚠️  Error checking live session plausibility:', error.message);
+      return { exists: false, plausible: false, filePath: null };
+    }
   }
 
   async detectCodingContent(content) {
