@@ -23,11 +23,12 @@ The Live Session Logging (LSL) System provides comprehensive real-time capture, 
 The LSL system v2.0 introduces several major improvements over the previous version:
 
 ### Key Enhancements
-- **Cross-Project Routing**: Intelligent classification routes coding content from nano-degree sessions to coding project
+
+- **Cross-Project Routing**: Intelligent classification routes coding content from the present project context to coding project
 - **Robust Project Detection**: Uses multiple detection methods (environment variables, .specstory directories, current working directory)
 - **Centralized Timezone Handling**: Single source of truth for timezone configuration and conversions
 - **Enhanced Status Line**: Real-time session monitoring with timing warnings and redirect status
-- **Semantic Trajectory Analysis**: AI-powered trajectory generation using Grok/XAI
+- **Semantic Trajectory Analysis**: AI-powered trajectory generation using a configurable semantic analysis model (default: Grok/XAI - fast, inexpensive)
 - **Real-Time Constraint Monitoring**: Proactive code quality assurance with file change detection
 
 ### System State Flow
@@ -47,6 +48,7 @@ The content routing system uses a sophisticated three-tier approach to determine
 3. **Semantic Analysis** (Fallback): AI-powered content classification when patterns are unclear
 
 ### System Flow
+
 ```
 Claude Session → Enhanced Transcript Monitor → Content Classification → LSL Files
                                            ↓
@@ -60,6 +62,7 @@ Status Line Display ← Semantic Analysis ← Trajectory Generation
 **Purpose**: Real-time monitoring with cross-project routing and robust project detection.
 
 **Key Features**:
+
 - 🔄 **Robust Project Detection**: Uses status line's proven project detection logic
 - 🌐 **Cross-Project Routing**: Routes coding content from nano-degree to coding project  
 - ⏰ **Timezone-Aware Processing**: Centralized timezone handling via `.env` configuration
@@ -68,6 +71,7 @@ Status Line Display ← Semantic Analysis ← Trajectory Generation
 - 🔐 **Secret Redaction**: Automatically redacts sensitive information
 
 **Configuration Environment Variables**:
+
 ```bash
 CODING_TARGET_PROJECT=/path/to/nano-degree    # Source project to monitor
 CODING_REPO=/path/to/coding                   # Target coding project  
@@ -79,12 +83,14 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 **Purpose**: Centralized timezone handling for consistent timestamp formatting.
 
 **Key Functions**:
+
 - `parseTimestamp(utcString)` - Convert UTC to local timezone
 - `formatTimestamp(utcString, timezone)` - Format for display (both UTC and local)
 - `getTimeWindow(timestamp)` - Determine 60-minute tranche  
 - `getTimezone()` - Load timezone from `.env` configuration
 
-**Display Format**: 
+**Display Format**:
+
 ```
 05/09/2025, 15:33 CEST (2025-09-05 13:33:47 UTC)
 ```
@@ -94,6 +100,7 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 **Purpose**: Real-time visual status with session timing warnings and redirect information.
 
 **Display Components**:
+
 ```
 🛡️ 8.5 🔍EX 🧠 ✅ 🔀→coding 📋1530-1630-session
 ```
@@ -105,6 +112,7 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 - `📋1530-1630-session` - Current session with timing warnings
 
 **Timing Warnings**:
+
 - **Normal**: `📋1530-1630-session` (>5 minutes remaining)
 - **Warning**: `📋🟠1530-1630-session(3min)` (≤5 minutes remaining)  
 - **Ended**: `📋🔴1530-1630-session(ended)` (session time passed)
@@ -114,11 +122,13 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 **Purpose**: Intelligent routing of content based on context analysis.
 
 **Classification Logic**:
+
 - **Coding Content**: File paths containing `/coding/`, Git operations, development workflows
 - **Project Content**: Content specific to the source project (nano-degree)
 - **Mixed Content**: Sessions spanning both domains
 
 **Routing Rules**:
+
 ```javascript
 // Coding content → coding project LSL files
 if (isToolOperationOnCodingFiles(exchange) || isGitOperation(exchange)) {
@@ -173,6 +183,7 @@ This enables the status line to show `🔀→coding` when content is being activ
 ### Centralized Configuration
 
 All timezone handling is centralized in `.env`:
+
 ```bash
 TIMEZONE=Europe/Berlin
 ```
@@ -213,6 +224,7 @@ All Claude transcript timestamps are in UTC and converted to local timezone for 
 ### Real-Time Project Detection
 
 The status line uses robust project detection that checks:
+
 1. `CODING_TARGET_PROJECT` environment variable
 2. Current working directory for `.specstory` folders
 3. Coding repo directory as fallback
@@ -234,8 +246,9 @@ function calculateTimeRemaining(sessionTimeRange) {
 ### Service Health Monitoring
 
 The status line monitors:
+
 - **Constraint Monitor**: Compliance scoring (`🛡️ 8.5`)
-- **Semantic Analysis**: AI service status (`🧠 ✅`) 
+- **Semantic Analysis**: AI service status (`🧠 ✅`)
 - **Live Session**: Current session status (`📋1530-1630-session`)
 - **Content Routing**: Cross-project routing (`🔀→coding`)
 
@@ -258,11 +271,13 @@ The LSL system now integrates with real-time constraint monitoring to automatica
 ### Constraint Types
 
 #### Code Quality Constraints
+
 - **no-console-log**: Prevents `console.log` usage in production code
 - **no-hardcoded-paths**: Detects hardcoded user-specific file paths
 - **function-complexity**: Warns about overly complex functions
 
 #### PlantUML-Specific Constraints  
+
 - **plantuml-note-syntax**: Enforces single-line note syntax (`note over Element : text`)
 - **plantuml-broken-skinparam**: Detects orphaned skinparam blocks
 - **plantuml-mixed-element-types**: Warns about mixing component types in sequence diagrams
@@ -284,6 +299,7 @@ graph TB
 ### Service Management
 
 #### Starting Constraint Monitoring
+
 ```bash
 # Start background monitoring
 ./scripts/start-constraint-monitoring.sh
@@ -296,10 +312,13 @@ node scripts/constraint-monitor-integration.js help
 ```
 
 #### Status Monitoring
+
 The constraint monitoring status is displayed in the combined status line:
+
 ```
 🛡️ 8.5 🔍EX 🧠 ✅ 🔀→coding 📋1730-1830
 ```
+
 Where `🛡️ 8.5` indicates the current compliance score out of 10.
 
 ## Enhanced Project Detection
@@ -330,6 +349,7 @@ function getProjectPath() {
 ### Validation Criteria
 
 Projects are validated by checking for:
+
 - `.specstory/` directory (primary indicator)
 - `CLAUDE.md` file (secondary indicator)
 - `package.json` or other project files (fallback)
@@ -531,12 +551,14 @@ node /path/to/coding/scripts/enhanced-transcript-monitor.js --test
 
 **Symptoms**: Status displays `📋1553_TBD` instead of session time
 
-**Causes**: 
+**Causes**:
+
 - Enhanced transcript monitor not running
 - Project detection failing  
 - No active transcript found
 
 **Solution**:
+
 ```bash
 # Check monitor status  
 ps aux | grep enhanced-transcript-monitor
@@ -554,11 +576,13 @@ TRANSCRIPT_DEBUG=true node scripts/enhanced-transcript-monitor.js --test
 **Symptoms**: All content goes to source project, no `*_from-nano-degree.md` files created
 
 **Causes**:
+
 - Content classification logic not triggered
 - Missing `.redirect-status` updates
 - Environment variables not set
 
 **Solution**:
+
 ```bash
 # Check redirect status
 cat .specstory/.redirect-status
@@ -576,11 +600,13 @@ node scripts/generate-proper-lsl-from-transcripts.js --project=coding
 **Symptoms**: Files created with wrong time windows, misaligned timestamps
 
 **Causes**:
+
 - Missing or incorrect `TIMEZONE` in `.env`  
 - Timezone utilities not being used
 - UTC vs local time confusion
 
 **Solution**:
+
 ```bash
 # Check timezone configuration
 grep TIMEZONE .env
@@ -597,11 +623,13 @@ console.log(formatTimestamp('2025-09-05T13:33:47.123Z'));
 **Symptoms**: No trajectory files generated, missing AI insights
 
 **Causes**:
+
 - Missing API keys
 - Network connectivity issues
 - API rate limiting
 
 **Solution**:
+
 ```bash
 # Check API keys  
 echo ${XAI_API_KEY:0:10}
@@ -650,6 +678,7 @@ cat .services-running.json
 ## Quick Start Guide
 
 ### 1. Environment Setup
+
 ```bash
 # Configure timezone in .env
 echo "TIMEZONE=Europe/Berlin" >> .env
@@ -659,6 +688,7 @@ export CODING_TARGET_PROJECT="/path/to/nano-degree"
 ```
 
 ### 2. Start Monitoring
+
 ```bash  
 # Start enhanced transcript monitor  
 node scripts/enhanced-transcript-monitor.js &
@@ -668,6 +698,7 @@ scripts/combined-status-line.js
 ```
 
 ### 3. Verify Operation
+
 ```bash
 # Check for LSL files
 ls -la .specstory/history/
@@ -680,6 +711,7 @@ ls -la .specstory/trajectory/
 ```
 
 ### 4. Monitor Activity
+
 ```bash
 # Real-time status monitoring
 watch -n 5 scripts/combined-status-line.js
