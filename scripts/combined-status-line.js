@@ -48,8 +48,9 @@ class CombinedStatusLine {
       const constraintStatus = await this.getConstraintStatus();
       const semanticStatus = await this.getSemanticStatus();
       const liveLogTarget = await this.getCurrentLiveLogTarget();
+      const redirectStatus = await this.getRedirectStatus();
       
-      const status = await this.buildCombinedStatus(constraintStatus, semanticStatus, liveLogTarget);
+      const status = await this.buildCombinedStatus(constraintStatus, semanticStatus, liveLogTarget, redirectStatus);
       
       this.statusCache = status;
       this.lastUpdate = now;
@@ -426,7 +427,34 @@ class CombinedStatusLine {
     }
   }
 
-  async buildCombinedStatus(constraint, semantic, liveLogTarget) {
+  async getRedirectStatus() {
+    try {
+      const targetProject = process.env.CODING_TARGET_PROJECT || process.cwd();
+      const redirectFile = join(targetProject, '.specstory', '.redirect-status');
+      
+      if (!existsSync(redirectFile)) {
+        return { active: false };
+      }
+      
+      const redirectInfo = JSON.parse(readFileSync(redirectFile, 'utf8'));
+      const redirectTime = new Date(redirectInfo.timestamp);
+      const now = new Date();
+      
+      // Consider redirect active if it happened within last 5 minutes
+      const isActive = (now - redirectTime) < 300000;
+      
+      return {
+        active: isActive,
+        target: redirectInfo.target,
+        tranche: redirectInfo.tranche,
+        timestamp: redirectInfo.timestamp
+      };
+    } catch (error) {
+      return { active: false };
+    }
+  }
+
+  async buildCombinedStatus(constraint, semantic, liveLogTarget, redirectStatus) {
     const parts = [];
     let overallColor = 'green';
 
@@ -482,6 +510,11 @@ class CombinedStatusLine {
     } else {
       parts.push('🧠 ❌');
       overallColor = 'red';
+    }
+
+    // Add redirect indicator if active
+    if (redirectStatus && redirectStatus.active) {
+      parts.push(`🔀→${redirectStatus.target}`);
     }
 
     // Add live log target filename inline at the end

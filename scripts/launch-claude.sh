@@ -156,32 +156,23 @@ if ! "$CODING_REPO/start-services.sh"; then
   exit 1
 fi
 
-# Start transcript monitoring for the target project
+# Simplified transcript monitoring - single process per project
 start_transcript_monitoring() {
-  local project_dir="$1"
+  local project_dir="$1" 
   local coding_repo="$2"
   
-  # Check if transcript monitor is already running for this project
-  local monitor_pid=$(ps aux | grep "transcript-monitor.js" | grep -v grep | awk '{print $2}' | head -1)
+  # Kill any existing transcript monitors to avoid conflicts
+  pkill -f "enhanced-transcript-monitor.js" 2>/dev/null || true
+  pkill -f "simplified-transcript-monitor.js" 2>/dev/null || true
+  pkill -f "transcript-monitor.js" 2>/dev/null || true
   
-  if [ -n "$monitor_pid" ]; then
-    # Check if it's monitoring the correct project by looking at the working directory
-    local monitor_cwd=$(pwdx "$monitor_pid" 2>/dev/null | cut -d: -f2 | tr -d ' ')
-    if [ "$monitor_cwd" = "$project_dir" ]; then
-      log "Transcript monitoring already active for this project (PID: $monitor_pid)"
-      return 0
-    else
-      log "Transcript monitor running for different project ($monitor_cwd), starting new one"
-    fi
-  fi
-  
-  # Start transcript monitor in background
-  log "Starting transcript monitoring for project: $(basename "$project_dir")"
+  # Start enhanced transcript monitor
+  log "Starting enhanced transcript monitoring for project: $(basename "$project_dir")"
   cd "$project_dir"
-  nohup node "$coding_repo/scripts/transcript-monitor.js" > transcript-monitor.log 2>&1 &
+  nohup node "$coding_repo/scripts/enhanced-transcript-monitor.js" > transcript-monitor.log 2>&1 &
   local new_pid=$!
   
-  # Wait briefly to ensure it started successfully
+  # Brief startup check
   sleep 1
   if kill -0 "$new_pid" 2>/dev/null; then
     log "Transcript monitoring started (PID: $new_pid)"
@@ -190,22 +181,11 @@ start_transcript_monitoring() {
   fi
 }
 
-# Start transcript monitoring for target project
+# Start simplified transcript monitoring for target project only
 if [ -d "$TARGET_PROJECT_DIR/.specstory" ] || mkdir -p "$TARGET_PROJECT_DIR/.specstory/history" 2>/dev/null; then
   start_transcript_monitoring "$TARGET_PROJECT_DIR" "$CODING_REPO"
 else
   log "Warning: Could not create .specstory directory for transcript monitoring"
-fi
-
-# ALWAYS start transcript monitoring for coding repo when working in a different project
-# This enables cross-project routing (when nano-degree operations affect coding files)
-if [ "$TARGET_PROJECT_DIR" != "$CODING_REPO" ]; then
-  log "Starting additional transcript monitoring for coding repo (cross-project routing)"
-  if [ -d "$CODING_REPO/.specstory" ] || mkdir -p "$CODING_REPO/.specstory/history" 2>/dev/null; then
-    start_transcript_monitoring "$CODING_REPO" "$CODING_REPO"
-  else
-    log "Warning: Could not create .specstory directory in coding repo"
-  fi
 fi
 
 # Show session summary for continuity
