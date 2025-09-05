@@ -12,10 +12,13 @@ import { parseTimestamp, formatTimestamp, getTimeWindow, getTimezone } from './t
 
 class EnhancedTranscriptMonitor {
   constructor(config = {}) {
+    // Initialize debug early so it can be used in getProjectPath
+    this.debug_enabled = config.debug || process.env.TRANSCRIPT_DEBUG === 'true';
+    
     this.config = {
       checkInterval: config.checkInterval || 2000, // More frequent for prompt detection
-      projectPath: config.projectPath || this.findProjectRoot(),
-      debug: config.debug || process.env.TRANSCRIPT_DEBUG === 'true',
+      projectPath: config.projectPath || this.getProjectPath(),
+      debug: this.debug_enabled,
       sessionDuration: config.sessionDuration || 7200000, // 2 hours (generous for debugging)
       timezone: config.timezone || getTimezone(), // Use central timezone config
       ...config
@@ -76,31 +79,32 @@ class EnhancedTranscriptMonitor {
   // Timezone utilities are now imported from timezone-utils.js
 
   /**
-   * Find the project root directory by looking for common indicators
+   * Use robust project path detection like status line - check both coding repo and current directory
    */
-  findProjectRoot() {
-    let currentDir = process.cwd();
+  getProjectPath() {
+    const __dirname = path.dirname(new URL(import.meta.url).pathname);
+    const rootDir = process.env.CODING_REPO || path.join(__dirname, '..');
     
-    // Walk up the directory tree looking for project indicators
-    while (currentDir !== path.dirname(currentDir)) {
-      // Check for package.json, .git, or specific coding project indicators
-      const indicators = [
-        'package.json',
-        '.git',
-        'scripts',
-        'CLAUDE.md'
-      ];
-      
-      for (const indicator of indicators) {
-        if (fs.existsSync(path.join(currentDir, indicator))) {
-          return currentDir;
-        }
+    // Check target project first (like status line does), then coding repo, then current directory
+    const checkPaths = [
+      process.env.CODING_TARGET_PROJECT, // Target project (e.g., nano-degree)
+      rootDir,                           // Coding repo 
+      process.cwd()                      // Current working directory
+    ].filter(Boolean); // Remove null/undefined values
+    
+    if (this.debug_enabled) console.error(`Checking project paths: ${JSON.stringify(checkPaths)}`);
+    
+    // Look for .specstory directory to confirm it's a valid project
+    for (const checkPath of checkPaths) {
+      const specstoryDir = path.join(checkPath, '.specstory');
+      if (fs.existsSync(specstoryDir)) {
+        if (this.debug_enabled) console.error(`Found project with .specstory at: ${checkPath}`);
+        return checkPath;
       }
-      
-      currentDir = path.dirname(currentDir);
     }
     
-    // Fallback to process.cwd() if no indicators found
+    // Fallback: prefer current directory since that's where user is working  
+    if (this.debug_enabled) console.error(`No .specstory found, using fallback: ${process.cwd()}`);
     return process.cwd();
   }
 
@@ -307,10 +311,10 @@ class EnhancedTranscriptMonitor {
     
     if (targetProject === this.config.projectPath) {
       // Local project
-      return path.join(targetProject, '.specstory', 'history', `${baseName}-trajectory.md`);
+      return path.join(targetProject, '.specstory', 'trajectory', `${baseName}-trajectory.md`);
     } else {
       // Redirected to coding project  
-      return path.join(targetProject, '.specstory', 'history', `${baseName}_coding-trajectory-from-${currentProjectName}.md`);
+      return path.join(targetProject, '.specstory', 'trajectory', `${baseName}_coding-trajectory-from-${currentProjectName}.md`);
     }
   }
 

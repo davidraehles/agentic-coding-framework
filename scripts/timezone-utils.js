@@ -112,6 +112,9 @@ export function parseTimestamp(timestamp, timezone = null) {
   };
 }
 
+// Export getTimezone as named export
+export { getTimezone };
+
 export default {
   getTimezone,
   utcToLocalTime,
