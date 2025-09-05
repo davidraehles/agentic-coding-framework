@@ -201,8 +201,16 @@ find_repo_root() {
     done
     
     # Fallback: check if we're in a subdirectory of the expected location
-    if [[ -f "/Users/q284340/Agentic/coding/shared-memory.json" ]]; then
-        echo "/Users/q284340/Agentic/coding"
+    # Use CODING_REPO or CODING_TOOLS_PATH if set, otherwise derive from script location
+    local coding_repo="${CODING_REPO:-${CODING_TOOLS_PATH}}"
+    if [[ -z "$coding_repo" ]]; then
+        # Derive from script location (this script is in knowledge-management/)
+        local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        coding_repo="$(dirname "$script_dir")"
+    fi
+    
+    if [[ -f "$coding_repo/shared-memory.json" ]]; then
+        echo "$coding_repo"
         return 0
     fi
     
@@ -212,7 +220,8 @@ find_repo_root() {
         return 0
     fi
     
-    echo "/Users/q284340/Agentic/coding"  # Default fallback
+    # Final fallback: use environment variable or current directory
+    echo "${CODING_REPO:-${CODING_TOOLS_PATH:-$PWD}}"
 }
 
 CLAUDE_REPO="$(find_repo_root)"
@@ -3120,7 +3129,7 @@ analyze_session() {
         project_name=$(git remote get-url origin 2>/dev/null | sed -E 's/.*[:/]([^/]+)\/[^/]+\.git$/\1/' || basename "$PWD")
         # Handle common cases
         case "$project_name" in
-            "q284340"|"user"|".")
+            "$(whoami)"|"user"|".")
                 project_name=$(basename "$PWD")
                 ;;
         esac

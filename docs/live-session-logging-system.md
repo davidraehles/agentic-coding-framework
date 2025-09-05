@@ -28,6 +28,23 @@ The LSL system v2.0 introduces several major improvements over the previous vers
 - **Centralized Timezone Handling**: Single source of truth for timezone configuration and conversions
 - **Enhanced Status Line**: Real-time session monitoring with timing warnings and redirect status
 - **Semantic Trajectory Analysis**: AI-powered trajectory generation using Grok/XAI
+- **Real-Time Constraint Monitoring**: Proactive code quality assurance with file change detection
+
+### System State Flow
+
+![LSL System State Chart](images/lsl-state-chart.png)
+
+The LSL system operates through several key states, from idle monitoring through active session processing, content classification, and constraint checking. The system maintains continuous background monitoring while providing real-time feedback through the status line.
+
+### Content Routing Decision Logic
+
+![Redirect Decision Flow](images/redirect-decision-flow.png)
+
+The content routing system uses a sophisticated three-tier approach to determine whether content should be redirected to the coding project:
+
+1. **Clear Coding Artifacts** (Highest Priority): Direct file path matches, code file extensions, development commands
+2. **Learned Keywords** (Medium Priority): Dynamic patterns learned from trajectory analysis and user behavior
+3. **Semantic Analysis** (Fallback): AI-powered content classification when patterns are unclear
 
 ### System Flow
 ```
@@ -151,6 +168,8 @@ This enables the status line to show `🔀→coding` when content is being activ
 
 ## Timezone & Time Window Management
 
+![Timezone & Time Window Handling](images/timezone-handling.png)
+
 ### Centralized Configuration
 
 All timezone handling is centralized in `.env`:
@@ -216,9 +235,72 @@ function calculateTimeRemaining(sessionTimeRange) {
 
 The status line monitors:
 - **Constraint Monitor**: Compliance scoring (`🛡️ 8.5`)
-- **Semantic Analysis**: AI service status (`🧠 ✅`)
+- **Semantic Analysis**: AI service status (`🧠 ✅`) 
 - **Live Session**: Current session status (`📋1530-1630-session`)
 - **Content Routing**: Cross-project routing (`🔀→coding`)
+
+## Real-Time Constraint Monitoring
+
+### Overview
+
+The LSL system now integrates with real-time constraint monitoring to automatically detect and report code violations as development occurs. This system works alongside the Enhanced Transcript Monitor to provide proactive code quality assurance.
+
+![Constraint Monitor Integration](images/constraint-monitor-integration.png)
+
+### Key Features
+
+- **File Change Detection**: Automatically monitors code edits using `chokidar`
+- **Real-Time Violation Reporting**: Immediate feedback on constraint violations
+- **PlantUML Validation**: Prevents diagram compilation errors with specialized rules
+- **Status Line Integration**: Compliance scores reflected in live status display
+- **Background Monitoring**: Non-intrusive monitoring that doesn't interrupt development flow
+
+### Constraint Types
+
+#### Code Quality Constraints
+- **no-console-log**: Prevents `console.log` usage in production code
+- **no-hardcoded-paths**: Detects hardcoded user-specific file paths
+- **function-complexity**: Warns about overly complex functions
+
+#### PlantUML-Specific Constraints  
+- **plantuml-note-syntax**: Enforces single-line note syntax (`note over Element : text`)
+- **plantuml-broken-skinparam**: Detects orphaned skinparam blocks
+- **plantuml-mixed-element-types**: Warns about mixing component types in sequence diagrams
+- **plantuml-standard-include**: Ensures `!include _standard-style.puml` is present
+
+### Integration Architecture
+
+```mermaid
+graph TB
+    A[File Changes] --> B[Chokidar Watcher]
+    B --> C[Constraint Monitor Integration]
+    C --> D[MCP Constraint Monitor]
+    C --> E[Violation Detection]
+    E --> F[Status Line Update]
+    E --> G[Developer Notification]
+    D --> H[Violation History]
+```
+
+### Service Management
+
+#### Starting Constraint Monitoring
+```bash
+# Start background monitoring
+./scripts/start-constraint-monitoring.sh
+
+# Manual scan of existing files
+node scripts/constraint-monitor-integration.js scan
+
+# Help and options
+node scripts/constraint-monitor-integration.js help
+```
+
+#### Status Monitoring
+The constraint monitoring status is displayed in the combined status line:
+```
+🛡️ 8.5 🔍EX 🧠 ✅ 🔀→coding 📋1730-1830
+```
+Where `🛡️ 8.5` indicates the current compliance score out of 10.
 
 ## Enhanced Project Detection
 

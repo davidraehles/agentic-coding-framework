@@ -1,5 +1,5 @@
 @startuml
-!theme plain
+!include _standard-style.puml
 title Cross-Project Content Routing Data Flow
 
 rectangle "Nano-Degree Project" as NanoDegree {
@@ -33,17 +33,8 @@ Classifier -> RedirectStatus : Update routing status
 
 Monitor -> TrajectoryFiles : Generate trajectories\n(semantic analysis)
 
-note over Classifier
-Classification logic:
-- File paths with /coding/
-- Tool operations on coding files  
-- Git operations
-- Development workflows
-end note
+' Classification logic: File paths with /coding/, Tool operations on coding files, Git operations, Development workflows
 
-note over RedirectStatus
-Redirect Status:
-timestamp, tranche, target
-end note
+' Redirect Status: timestamp, tranche, target
 
 @enduml

@@ -1,10 +1,6 @@
 @startuml installation-flow
 !include _standard-style.puml
 
-    Color black
-    FontColor black
-}
-
 title Installation Flow - Network Detection & Repository Selection
 
 start

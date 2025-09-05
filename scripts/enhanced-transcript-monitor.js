@@ -247,19 +247,179 @@ class EnhancedTranscriptMonitor {
     const combinedStr = (exchange.userMessage + exchange.claudeResponse + 
       JSON.stringify(exchange.toolCalls) + JSON.stringify(exchange.toolResults)).toLowerCase();
 
-    const codingIndicators = [
-      '/users/q284340/agentic/coding/',
+    // EXTENSIVE DEBUG LOGGING
+    console.log(`\n🔍 CODING DETECTION DEBUG for exchange:`);
+    console.log(`User: "${exchange.userMessage?.slice(0, 100)}..."`);
+    console.log(`Tools: ${exchange.toolCalls?.map(t => t.name).join(', ') || 'none'}`);
+    console.log(`Combined string (first 200 chars): "${combinedStr.slice(0, 200)}..."`);
+
+    // 1. CRYSTAL CLEAR CODING ARTIFACTS - Highest Priority
+    const codingToolsPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || process.cwd();
+    const clearCodingIndicators = [
+      // Direct paths to coding project
+      codingToolsPath.toLowerCase(),
       'coding/scripts/',
       'coding/bin/',
       'coding/src/',
       'coding/.specstory/',
       'coding/integrations/',
-      'transcript-monitor',
-      'launch-claude',
-      'simplified-transcript'
+      // Specific coding files/tools
+      'enhanced-transcript-monitor',
+      'trajectory-keyword-extractor',
+      'combined-status-line',
+      'constraint-monitor',
+      'semantic-analysis',
+      // File extensions and code patterns
+      '.js', '.py', '.sh', '.json', '.puml',
+      'plantuml', 'bash', 'node', 'npm', 'git',
+      // Code-specific tool calls
+      'read.*coding/', 'edit.*coding/', 'write.*coding/',
+      // System maintenance
+      'transcript-monitor', 'launch-claude', 'simplified-transcript'
     ];
 
-    return codingIndicators.some(indicator => combinedStr.includes(indicator));
+    const foundCodingIndicators = clearCodingIndicators.filter(indicator => combinedStr.includes(indicator));
+    console.log(`🎯 Clear coding indicators found: [${foundCodingIndicators.join(', ')}]`);
+
+    // If we're clearly working with coding artifacts, it's coding-related
+    if (foundCodingIndicators.length > 0) {
+      console.log(`✅ CODING DETECTED via clear artifacts/paths`);
+      this.debug(`Coding detected via clear artifacts/paths: ${foundCodingIndicators.join(', ')}`);
+      return true;
+    }
+
+    // 2. CRYSTAL CLEAR NON-CODING ARTIFACTS
+    const clearNonCodingIndicators = [
+      'nano-degree/',
+      'course content',
+      'course material',
+      'learning module',
+      'curriculum',
+      'student',
+      'assignment'
+    ];
+
+    const foundNonCodingIndicators = clearNonCodingIndicators.filter(indicator => combinedStr.includes(indicator));
+    console.log(`🚫 Clear non-coding indicators found: [${foundNonCodingIndicators.join(', ')}]`);
+
+    // If we're clearly working with non-coding artifacts, it's not coding-related
+    if (foundNonCodingIndicators.length > 0) {
+      console.log(`❌ NON-CODING DETECTED via clear artifacts`);
+      this.debug(`Non-coding detected via clear artifacts: ${foundNonCodingIndicators.join(', ')}`);
+      return false;
+    }
+
+    // 3. WHEN AMBIGUOUS - Try learned keywords first
+    console.log(`🤔 Artifacts ambiguous, checking learned keywords...`);
+    this.debug(`Artifacts ambiguous, checking learned keywords...`);
+    
+    const learnedKeywords = this.loadLearnedKeywords();
+    const codingKeywords = learnedKeywords.proCodingKeywords || [];
+    const contraCodingKeywords = learnedKeywords.contraCodingKeywords || [];
+
+    const proCodingMatches = codingKeywords.filter(keyword => combinedStr.includes(keyword));
+    const contraCodingMatches = contraCodingKeywords.filter(keyword => combinedStr.includes(keyword));
+    
+    console.log(`📊 Keyword analysis:`);
+    console.log(`  Pro-coding matches (${proCodingMatches.length}): [${proCodingMatches.join(', ')}]`);
+    console.log(`  Contra-coding matches (${contraCodingMatches.length}): [${contraCodingMatches.join(', ')}]`);
+    
+    // Strong keyword signals
+    if (proCodingMatches.length >= 3 && proCodingMatches.length > contraCodingMatches.length * 2) {
+      console.log(`✅ CODING DETECTED via keywords`);
+      this.debug(`Coding detected via keywords: pro=${proCodingMatches.length} > contra=${contraCodingMatches.length}*2`);
+      return true;
+    }
+
+    // 4. FINAL FALLBACK - Semantic analysis of the prompt itself
+    if (proCodingMatches.length === 0 && contraCodingMatches.length === 0) {
+      console.log(`🔍 Keywords inconclusive, running semantic analysis...`);
+      this.debug(`Keywords inconclusive, running semantic analysis...`);
+      const semanticResult = this.semanticCodingAnalysis(exchange);
+      console.log(`🧠 Semantic analysis result: ${semanticResult ? 'CODING' : 'NON-CODING'}`);
+      return semanticResult;
+    }
+
+    console.log(`❌ DEFAULTING TO NON-CODING: artifacts unclear, keywords insufficient`);
+    this.debug(`Defaulting to non-coding: artifacts unclear, keywords insufficient`);
+    return false;
+  }
+  
+  /**
+   * Semantic analysis of the prompt to determine coding intent
+   */
+  async semanticCodingAnalysis(exchange) {
+    try {
+      this.debug(`Running semantic analysis on: "${exchange.userMessage.slice(0, 100)}..."`);
+      
+      // Build context from recent exchanges
+      const recentContext = this.currentUserPromptSet.slice(-3)
+        .map(ex => ex.userMessage).join(' ');
+      
+      // Fallback to simple heuristics
+      return this.fallbackSemanticAnalysis(exchange, recentContext);
+      
+    } catch (error) {
+      this.debug('Semantic analysis failed:', error.message);
+      return false; // Default to non-coding on error
+    }
+  }
+
+  /**
+   * Fallback semantic analysis using simple heuristics
+   */
+  fallbackSemanticAnalysis(exchange, context) {
+    const combined = (exchange.userMessage + ' ' + context).toLowerCase();
+    
+    // Strong coding intent signals
+    const codingSignals = [
+      /\b(fix|debug|implement|create|build|develop|code|script)\b/g,
+      /\b(error|bug|issue|problem|failure|broken)\b/g,
+      /\b(function|method|class|variable|file|directory)\b/g,
+      /\b(install|configure|setup|deploy|run|execute)\b/g,
+      /\b(database|api|server|system|application)\b/g,
+      /\b(test|testing|build|compilation)\b/g
+    ];
+
+    // Strong non-coding signals
+    const nonCodingSignals = [
+      /\b(explain|understand|learn|study|read|review)\b/g,
+      /\b(course|lesson|module|chapter|curriculum)\b/g,
+      /\b(student|teacher|education|learning)\b/g,
+      /\b(question|clarify|help me understand)\b/g
+    ];
+
+    const codingMatches = codingSignals.reduce((count, pattern) => 
+      count + (combined.match(pattern) || []).length, 0);
+    const nonCodingMatches = nonCodingSignals.reduce((count, pattern) => 
+      count + (combined.match(pattern) || []).length, 0);
+
+    this.debug(`Semantic heuristics: coding=${codingMatches}, non-coding=${nonCodingMatches}`);
+    return codingMatches > nonCodingMatches && codingMatches >= 2;
+  }
+
+  /**
+   * Load learned keywords from trajectory analysis
+   */
+  loadLearnedKeywords() {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      // Load from the current project's .specstory directory
+      const configPath = path.join(this.config.projectPath, '.specstory/trajectory-keywords.json');
+      
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        this.debug(`Loaded ${config.proCodingKeywords?.length || 0} pro-coding keywords from ${configPath}`);
+        return config;
+      } else {
+        this.debug(`No learned keywords found at ${configPath}`);
+      }
+    } catch (error) {
+      this.debug(`Error loading learned keywords: ${error.message}`);
+    }
+    
+    return { proCodingKeywords: [], contraCodingKeywords: [] };
   }
 
   /**

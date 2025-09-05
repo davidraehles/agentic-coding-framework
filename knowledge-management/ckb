@@ -14,8 +14,12 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-KNOWLEDGE_BASE="${SHARED_MEMORY_PATH:-/Users/q284340/Agentic/coding/shared-memory.json}"
-INSIGHTS_DIR="/Users/q284340/Agentic/coding/knowledge-management/insights"
+# Determine script directory dynamically
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODING_ROOT="$(dirname "$SCRIPT_DIR")"
+
+KNOWLEDGE_BASE="${SHARED_MEMORY_PATH:-$CODING_ROOT/shared-memory.json}"
+INSIGHTS_DIR="$CODING_ROOT/knowledge-management/insights"
 TEMP_DIR="/tmp/ckb-$$"
 mkdir -p "$TEMP_DIR"
 

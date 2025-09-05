@@ -1,7 +1,10 @@
 #!/bin/bash
 # Activate Agent-Agnostic Coding Tools environment
-export CODING_REPO="/Users/q284340/Agentic/coding"
-export PATH="/Users/q284340/Agentic/coding/bin:$PATH"
+# Dynamically determine the coding repo path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export CODING_REPO="$SCRIPT_DIR"
+export CODING_TOOLS_PATH="$SCRIPT_DIR"  # For compatibility
+export PATH="$SCRIPT_DIR/bin:$PATH"
 echo "✅ Agent-Agnostic Coding Tools environment activated!"
 echo "Commands 'ukb', 'vkb', and 'coding' are now available."
 echo ""

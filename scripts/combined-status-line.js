@@ -10,7 +10,7 @@ import fs, { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
-// Removed live-logging-coordinator import to prevent console output
+import { getTimeWindow } from './timezone-utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = process.env.CODING_REPO || join(__dirname, '..');
@@ -88,87 +88,102 @@ class CombinedStatusLine {
 
   async getCurrentLiveLogTarget() {
     try {
-      // 1. Check for today's most recent live session files in BOTH coding and current project
-      const today = new Date().toISOString().split('T')[0];
+      // 1. Calculate current time tranche using the same timezone utilities as LSL
+      const now = new Date();
+      const currentTranche = getTimeWindow(now); // This handles timezone conversion properly
       
-      // Check both coding repo and current working directory
+      if (process.env.DEBUG_STATUS) {
+        console.error(`DEBUG: Current time: ${now.getHours()}:${now.getMinutes()}`);
+        console.error(`DEBUG: Current tranche calculated: ${currentTranche}`);
+      }
+      
+      // 2. Look for current tranche session files in BOTH coding and target project
+      const today = new Date().toISOString().split('T')[0];
+      const targetProject = process.env.CODING_TARGET_PROJECT || process.cwd();
       const checkDirs = [
         join(rootDir, '.specstory/history'),           // Coding repo
-        join(process.cwd(), '.specstory/history')      // Current project
+        join(targetProject, '.specstory/history')      // Target project
       ];
       
-      let allFiles = [];
+      // Look specifically for current tranche session files
+      for (const historyDir of checkDirs) {
+        if (existsSync(historyDir)) {
+          if (process.env.DEBUG_STATUS) {
+            console.error(`DEBUG: Checking directory: ${historyDir}`);
+            const allFiles = fs.readdirSync(historyDir);
+            console.error(`DEBUG: All files in ${historyDir}:`, allFiles.filter(f => f.includes(today)));
+          }
+          
+          const currentTrancheFiles = fs.readdirSync(historyDir)
+            .filter(f => f.includes(today) && f.includes(currentTranche) && f.includes('session') && f.endsWith('.md'));
+          
+          if (process.env.DEBUG_STATUS) {
+            console.error(`DEBUG: Looking for files with: ${today} AND ${currentTranche} AND session.md`);
+            console.error(`DEBUG: Found current tranche files:`, currentTrancheFiles);
+          }
+          
+          if (currentTrancheFiles.length > 0) {
+            // Found current tranche session file - calculate time remaining
+            const remainingMinutes = this.calculateTimeRemaining(currentTranche);
+            
+            if (process.env.DEBUG_STATUS) {
+              console.error(`DEBUG: Found current tranche file, remaining minutes: ${remainingMinutes}`);
+            }
+            
+            if (remainingMinutes !== null && remainingMinutes <= 5 && remainingMinutes > 0) {
+              return `🟠${currentTranche}-session(${remainingMinutes}min)`;
+            } else if (remainingMinutes !== null && remainingMinutes <= 0) {
+              return `🔴${currentTranche}-session(ended)`;
+            } else {
+              return `${currentTranche}-session`;
+            }
+          }
+        }
+      }
       
+      // 3. If no current tranche file found, look for most recent session files as fallback
+      let allFiles = [];
       for (const historyDir of checkDirs) {
         if (existsSync(historyDir)) {
           const files = fs.readdirSync(historyDir)
-            .filter(f => f.includes(today) && (f.includes('-session.md') || f.includes('live-transcript') || f.includes('live-session')))
+            .filter(f => f.includes(today) && f.includes('-session.md'))
             .map(f => {
               const filePath = join(historyDir, f);
               const stats = fs.statSync(filePath);
-              return { file: f, mtime: stats.mtime, location: historyDir };
+              // Extract tranche time for proper sorting
+              const timeMatch = f.match(/(\d{4})-(\d{4})-session/);
+              const trancheEnd = timeMatch ? parseInt(timeMatch[2]) : 0;
+              return { file: f, mtime: stats.mtime, location: historyDir, trancheEnd };
             });
           allFiles = allFiles.concat(files);
         }
       }
       
-      // Sort all files by modification time (most recent first)
-      // For files with same timestamp, prefer later session times
-      allFiles.sort((a, b) => {
-        const timeDiff = b.mtime - a.mtime;
-        if (timeDiff !== 0) return timeDiff;
+      if (allFiles.length > 0) {
+        // Sort by tranche end time (most recent tranche first)
+        allFiles.sort((a, b) => b.trancheEnd - a.trancheEnd);
+        const mostRecent = allFiles[0].file;
         
-        // Same timestamp - extract session times for secondary sort
-        const aTimeMatch = a.file.match(/(\d{4})-(\d{4})-session/);
-        const bTimeMatch = b.file.match(/(\d{4})-(\d{4})-session/);
-        
-        if (aTimeMatch && bTimeMatch) {
-          const aEndTime = parseInt(aTimeMatch[2]);
-          const bEndTime = parseInt(bTimeMatch[2]);
-          return bEndTime - aEndTime; // Prefer later session end time
-        }
-        
-        return 0;
-      });
-        
-        if (allFiles.length > 0) {
-          const mostRecent = allFiles[0].file;
+        const timeMatch = mostRecent.match(/(\d{4}-\d{4})-session/);
+        if (timeMatch) {
+          const timeRange = timeMatch[1];
+          const remainingMinutes = this.calculateTimeRemaining(timeRange);
           
-          
-          // Show appropriate filename format based on type
-          if (mostRecent.includes('-session.md')) {
-            // For session files, show time range: 1030-1130-session
-            const timeMatch = mostRecent.match(/(\d{4}-\d{4})-session/);
-            if (timeMatch) {
-              const timeRange = timeMatch[1];
-              const remainingMinutes = this.calculateTimeRemaining(timeRange);
-              
-              
-              // Add color coding based on time remaining
-              let sessionDisplay = `${timeRange}-session`;
-              if (remainingMinutes !== null && remainingMinutes <= 5 && remainingMinutes > 0) {
-                // Orange warning for last 5 minutes with time display
-                sessionDisplay = `🟠${timeRange}-session(${remainingMinutes}min)`;
-              } else if (remainingMinutes !== null && remainingMinutes <= 0) {
-                // Red if past session end
-                sessionDisplay = `🔴${timeRange}-session(ended)`;
-              }
-              
-              return sessionDisplay;
-            }
-            return mostRecent.replace('.md', '');
-          } else if (mostRecent.includes('live-transcript') || mostRecent.includes('live-session')) {
-            return mostRecent.replace('.md', '');
+          if (remainingMinutes !== null && remainingMinutes <= 0) {
+            return `🔴${timeRange}-session(ended)`;
+          } else {
+            return `${timeRange}-session`;
           }
-          
-          // Fallback: show full filename
-          return mostRecent.replace('.md', '');
         }
+      }
       
       // 2. Check current transcript to predict target filename
       const os = await import('os');
       const homeDir = os.homedir();
-      const transcriptDir = join(homeDir, '.claude', 'projects', '-Users-q284340-Agentic-coding');
+      // Create transcript directory path based on current coding repo location
+      const codingRepo = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
+      const transcriptDirName = `-${codingRepo.replace(/[^a-zA-Z0-9]/g, '-')}`;
+      const transcriptDir = join(homeDir, '.claude', 'projects', transcriptDirName);
       
       if (existsSync(transcriptDir)) {
         const files = fs.readdirSync(transcriptDir)
@@ -201,8 +216,8 @@ class CombinedStatusLine {
       }
       
       // 3. Generate expected target filename based on current time
-      const now = new Date();
-      const timeId = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      const currentTime = new Date();
+      const timeId = `${String(currentTime.getHours()).padStart(2, '0')}${String(currentTime.getMinutes()).padStart(2, '0')}`;
       return timeId + '_TBD';
       
     } catch (error) {
@@ -440,8 +455,8 @@ class CombinedStatusLine {
       const redirectTime = new Date(redirectInfo.timestamp);
       const now = new Date();
       
-      // Consider redirect active if it happened within last 5 minutes
-      const isActive = (now - redirectTime) < 300000;
+      // Consider redirect active if it happened within current session (60 minutes)
+      const isActive = (now - redirectTime) < 3600000;
       
       return {
         active: isActive,
@@ -517,9 +532,11 @@ class CombinedStatusLine {
       parts.push(`🔀→${redirectStatus.target}`);
     }
 
-    // Add live log target filename inline at the end
+    // Add live log target filename inline at the end (compact format)
     if (liveLogTarget && liveLogTarget !== '----') {
-      parts.push(`📋${liveLogTarget}`);
+      // Compact the session display to avoid wrapping
+      const compactTarget = liveLogTarget.replace('-session', '').replace('🔴', '🔴').replace('🟠', '🟠');
+      parts.push(`📋${compactTarget}`);
     }
     
     const statusText = parts.join(' ');

@@ -1,12 +1,13 @@
 @startuml
+!include _standard-style.puml
 !theme plain
 title Live Session Logging Overview
 
 actor User
 participant "Claude Code" as Claude
-component "Transcript\nMonitor" as Monitor  
-database "LSL Files" as Files
-component "Status Line" as Status
+participant "Transcript\nMonitor" as Monitor  
+participant "LSL Files" as Files
+participant "Status Line" as Status
 
 User -> Claude : Development session
 Claude -> Monitor : Real-time transcript
