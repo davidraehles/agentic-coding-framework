@@ -149,12 +149,12 @@ class CombinedStatusLine {
       for (const historyDir of checkDirs) {
         if (existsSync(historyDir)) {
           const files = fs.readdirSync(historyDir)
-            .filter(f => f.includes(today) && f.includes('-session.md'))
+            .filter(f => f.includes(today) && f.includes('session') && f.endsWith('.md'))
             .map(f => {
               const filePath = join(historyDir, f);
               const stats = fs.statSync(filePath);
-              // Extract tranche time for proper sorting
-              const timeMatch = f.match(/(\d{4})-(\d{4})-session/);
+              // Extract tranche time for proper sorting - handle both _ and - separators
+              const timeMatch = f.match(/(\d{4})[-_](\d{4})[_-].*session/) || f.match(/(\d{4})-(\d{4})-session/);
               const trancheEnd = timeMatch ? parseInt(timeMatch[2]) : 0;
               return { file: f, mtime: stats.mtime, location: historyDir, trancheEnd };
             });
@@ -167,9 +167,9 @@ class CombinedStatusLine {
         allFiles.sort((a, b) => b.trancheEnd - a.trancheEnd);
         const mostRecent = allFiles[0].file;
         
-        const timeMatch = mostRecent.match(/(\d{4}-\d{4})-session/);
+        const timeMatch = mostRecent.match(/(\d{4})[-_](\d{4})[_-].*session/) || mostRecent.match(/(\d{4})-(\d{4})-session/);
         if (timeMatch) {
-          const timeRange = timeMatch[1];
+          const timeRange = `${timeMatch[1]}-${timeMatch[2]}`;
           const remainingMinutes = this.calculateTimeRemaining(timeRange);
           
           if (remainingMinutes !== null && remainingMinutes <= 0) {

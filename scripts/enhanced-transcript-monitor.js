@@ -437,7 +437,6 @@ class EnhancedTranscriptMonitor {
     if (completedSet.length === 0) return;
 
     const sessionFile = this.getSessionFilePath(targetProject, tranche);
-    const trajectoryFile = this.getTrajectoryFilePath(targetProject, tranche);
     
     // Log the completed user prompt set to session file
     for (const exchange of completedSet) {
