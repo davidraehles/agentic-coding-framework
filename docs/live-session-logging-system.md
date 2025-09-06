@@ -28,7 +28,7 @@ The LSL system v2.0 introduces several major improvements over the previous vers
 - **Robust Project Detection**: Uses multiple detection methods (environment variables, .specstory directories, current working directory)
 - **Centralized Timezone Handling**: Single source of truth for timezone configuration and conversions
 - **Enhanced Status Line**: Real-time session monitoring with timing warnings and redirect status
-- **Semantic Trajectory Analysis**: AI-powered trajectory generation using a configurable semantic analysis model (default: Grok/XAI - fast, inexpensive)
+- **Trajectory Generation**: Basic trajectory files documenting session patterns and activities
 - **Real-Time Constraint Monitoring**: Proactive code quality assurance with file change detection
 
 ### System State Flow
@@ -39,20 +39,21 @@ The LSL system operates through several key states, from idle monitoring through
 
 ### Content Routing Decision Logic
 
-![Redirect Decision Flow](images/redirect-decision-flow.png)
+The content routing system uses a **simple, reliable file-based approach** to determine whether content should be redirected to the coding project:
 
-The content routing system uses a sophisticated three-tier approach to determine whether content should be redirected to the coding project:
+**Rule**: Redirect to coding project **ONLY** when tool calls actually touch files in the coding directory.
 
-1. **Clear Coding Artifacts** (Highest Priority): Direct file path matches, code file extensions, development commands
-2. **Learned Keywords** (Medium Priority): Dynamic patterns learned from trajectory analysis and user behavior
-3. **Semantic Analysis** (Fallback): AI-powered content classification when patterns are unclear
+**Detection Logic**:
+1. Check each tool call for file operations in `/coding/` directory
+2. Check tool results for coding directory references  
+3. Return `true` only if coding directory is touched, `false` otherwise
 
 ### System Flow
 
 ```
-Claude Session → Enhanced Transcript Monitor → Content Classification → LSL Files
+Claude Session → Enhanced Transcript Monitor → File-Based Classification → LSL Files
                                            ↓
-Status Line Display ← Semantic Analysis ← Trajectory Generation
+Status Line Display ← Trajectory Generation
 ```
 
 ## Core Components
@@ -67,7 +68,7 @@ Status Line Display ← Semantic Analysis ← Trajectory Generation
 - 🌐 **Cross-Project Routing**: Routes coding content from nano-degree to coding project  
 - ⏰ **Timezone-Aware Processing**: Centralized timezone handling via `.env` configuration
 - 📋 **Real-time LSL Generation**: Creates structured session files as interactions occur
-- 🧠 **Semantic Integration**: Generates trajectory files with AI analysis
+- 📁 **Simple File-Based Routing**: Routes content based on actual file operations
 - 🔐 **Secret Redaction**: Automatically redacts sensitive information
 
 **Configuration Environment Variables**:
@@ -102,7 +103,7 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 **Display Components**:
 
 ```
-🛡️ 8.5 🔍EX 🧠 ✅ 🔀→coding 📋1530-1630-session
+🛡️ 8.5 🔍EX 🔀→coding 📋1530-1630-session
 ```
 
 - `🛡️ 8.5` - Constraint compliance score
@@ -119,25 +120,29 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 
 ### 4. Content Classification System
 
-**Purpose**: Intelligent routing of content based on context analysis.
+**Purpose**: Simple file-based routing of content based on actual file operations.
 
 **Classification Logic**:
 
-- **Coding Content**: File paths containing `/coding/`, Git operations, development workflows
-- **Project Content**: Content specific to the source project (nano-degree)
-- **Mixed Content**: Sessions spanning both domains
+- **Coding Content**: Tool calls that touch files in the `/coding/` directory
+- **Project Content**: All other content remains in the source project
 
 **Routing Rules**:
 
 ```javascript
-// Coding content → coding project LSL files
-if (isToolOperationOnCodingFiles(exchange) || isGitOperation(exchange)) {
-  route_to_coding_project(exchange);
-}
-
-// Project-specific content → source project LSL files  
-if (isProjectSpecificContent(exchange)) {
-  route_to_source_project(exchange);
+// Simple file-based detection
+function isCodingRelated(exchange) {
+  const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
+  
+  // Check tool calls for file operations in coding directory
+  for (const toolCall of exchange.toolCalls || []) {
+    const toolData = JSON.stringify(toolCall).toLowerCase();
+    if (toolData.includes(codingPath.toLowerCase()) || toolData.includes('/coding/')) {
+      return true; // Route to coding project
+    }
+  }
+  
+  return false; // Keep in source project
 }
 ```
 
@@ -248,7 +253,6 @@ function calculateTimeRemaining(sessionTimeRange) {
 The status line monitors:
 
 - **Constraint Monitor**: Compliance scoring (`🛡️ 8.5`)
-- **Semantic Analysis**: AI service status (`🧠 ✅`)
 - **Live Session**: Current session status (`📋1530-1630-session`)
 - **Content Routing**: Cross-project routing (`🔀→coding`)
 
@@ -416,10 +420,10 @@ This session captures real-time tool interactions and exchanges.
 
 ### Trajectory File Format
 
-Trajectory files provide semantic analysis of session patterns:
+Trajectory files provide basic documentation of session patterns:
 
 ```markdown  
-# Trajectory Analysis: 1530-1630
+# Trajectory Summary: 1530-1630
 
 **Generated:** 2025-09-05T16:30:00.000Z
 **Session:** 1530-1630  
@@ -429,25 +433,19 @@ Trajectory files provide semantic analysis of session patterns:
 
 ---
 
-## Executive Summary
+## Session Activities
 
-Session focused on updating Live Session Logging documentation and improving cross-project content routing...
-
----
-
-## Technical Patterns Applied
-
-1. **Systematic Documentation**: Complete rewrite of LSL system docs
-2. **Cross-Project Integration**: Enhanced routing between nano-degree and coding
-3. **Timezone Standardization**: Centralized timezone handling implementation
+- Updated LSL documentation to reflect simplified detection logic
+- Modified enhanced transcript monitor for file-based routing
+- Removed complex keyword and semantic analysis features
 
 ---
 
-## Key Insights
+## Technical Changes
 
-- Robust project detection eliminates TBD status issues  
-- Cross-project routing enables specialized content organization
-- Centralized timezone handling prevents timestamp misalignment
+1. **Simplified Detection**: File-based routing replaces complex heuristics
+2. **Documentation Updates**: Removed references to deprecated features
+3. **Code Cleanup**: Removed unused semantic analysis functions
 
 ---
 ```
@@ -464,10 +462,8 @@ TIMEZONE=Europe/Berlin
 CODING_TARGET_PROJECT=/Users/q284340/Agentic/nano-degree
 CODING_REPO=/Users/q284340/Agentic/coding
 
-# API Keys for Semantic Analysis
-XAI_API_KEY=xai-your-key-here
-OPENAI_API_KEY=sk-your-key-here
-GROQ_API_KEY=gsk_your-key-here
+# Optional API Keys (for future features)
+# XAI_API_KEY=xai-your-key-here
 
 # Optional: Debugging
 TRANSCRIPT_DEBUG=true
@@ -487,17 +483,6 @@ DEBUG_STATUS=true
       "max_batch_size": 10,
       "secret_redaction": true
     }
-  },
-  "semantic_analysis": {
-    "models": {
-      "xai": {
-        "default_model": "grok-2-1212",
-        "base_url": "https://api.x.ai/v1"
-      }
-    },
-    "trajectory_generation": true,
-    "max_tokens": 400,
-    "temperature": 0.2
   },
   "status_line": {
     "cache_timeout": 5000,
@@ -520,7 +505,7 @@ node /path/to/coding/scripts/enhanced-transcript-monitor.js
 
 # Check status
 /path/to/coding/scripts/combined-status-line.js
-# Output: 🛡️ 8.5 🔍EX 🧠 ✅ 🔀→coding 📋1530-1630-session
+# Output: 🛡️ 8.5 🔍EX 🔀→coding 📋1530-1630-session
 ```
 
 ### Generating LSL Files Manually
@@ -618,30 +603,6 @@ console.log(formatTimestamp('2025-09-05T13:33:47.123Z'));
 "
 ```
 
-#### 4. Semantic Analysis Failing
-
-**Symptoms**: No trajectory files generated, missing AI insights
-
-**Causes**:
-
-- Missing API keys
-- Network connectivity issues
-- API rate limiting
-
-**Solution**:
-
-```bash
-# Check API keys  
-echo ${XAI_API_KEY:0:10}
-echo ${OPENAI_API_KEY:0:10}
-
-# Test semantic analyzer
-node -e "
-const { SemanticAnalyzer } = require('./src/live-logging/SemanticAnalyzer.js');
-const analyzer = new SemanticAnalyzer(process.env.XAI_API_KEY);
-console.log('Analyzer initialized successfully');
-"
-```
 
 ### Debug Mode
 

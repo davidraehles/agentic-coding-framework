@@ -1,65 +1,21 @@
 @startuml
 !include _standard-style.puml
-title LSL Content Routing Decision Flow
+title LSL Simple File-Based Routing
 
 start
 
 :User Prompt Detected|
 
-:Extract Prompt Content|
-:Get File Paths & Tools Used|
+:Check Tool Calls|
 
-' Clear indicators check
-if (Contains Clear Coding Artifacts?) then (yes)
-  :Mark as CODING CONTENT|
-  :Update Redirect Status|
+if (Tool touches /coding/ directory?) then (yes)
   :Route to Coding Project|
+  :Update Redirect Status|
   stop
 else (no)
-  ' Check learned keywords
-  if (Load Trajectory Keywords?) then (success)
-    if (Matches Learned Keywords?) then (yes)
-      :Mark as CODING CONTENT|
-      :Update Redirect Status|  
-      :Route to Coding Project|
-      stop
-    else (no)
-      ' Semantic analysis fallback
-      if (Semantic Analysis Available?) then (yes)
-        :Run AI Content Analysis|
-        if (AI Determines Coding?) then (yes)
-          :Mark as CODING CONTENT|
-          :Learn New Keywords|
-          :Update Redirect Status|
-          :Route to Coding Project|
-          stop
-        else (no)
-          :Mark as NON-CODING|
-          :Route to Origin Project|
-          stop
-        endif
-      else (no)
-        :Default to NON-CODING|
-        :Route to Origin Project|
-        stop
-      endif
-    endif
-  else (failed)
-    ' No keywords available - use basic detection
-    if (Basic Pattern Matching?) then (coding)
-      :Mark as CODING CONTENT|
-      :Route to Coding Project|
-      stop
-    else (non-coding)
-      :Mark as NON-CODING|
-      :Route to Origin Project|
-      stop
-    endif
-  endif
+  :Stay in Origin Project|
+  stop
 endif
 
-' Clear Coding Artifacts: /coding/ paths, .js/.py/.sh/.puml files, git/npm/node commands, plantuml operations, enhanced-transcript-monitor
-' Learned Keywords: Dynamic from trajectory analysis, Updated based on redirect patterns, Project-specific patterns, Stored in trajectory-keywords.json  
-' Semantic Analysis: AI-powered content classification, Context-aware decision making, Learning from user behavior, Fallback when patterns unclear
 
 @enduml
