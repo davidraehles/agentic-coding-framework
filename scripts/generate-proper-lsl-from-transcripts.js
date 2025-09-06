@@ -10,19 +10,27 @@ import fs from 'fs';
 import path from 'path';
 import { parseTimestamp, formatTimestamp } from './timezone-utils.js';
 
-// Project configurations
-const PROJECT_CONFIGS = {
-  'coding': {
-    outputDir: '/Users/q284340/Agentic/coding/.specstory/history',
-    filenamePattern: (date, window) => `${date}_${window}_session-from-nano-degree.md`,
-    shouldInclude: shouldIncludeInCoding
-  },
-  'nano-degree': {
-    outputDir: '/Users/q284340/Agentic/nano-degree/.specstory/history', 
-    filenamePattern: (date, window) => `${date}_${window}-session.md`,
-    shouldInclude: shouldIncludeInNanoDegree
-  }
-};
+// Get the target project from environment or command line
+function getTargetProject() {
+  const targetPath = process.env.CODING_TARGET_PROJECT || process.cwd();
+  const projectName = targetPath.split('/').pop();
+  return {
+    name: projectName,
+    path: targetPath,
+    outputDir: `${targetPath}/.specstory/history`,
+    // If we're generating for coding project, always mark files as coming from their origin
+    filenamePattern: (date, window, isFromOtherProject, originProject) => {
+      if (projectName === 'coding') {
+        if (isFromOtherProject) {
+          return `${date}_${window}-session-from-${originProject}.md`;
+        } else {
+          return `${date}_${window}-session-from-coding.md`;
+        }
+      }
+      return `${date}_${window}-session.md`;
+    }
+  };
+}
 
 function extractTextContent(content) {
   if (typeof content === 'string') return content;
@@ -66,78 +74,33 @@ function isSlashCommandResponse(userMessage, responseText) {
 }
 
 function truncateSlashCommandResponse(responseText) {
-  if (responseText.length <= 1000) {
+  if (responseText.length <= 500) {
     return responseText;
   }
-  return responseText.substring(0, 1000) + '\n\n...\n\n*[Response truncated - /sl command output abbreviated for readability]*';
+  return responseText.substring(0, 500) + '\n\n...\n\n*[Response truncated - /sl command output abbreviated for readability]*\n';
 }
 
-function shouldIncludeInCoding(userMessage, fullExchange = '') {
-  const codingPaths = [
-    '/Users/q284340/Agentic/coding/',
-    '~/Agentic/coding/',
-    'coding/',
-    'coding/bin/',
-    'coding/scripts/',
-    'coding/.specstory/',
-    'coding/lib/',
-    'coding/docs/',
-    'coding/integrations/'
-  ];
+// Check if exchange involves operations on coding directory files
+function touchesCodingDirectory(fullExchange) {
+  // Only look for actual file operations in the coding directory
+  const codingPath = '/Users/q284340/Agentic/coding/';
+  const exchange = fullExchange.toLowerCase();
   
-  const fullText = (userMessage + ' ' + fullExchange).toLowerCase();
+  // Check if any tool calls touch coding directory files
+  // Look for Read, Edit, Write, MultiEdit operations on coding paths
+  if (exchange.includes(codingPath.toLowerCase())) {
+    return true;
+  }
   
-  const hasCodePathReference = codingPaths.some(path => 
-    fullText.includes(path.toLowerCase())
-  );
+  // Also check for relative paths that clearly indicate coding directory
+  if (exchange.includes('coding/scripts/') || 
+      exchange.includes('coding/docs/') ||
+      exchange.includes('coding/bin/') ||
+      exchange.includes('coding/.specstory/')) {
+    return true;
+  }
   
-  const hasCodeFileOperation = (
-    fullText.includes('coding/') && (
-      fullText.includes('read') ||
-      fullText.includes('write') ||
-      fullText.includes('edit') ||
-      fullText.includes('create') ||
-      fullText.includes('modify') ||
-      fullText.includes('update') ||
-      fullText.includes('delete') ||
-      fullText.includes('move')
-    )
-  );
-  
-  return hasCodePathReference || hasCodeFileOperation;
-}
-
-function shouldIncludeInNanoDegree(userMessage, fullExchange = '') {
-  // Content that specifically belongs to nano-degree project
-  const nanoDegreePaths = [
-    '/Users/q284340/Agentic/nano-degree/',
-    '~/Agentic/nano-degree/',
-    'nano-degree/',
-    'docs-content/',
-    'course-content/',
-    'modules/',
-    'nanodegree'
-  ];
-  
-  const nanoDegreeKeywords = [
-    'course', 'module', 'education', 'curriculum', 'student', 'learning',
-    'lesson', 'tutorial', 'documentation site', 'docs site', 'course material',
-    'agent frameworks', 'langchain', 'crewai', 'pydantic', 'rag systems',
-    'mcp protocol', 'acp protocol', 'a2a protocol', 'observer path', 
-    'participant path', 'implementer path', 'three-path learning'
-  ];
-  
-  const fullText = (userMessage + ' ' + fullExchange).toLowerCase();
-  
-  const hasNanoDegreePath = nanoDegreePaths.some(path => 
-    fullText.includes(path.toLowerCase())
-  );
-  
-  const hasNanoDegreeKeyword = nanoDegreeKeywords.some(keyword => 
-    fullText.includes(keyword.toLowerCase())
-  );
-  
-  return hasNanoDegreePath || hasNanoDegreeKeyword;
+  return false;
 }
 
 function extractToolCalls(content) {
@@ -158,20 +121,40 @@ function extractToolCalls(content) {
   return '';
 }
 
-async function generateLSLForProject(projectName) {
-  const config = PROJECT_CONFIGS[projectName];
-  if (!config) {
-    throw new Error(`Unknown project: ${projectName}`);
+async function generateLSL() {
+  const targetProject = getTargetProject();
+  console.log(`\n🔄 Generating LSL files for: ${targetProject.path}`);
+
+  // Find all transcript files automatically - use imports since this is ES module
+  
+  function findAllTranscriptFiles() {
+    const projectsDir = '/Users/q284340/.claude/projects/';
+    const transcriptPaths = [];
+    
+    // Find all .jsonl files in projects directory
+    const projectDirs = fs.readdirSync(projectsDir);
+    for (const dirName of projectDirs) {
+      if (dirName.startsWith('-Users-q284340-Agentic-')) {
+        const projectPath = path.join(projectsDir, dirName);
+        try {
+          const files = fs.readdirSync(projectPath);
+          for (const fileName of files) {
+            if (fileName.endsWith('.jsonl')) {
+              transcriptPaths.push(path.join(projectPath, fileName));
+            }
+          }
+        } catch (error) {
+          // Skip if directory can't be read
+          console.warn(`Could not read directory ${projectPath}: ${error.message}`);
+        }
+      }
+    }
+    
+    return transcriptPaths.sort(); // Sort for consistent ordering
   }
-
-  console.log(`\n🔄 Generating LSL files for project: ${projectName}`);
-
-  const transcriptPaths = [
-    '/Users/q284340/.claude/projects/-Users-q284340-Agentic-nano-degree/96b3c7de-16cb-48f3-90d2-f926452f9523.jsonl',
-    '/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/365ed86e-7959-4529-b50b-163f80cb556b.jsonl',
-    '/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/81a4c859-b5fc-4765-8c22-e4fa72269aa5.jsonl',
-    '/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/135ee593-e8ea-4f0c-b5d9-9622c4780349.jsonl'
-  ];
+  
+  const transcriptPaths = findAllTranscriptFiles();
+  console.log(`Found ${transcriptPaths.length} transcript files to process`);
 
   const sessions = new Map();
 
@@ -237,11 +220,16 @@ async function generateLSLForProject(projectName) {
               toolCalls.push(tools);
             }
           } else if (nextEntry.type === 'user' && nextEntry.message?.content?.[0]?.tool_use_id) {
-            // This is a tool result - capture FULL result, not truncated
+            // This is a tool result
             const toolResult = nextEntry.message.content[0].content;
             if (toolResult && typeof toolResult === 'string') {
-              // Capture full tool result without truncation
-              toolResults.push(toolResult);
+              // For /sl commands, also abbreviate tool results like Claude responses
+              if (isSlashCommandResponse(userText, toolResult)) {
+                toolResults.push(truncateSlashCommandResponse(toolResult));
+              } else {
+                // Capture full tool result for non-/sl commands
+                toolResults.push(toolResult);
+              }
             }
           }
           
@@ -257,17 +245,32 @@ async function generateLSLForProject(projectName) {
           fullExchange += '\n\nTool Results:\n' + toolResults.join('\n');
         }
         
-        // Check if this complete exchange should be included in this project
-        const shouldInclude = config.shouldInclude(userText, fullExchange);
+        // Simple logic: 
+        // - If we're generating for coding project AND exchange touches coding files → include
+        // - If we're generating for any other project AND exchange doesn't touch coding files → include
+        const touchesCoding = touchesCodingDirectory(fullExchange);
+        const shouldInclude = (targetProject.name === 'coding') ? touchesCoding : !touchesCoding;
         
         if (shouldInclude) {
+          // Determine if this exchange is redirected from another project
+          const isFromNanoDegree = transcriptPath.includes('-Users-q284340-Agentic-nano-degree');
+          const isFromCoding = transcriptPath.includes('-Users-q284340-Agentic-coding');
+          const isRedirected = targetProject.name === 'coding' && isFromNanoDegree && touchesCoding;
+          
+          // Determine origin project name
+          let originProject = null;
+          if (isFromNanoDegree) originProject = 'nano-degree';
+          else if (isFromCoding) originProject = 'coding';
+          
           const exchange = {
             timestamp: timestampInfo,
             userMessage: userText,
             claudeResponses: assistantResponses,
             toolCalls: toolCalls,
             toolResults: toolResults,
-            window: timestampInfo.window
+            window: timestampInfo.window,
+            isRedirected: isRedirected,
+            originProject: originProject
           };
           
           const window = exchange.window;
@@ -283,7 +286,7 @@ async function generateLSLForProject(projectName) {
       }
     }
     
-    console.log(`Extracted ${exchangeCount} ${projectName}-related exchanges from ${path.basename(transcriptPath)}`);
+    console.log(`Extracted ${exchangeCount} exchanges from ${path.basename(transcriptPath)}`);
   }
 
   // Generate LSL files for each session
@@ -291,15 +294,21 @@ async function generateLSLForProject(projectName) {
     if (exchanges.length === 0) continue;
     
     const [startTime, endTime] = window.split('-');
-    const filename = config.filenamePattern('2025-09-05', window);
-    const filepath = path.join(config.outputDir, filename);
+    // Extract actual date from the first exchange in this session
+    const firstExchange = exchanges[0];
+    const actualDate = firstExchange.timestamp.utc.date.toISOString().split('T')[0]; // Get YYYY-MM-DD part
+    // Check if this session came from another project (for coding project only)
+    const isFromOtherProject = targetProject.name === 'coding' && exchanges.some(e => e.isRedirected);
+    const originProject = isFromOtherProject ? exchanges.find(e => e.isRedirected)?.originProject : null;
+    const filename = targetProject.filenamePattern(actualDate, window, isFromOtherProject, originProject);
+    const filepath = path.join(targetProject.outputDir, filename);
     
     // Create directory if it doesn't exist
-    if (!fs.existsSync(config.outputDir)) {
-      fs.mkdirSync(config.outputDir, { recursive: true });
+    if (!fs.existsSync(targetProject.outputDir)) {
+      fs.mkdirSync(targetProject.outputDir, { recursive: true });
     }
     
-    let content = `# WORK SESSION (${startTime}-${endTime})
+    let content = `# WORK SESSION (${actualDate}_${startTime}-${endTime})
 
 **Generated:** ${new Date().toLocaleDateString('en-US', { 
   month: '2-digit', 
@@ -311,10 +320,10 @@ async function generateLSLForProject(projectName) {
   minute: '2-digit', 
   second: '2-digit' 
 })}
-**Work Period:** ${startTime}-${endTime}
+**Work Period:** ${actualDate}_${startTime}-${endTime}
 **Focus:** Live session logging from actual transcript data
 **Duration:** ~60 minutes
-**Project:** ${projectName}
+**Project:** ${targetProject.name}
 
 ---
 
@@ -369,29 +378,13 @@ ${exchange.toolResults.join('\n')}
     console.log(`Created: ${filename} with ${exchanges.length} exchanges`);
   }
   
-  console.log(`\n✅ LSL file generation complete for ${projectName}!`);
+  console.log(`\n✅ LSL file generation complete for ${targetProject.name}!`);
 }
 
 // Command line interface
 async function main() {
-  const args = process.argv.slice(2);
-  const projectArg = args.find(arg => arg.startsWith('--project='));
-  
-  if (!projectArg) {
-    console.error('Usage: node generate-proper-lsl-from-transcripts.js --project=<coding|nano-degree>');
-    process.exit(1);
-  }
-  
-  const projectName = projectArg.split('=')[1];
-  
-  if (!PROJECT_CONFIGS[projectName]) {
-    console.error(`Unknown project: ${projectName}`);
-    console.error('Available projects:', Object.keys(PROJECT_CONFIGS).join(', '));
-    process.exit(1);
-  }
-  
   try {
-    await generateLSLForProject(projectName);
+    await generateLSL();
   } catch (error) {
     console.error('❌ LSL generation failed:', error.message);
     process.exit(1);
@@ -402,4 +395,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 
-export { generateLSLForProject };
+export { generateLSL };

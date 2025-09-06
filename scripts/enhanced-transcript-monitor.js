@@ -159,7 +159,7 @@ class EnhancedTranscriptMonitor {
         currentExchange = {
           id: message.uuid,
           timestamp: message.timestamp || Date.now(),
-          userMessage: this.extractTextContent(message.message.content) || '',
+          userMessage: this.extractUserMessage(message.message) || '',
           claudeResponse: '',
           toolCalls: [],
           toolResults: [],
@@ -217,6 +217,32 @@ class EnhancedTranscriptMonitor {
     return '';
   }
 
+  extractTextContent(content) {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content
+        .filter(item => item && item.type === 'text')
+        .map(item => item.text)
+        .filter(text => text && text.trim())
+        .join('\n');
+    }
+    return '';
+  }
+
+  extractUserMessage(entry) {
+    // Handle different user message structures - using proven logic from LSL script
+    if (entry.message?.content) {
+      if (typeof entry.message.content === 'string') {
+        return entry.message.content;
+      }
+      return this.extractTextContent(entry.message.content);
+    }
+    if (entry.content) {
+      return this.extractTextContent(entry.content);
+    }
+    return '';
+  }
+
   /**
    * Get unprocessed exchanges
    */
@@ -244,183 +270,49 @@ class EnhancedTranscriptMonitor {
    * Check if content involves coding project
    */
   isCodingRelated(exchange) {
-    const combinedStr = (exchange.userMessage + exchange.claudeResponse + 
-      JSON.stringify(exchange.toolCalls) + JSON.stringify(exchange.toolResults)).toLowerCase();
-
-    // EXTENSIVE DEBUG LOGGING
-    console.log(`\n🔍 CODING DETECTION DEBUG for exchange:`);
-    console.log(`User: "${exchange.userMessage?.slice(0, 100)}..."`);
-    console.log(`Tools: ${exchange.toolCalls?.map(t => t.name).join(', ') || 'none'}`);
-    console.log(`Combined string (first 200 chars): "${combinedStr.slice(0, 200)}..."`);
-
-    // 1. CRYSTAL CLEAR CODING ARTIFACTS - Highest Priority
-    const codingToolsPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || process.cwd();
-    const clearCodingIndicators = [
-      // Direct paths to coding project
-      codingToolsPath.toLowerCase(),
-      'coding/scripts/',
-      'coding/bin/',
-      'coding/src/',
-      'coding/.specstory/',
-      'coding/integrations/',
-      // Specific coding files/tools
-      'enhanced-transcript-monitor',
-      'trajectory-keyword-extractor',
-      'combined-status-line',
-      'constraint-monitor',
-      'semantic-analysis',
-      // File extensions and code patterns
-      '.js', '.py', '.sh', '.json', '.puml',
-      'plantuml', 'bash', 'node', 'npm', 'git',
-      // Code-specific tool calls
-      'read.*coding/', 'edit.*coding/', 'write.*coding/',
-      // System maintenance
-      'transcript-monitor', 'launch-claude', 'simplified-transcript'
-    ];
-
-    const foundCodingIndicators = clearCodingIndicators.filter(indicator => combinedStr.includes(indicator));
-    console.log(`🎯 Clear coding indicators found: [${foundCodingIndicators.join(', ')}]`);
-
-    // If we're clearly working with coding artifacts, it's coding-related
-    if (foundCodingIndicators.length > 0) {
-      console.log(`✅ CODING DETECTED via clear artifacts/paths`);
-      this.debug(`Coding detected via clear artifacts/paths: ${foundCodingIndicators.join(', ')}`);
-      return true;
-    }
-
-    // 2. CRYSTAL CLEAR NON-CODING ARTIFACTS
-    const clearNonCodingIndicators = [
-      'nano-degree/',
-      'course content',
-      'course material',
-      'learning module',
-      'curriculum',
-      'student',
-      'assignment'
-    ];
-
-    const foundNonCodingIndicators = clearNonCodingIndicators.filter(indicator => combinedStr.includes(indicator));
-    console.log(`🚫 Clear non-coding indicators found: [${foundNonCodingIndicators.join(', ')}]`);
-
-    // If we're clearly working with non-coding artifacts, it's not coding-related
-    if (foundNonCodingIndicators.length > 0) {
-      console.log(`❌ NON-CODING DETECTED via clear artifacts`);
-      this.debug(`Non-coding detected via clear artifacts: ${foundNonCodingIndicators.join(', ')}`);
-      return false;
-    }
-
-    // 3. WHEN AMBIGUOUS - Try learned keywords first
-    console.log(`🤔 Artifacts ambiguous, checking learned keywords...`);
-    this.debug(`Artifacts ambiguous, checking learned keywords...`);
+    // Get the coding directory path
+    const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
     
-    const learnedKeywords = this.loadLearnedKeywords();
-    const codingKeywords = learnedKeywords.proCodingKeywords || [];
-    const contraCodingKeywords = learnedKeywords.contraCodingKeywords || [];
-
-    const proCodingMatches = codingKeywords.filter(keyword => combinedStr.includes(keyword));
-    const contraCodingMatches = contraCodingKeywords.filter(keyword => combinedStr.includes(keyword));
+    console.log(`\n🔍 SIMPLE CODING DETECTION:`);
+    console.log(`  Coding path: ${codingPath}`);
+    console.log(`  Tools: ${exchange.toolCalls?.map(t => t.name).join(', ') || 'none'}`);
     
-    console.log(`📊 Keyword analysis:`);
-    console.log(`  Pro-coding matches (${proCodingMatches.length}): [${proCodingMatches.join(', ')}]`);
-    console.log(`  Contra-coding matches (${contraCodingMatches.length}): [${contraCodingMatches.join(', ')}]`);
+    // Check tool calls for file operations in coding directory
+    for (const toolCall of exchange.toolCalls || []) {
+      const toolData = JSON.stringify(toolCall).toLowerCase();
+      
+      // Look for file operations (Read, Write, Edit, etc.) that touch coding directory
+      if (toolData.includes(codingPath.toLowerCase())) {
+        console.log(`✅ CODING DETECTED: ${toolCall.name} touches ${codingPath}`);
+        this.debug(`Coding detected: ${toolCall.name} operates on ${codingPath}`);
+        return true;
+      }
+      
+      // Also check for explicit coding/ paths in tool parameters
+      if (toolData.includes('/coding/') || toolData.includes('coding/')) {
+        console.log(`✅ CODING DETECTED: ${toolCall.name} references coding/ directory`);
+        this.debug(`Coding detected: ${toolCall.name} references coding/ directory`);
+        return true;
+      }
+    }
     
-    // Strong keyword signals
-    if (proCodingMatches.length >= 3 && proCodingMatches.length > contraCodingMatches.length * 2) {
-      console.log(`✅ CODING DETECTED via keywords`);
-      this.debug(`Coding detected via keywords: pro=${proCodingMatches.length} > contra=${contraCodingMatches.length}*2`);
-      return true;
+    // Check tool results for coding directory references
+    for (const toolResult of exchange.toolResults || []) {
+      const resultData = JSON.stringify(toolResult).toLowerCase();
+      
+      if (resultData.includes(codingPath.toLowerCase()) || resultData.includes('/coding/')) {
+        console.log(`✅ CODING DETECTED: Tool result references coding directory`);
+        this.debug(`Coding detected: Tool result references coding directory`);
+        return true;
+      }
     }
-
-    // 4. FINAL FALLBACK - Semantic analysis of the prompt itself
-    if (proCodingMatches.length === 0 && contraCodingMatches.length === 0) {
-      console.log(`🔍 Keywords inconclusive, running semantic analysis...`);
-      this.debug(`Keywords inconclusive, running semantic analysis...`);
-      const semanticResult = this.semanticCodingAnalysis(exchange);
-      console.log(`🧠 Semantic analysis result: ${semanticResult ? 'CODING' : 'NON-CODING'}`);
-      return semanticResult;
-    }
-
-    console.log(`❌ DEFAULTING TO NON-CODING: artifacts unclear, keywords insufficient`);
-    this.debug(`Defaulting to non-coding: artifacts unclear, keywords insufficient`);
+    
+    console.log(`❌ NON-CODING: No file operations in coding directory detected`);
+    this.debug(`Non-coding: No file operations in coding directory detected`);
     return false;
   }
   
-  /**
-   * Semantic analysis of the prompt to determine coding intent
-   */
-  async semanticCodingAnalysis(exchange) {
-    try {
-      this.debug(`Running semantic analysis on: "${exchange.userMessage.slice(0, 100)}..."`);
-      
-      // Build context from recent exchanges
-      const recentContext = this.currentUserPromptSet.slice(-3)
-        .map(ex => ex.userMessage).join(' ');
-      
-      // Fallback to simple heuristics
-      return this.fallbackSemanticAnalysis(exchange, recentContext);
-      
-    } catch (error) {
-      this.debug('Semantic analysis failed:', error.message);
-      return false; // Default to non-coding on error
-    }
-  }
 
-  /**
-   * Fallback semantic analysis using simple heuristics
-   */
-  fallbackSemanticAnalysis(exchange, context) {
-    const combined = (exchange.userMessage + ' ' + context).toLowerCase();
-    
-    // Strong coding intent signals
-    const codingSignals = [
-      /\b(fix|debug|implement|create|build|develop|code|script)\b/g,
-      /\b(error|bug|issue|problem|failure|broken)\b/g,
-      /\b(function|method|class|variable|file|directory)\b/g,
-      /\b(install|configure|setup|deploy|run|execute)\b/g,
-      /\b(database|api|server|system|application)\b/g,
-      /\b(test|testing|build|compilation)\b/g
-    ];
-
-    // Strong non-coding signals
-    const nonCodingSignals = [
-      /\b(explain|understand|learn|study|read|review)\b/g,
-      /\b(course|lesson|module|chapter|curriculum)\b/g,
-      /\b(student|teacher|education|learning)\b/g,
-      /\b(question|clarify|help me understand)\b/g
-    ];
-
-    const codingMatches = codingSignals.reduce((count, pattern) => 
-      count + (combined.match(pattern) || []).length, 0);
-    const nonCodingMatches = nonCodingSignals.reduce((count, pattern) => 
-      count + (combined.match(pattern) || []).length, 0);
-
-    this.debug(`Semantic heuristics: coding=${codingMatches}, non-coding=${nonCodingMatches}`);
-    return codingMatches > nonCodingMatches && codingMatches >= 2;
-  }
-
-  /**
-   * Load learned keywords from trajectory analysis
-   */
-  loadLearnedKeywords() {
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      // Load from the current project's .specstory directory
-      const configPath = path.join(this.config.projectPath, '.specstory/trajectory-keywords.json');
-      
-      if (fs.existsSync(configPath)) {
-        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        this.debug(`Loaded ${config.proCodingKeywords?.length || 0} pro-coding keywords from ${configPath}`);
-        return config;
-      } else {
-        this.debug(`No learned keywords found at ${configPath}`);
-      }
-    } catch (error) {
-      this.debug(`Error loading learned keywords: ${error.message}`);
-    }
-    
-    return { proCodingKeywords: [], contraCodingKeywords: [] };
-  }
 
   /**
    * Get current time tranche (XX:30 - (XX+1):30)
@@ -463,18 +355,36 @@ class EnhancedTranscriptMonitor {
   }
 
   /**
-   * Get trajectory file path
+   * Update comprehensive trajectory file
    */
-  getTrajectoryFilePath(targetProject, tranche) {
-    const baseName = `${tranche.date}_${tranche.timeString}`;
-    const currentProjectName = path.basename(this.config.projectPath);
-    
-    if (targetProject === this.config.projectPath) {
-      // Local project
-      return path.join(targetProject, '.specstory', 'trajectory', `${baseName}-trajectory.md`);
-    } else {
-      // Redirected to coding project  
-      return path.join(targetProject, '.specstory', 'trajectory', `${baseName}_coding-trajectory-from-${currentProjectName}.md`);
+  async updateComprehensiveTrajectory(targetProject) {
+    try {
+      const { spawn } = await import('child_process');
+      const updateScript = path.join(__dirname, 'update-comprehensive-trajectory.js');
+      
+      const child = spawn('node', [updateScript], {
+        cwd: targetProject,
+        stdio: 'pipe',
+        env: { ...process.env, CODING_TARGET_PROJECT: targetProject }
+      });
+      
+      child.stdout.on('data', (data) => {
+        this.debug(`Trajectory: ${data.toString().trim()}`);
+      });
+      
+      child.stderr.on('data', (data) => {
+        this.debug(`Trajectory Error: ${data.toString().trim()}`);
+      });
+      
+      child.on('close', (code) => {
+        if (code === 0) {
+          this.debug(`✅ Updated comprehensive trajectory for ${path.basename(targetProject)}`);
+        } else {
+          this.debug(`⚠️ Trajectory update failed with code ${code}`);
+        }
+      });
+    } catch (error) {
+      this.debug(`Error updating comprehensive trajectory: ${error.message}`);
     }
   }
 
@@ -488,17 +398,14 @@ class EnhancedTranscriptMonitor {
   }
 
   /**
-   * Create empty LSL/trajectory pair
+   * Create empty session file only (trajectory handled centrally)
    */
-  async createEmptySessionPair(targetProject, tranche) {
+  async createEmptySessionFile(targetProject, tranche) {
     const sessionFile = this.getSessionFilePath(targetProject, tranche);
-    const trajectoryFile = this.getTrajectoryFilePath(targetProject, tranche);
     
-    // Ensure directories exist
+    // Ensure directory exists
     const sessionDir = path.dirname(sessionFile);
-    const trajectoryDir = path.dirname(trajectoryFile);
     if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
-    if (!fs.existsSync(trajectoryDir)) fs.mkdirSync(trajectoryDir, { recursive: true });
 
     // Create empty session file
     if (!fs.existsSync(sessionFile)) {
@@ -519,195 +426,9 @@ class EnhancedTranscriptMonitor {
       console.log(`📝 Created ${isRedirected ? 'redirected' : 'new'} session: ${path.basename(sessionFile)}`);
     }
 
-    // Create empty trajectory file
-    if (!fs.existsSync(trajectoryFile)) {
-      const trajectoryHeader = `# Trajectory Analysis: ${tranche.timeString}\n\n` +
-        `**Generated:** ${new Date().toISOString()}\n` +
-        `**Session:** ${tranche.timeString}\n` +
-        `**Focus:** Session trajectory and behavioral patterns\n` +
-        `**Duration:** ~60 minutes\n\n` +
-        `---\n\n## Trajectory Summary\n\n` +
-        `*To be updated when first user prompt set completes*\n\n` +
-        `## Key Patterns\n\n` +
-        `*To be populated during session*\n\n` +
-        `---\n\n`;
-      
-      fs.writeFileSync(trajectoryFile, trajectoryHeader);
-      console.log(`🎯 Created trajectory: ${path.basename(trajectoryFile)}`);
-    }
-
-    return { sessionFile, trajectoryFile };
+    return sessionFile;
   }
 
-  /**
-   * Update trajectory with aggregated information
-   */
-  async updateTrajectoryWithAggregation(trajectoryFile, currentUserPromptSet, allPreviousTrajectories) {
-    try {
-      // Gather content for trajectory analysis
-      let analysisContent = '';
-      
-      // Add current user prompt set summary
-      if (currentUserPromptSet.length > 0) {
-        analysisContent += `## Current User Prompt Set\n\n`;
-        for (const exchange of currentUserPromptSet) {
-          analysisContent += `**User:** ${exchange.userMessage.slice(0, 200)}${exchange.userMessage.length > 200 ? '...' : ''}\n`;
-          analysisContent += `**Tools:** ${exchange.toolCalls.map(t => t.name).join(', ')}\n`;
-          analysisContent += `**Context:** ${this.isCodingRelated(exchange) ? 'Coding-related' : 'General activity'}\n\n`;
-        }
-      }
-
-      // Add previous trajectory context (last 2-3 trajectories for continuity)
-      if (allPreviousTrajectories.length > 0) {
-        analysisContent += `## Previous Trajectory Context\n\n`;
-        const recentTrajectories = allPreviousTrajectories.slice(-3);
-        for (const prevTraj of recentTrajectories) {
-          if (fs.existsSync(prevTraj)) {
-            const content = fs.readFileSync(prevTraj, 'utf8');
-            const summary = this.extractTrajectorySummary(content);
-            analysisContent += `**Previous Session:** ${path.basename(prevTraj)}\n${summary}\n\n`;
-          }
-        }
-      }
-
-      // Generate aggregated trajectory update
-      const trajectoryUpdate = await this.generateTrajectoryAnalysis(analysisContent, currentUserPromptSet);
-      
-      // Update trajectory file
-      const currentContent = fs.readFileSync(trajectoryFile, 'utf8');
-      const updatedContent = currentContent.replace(
-        '*To be updated when first user prompt set completes*',
-        trajectoryUpdate
-      ).replace(
-        '*To be populated during session*',
-        this.extractKeyPatterns(currentUserPromptSet)
-      );
-      
-      fs.writeFileSync(trajectoryFile, updatedContent);
-      this.debug(`Updated trajectory: ${path.basename(trajectoryFile)}`);
-      
-    } catch (error) {
-      this.debug(`Error updating trajectory: ${error.message}`);
-    }
-  }
-
-  /**
-   * Extract summary from previous trajectory
-   */
-  extractTrajectorySummary(trajectoryContent) {
-    const lines = trajectoryContent.split('\n');
-    const summaryLines = [];
-    let inSummary = false;
-    
-    for (const line of lines) {
-      if (line.includes('## Trajectory Summary') || line.includes('## Session Summary')) {
-        inSummary = true;
-        continue;
-      }
-      if (inSummary && line.startsWith('##')) {
-        break;
-      }
-      if (inSummary && line.trim()) {
-        summaryLines.push(line);
-      }
-    }
-    
-    return summaryLines.slice(0, 5).join('\n') || 'Previous session completed.';
-  }
-
-  /**
-   * Generate trajectory analysis (simplified - can be enhanced with LLM)
-   */
-  async generateTrajectoryAnalysis(analysisContent, userPromptSet) {
-    const patterns = this.analyzePatterns(userPromptSet);
-    const focus = this.determineFocus(userPromptSet);
-    
-    return `**Session Focus:** ${focus}\n\n` +
-      `**Activity Patterns:**\n${patterns}\n\n` +
-      `**Learning Trajectory:** Session progressing with ${userPromptSet.length} user prompt exchanges. ` +
-      `Primary activities include ${this.summarizeActivities(userPromptSet)}.\n\n` +
-      `**Updated:** ${new Date().toISOString()}\n`;
-  }
-
-  /**
-   * Analyze patterns from user prompt set
-   */
-  analyzePatterns(userPromptSet) {
-    const toolCounts = {};
-    let codingActivities = 0;
-    
-    for (const exchange of userPromptSet) {
-      for (const tool of exchange.toolCalls) {
-        toolCounts[tool.name] = (toolCounts[tool.name] || 0) + 1;
-      }
-      if (this.isCodingRelated(exchange)) codingActivities++;
-    }
-    
-    const patterns = Object.entries(toolCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([tool, count]) => `${tool}(${count})`)
-      .join(', ');
-    
-    return `- Tool usage: ${patterns}\n` +
-      `- Coding focus: ${codingActivities}/${userPromptSet.length} exchanges\n` +
-      `- Session continuity: Building on previous trajectory`;
-  }
-
-  /**
-   * Determine session focus
-   */
-  determineFocus(userPromptSet) {
-    if (userPromptSet.length === 0) return 'Session initialization';
-    
-    const codingRelated = userPromptSet.filter(ex => this.isCodingRelated(ex)).length;
-    const total = userPromptSet.length;
-    
-    if (codingRelated / total > 0.7) return 'Code development and system architecture';
-    if (codingRelated / total > 0.3) return 'Mixed development and analysis tasks';
-    return 'General analysis and documentation';
-  }
-
-  /**
-   * Summarize activities
-   */
-  summarizeActivities(userPromptSet) {
-    const tools = new Set();
-    for (const exchange of userPromptSet) {
-      for (const tool of exchange.toolCalls) {
-        tools.add(tool.name);
-      }
-    }
-    return Array.from(tools).slice(0, 3).join(', ') || 'analysis tasks';
-  }
-
-  /**
-   * Extract key patterns for trajectory
-   */
-  extractKeyPatterns(userPromptSet) {
-    if (userPromptSet.length === 0) return '- Session starting';
-    
-    return userPromptSet.map((ex, i) => 
-      `- Exchange ${i + 1}: ${ex.toolCalls.map(t => t.name).join(', ') || 'Discussion'}`
-    ).join('\n');
-  }
-
-  /**
-   * Find all previous trajectories for aggregation
-   */
-  findPreviousTrajectories(targetProject, currentTranche) {
-    const historyDir = path.join(targetProject, '.specstory', 'history');
-    if (!fs.existsSync(historyDir)) return [];
-
-    try {
-      return fs.readdirSync(historyDir)
-        .filter(file => file.includes('trajectory') && file < `${currentTranche.date}_${currentTranche.timeString}`)
-        .map(file => path.join(historyDir, file))
-        .sort();
-    } catch (error) {
-      return [];
-    }
-  }
 
   /**
    * Process user prompt set completion
@@ -723,9 +444,8 @@ class EnhancedTranscriptMonitor {
       await this.logExchangeToSession(exchange, sessionFile, targetProject);
     }
 
-    // Update trajectory with aggregated information
-    const previousTrajectories = this.findPreviousTrajectories(targetProject, tranche);
-    await this.updateTrajectoryWithAggregation(trajectoryFile, completedSet, previousTrajectories);
+    // Update comprehensive trajectory instead of individual trajectory files
+    await this.updateComprehensiveTrajectory(targetProject);
     
     console.log(`📋 Completed user prompt set: ${completedSet.length} exchanges → ${path.basename(sessionFile)}`);
   }
@@ -791,12 +511,15 @@ class EnhancedTranscriptMonitor {
             (process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding') : 
             this.config.projectPath;
           
-          await this.createEmptySessionPair(newTargetProject, currentTranche);
+          await this.createEmptySessionFile(newTargetProject, currentTranche);
           this.lastTranche = currentTranche;
           
-          // Notify status line about redirect
+          // Manage redirect notification for new session boundary
           if (newTargetProject !== this.config.projectPath) {
             await this.notifyStatusLineRedirect(currentTranche);
+          } else {
+            // Clear redirect status when creating local session
+            await this.clearRedirectStatus();
           }
         } else {
           // Same session - complete current user prompt set
@@ -806,6 +529,14 @@ class EnhancedTranscriptMonitor {
               this.config.projectPath;
             
             await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+            
+            // Manage redirect notification based on target
+            if (targetProject !== this.config.projectPath) {
+              await this.notifyStatusLineRedirect(currentTranche);
+            } else {
+              // Clear redirect status when processing local (non-coding) activities
+              await this.clearRedirectStatus();
+            }
           }
         }
         
@@ -839,6 +570,21 @@ class EnhancedTranscriptMonitor {
       this.debug(`Notified status line of redirect to coding`);
     } catch (error) {
       this.debug(`Failed to notify status line: ${error.message}`);
+    }
+  }
+
+  /**
+   * Clear redirect status when no active redirection
+   */
+  async clearRedirectStatus() {
+    try {
+      const redirectFile = path.join(this.config.projectPath, '.specstory', '.redirect-status');
+      if (fs.existsSync(redirectFile)) {
+        fs.unlinkSync(redirectFile);
+        this.debug(`Cleared redirect status`);
+      }
+    } catch (error) {
+      this.debug(`Failed to clear redirect status: ${error.message}`);
     }
   }
 

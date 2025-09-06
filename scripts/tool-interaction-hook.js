@@ -31,8 +31,8 @@ async function processToolInteraction() {
     }
     
     if (!interactionData) {
-      console.error('No tool interaction data received');
-      process.exit(1);
+      // Gracefully handle missing data - this is normal for many tool calls
+      process.exit(0);
     }
     
     // Import and call the hook function

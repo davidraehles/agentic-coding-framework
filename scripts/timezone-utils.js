@@ -48,15 +48,27 @@ export function getTimeWindow(localDate) {
   if (minutes < 30) {
     // Before XX:30, belongs to previous hour's XX:30 window
     windowStart = (hours - 1) * 60 + 30;
+    // Handle negative hours (when hours = 0 and minutes < 30)
+    if (windowStart < 0) {
+      windowStart = 23 * 60 + 30; // 23:30 of previous day
+    }
   } else {
     // After XX:30, belongs to this hour's XX:30 window
     windowStart = hours * 60 + 30;
   }
   
-  const startHour = Math.floor(windowStart / 60);
-  const endHour = Math.floor((windowStart + 60) / 60);
+  let startHour = Math.floor(windowStart / 60);
+  let endHour = Math.floor((windowStart + 60) / 60);
   const startMin = windowStart % 60;
   const endMin = (windowStart + 60) % 60;
+  
+  // Handle day overflow
+  if (endHour >= 24) {
+    endHour = endHour % 24;
+  }
+  if (startHour >= 24) {
+    startHour = startHour % 24;
+  }
   
   const formatTime = (h, m) => `${h.toString().padStart(2, '0')}${m.toString().padStart(2, '0')}`;
   

@@ -50,6 +50,9 @@ class CombinedStatusLine {
       const liveLogTarget = await this.getCurrentLiveLogTarget();
       const redirectStatus = await this.getRedirectStatus();
       
+      // Robust transcript monitor health check and auto-restart
+      await this.ensureTranscriptMonitorRunning();
+      
       const status = await this.buildCombinedStatus(constraintStatus, semanticStatus, liveLogTarget, redirectStatus);
       
       this.statusCache = status;
@@ -455,8 +458,8 @@ class CombinedStatusLine {
       const redirectTime = new Date(redirectInfo.timestamp);
       const now = new Date();
       
-      // Consider redirect active if it happened within current session (60 minutes)
-      const isActive = (now - redirectTime) < 3600000;
+      // Consider redirect active only during recent activity (3 minutes)
+      const isActive = (now - redirectTime) < 180000;
       
       return {
         active: isActive,
@@ -594,6 +597,47 @@ class CombinedStatusLine {
     lines.push('🔄 Updates every 5 seconds');
     
     return lines.join('\n');
+  }
+
+  /**
+   * Robust transcript monitor health check and auto-restart mechanism
+   * Runs every 300ms via status line updates to ensure transcript monitor is always running
+   */
+  async ensureTranscriptMonitorRunning() {
+    try {
+      // Check if transcript monitor process is running  
+      const { exec } = await import('child_process');
+      const util = await import('util');
+      const execAsync = util.promisify(exec);
+      
+      try {
+        const { stdout } = await execAsync('ps aux | grep -v grep | grep enhanced-transcript-monitor');
+        if (stdout.trim().length > 0) {
+          // Transcript monitor is running
+          return;
+        }
+      } catch (error) {
+        // ps command failed or no process found
+      }
+      
+      // Transcript monitor is not running - restart it
+      const targetProject = process.env.CODING_TARGET_PROJECT || process.cwd();
+      const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
+      
+      // Start transcript monitor in background
+      const startCommand = `cd "${targetProject}" && TRANSCRIPT_DEBUG=false node "${codingPath}/scripts/enhanced-transcript-monitor.js" > transcript-monitor.log 2>&1 &`;
+      
+      await execAsync(startCommand);
+      
+      if (process.env.DEBUG_STATUS) {
+        console.error('🔄 Auto-restarted transcript monitor');
+      }
+      
+    } catch (error) {
+      if (process.env.DEBUG_STATUS) {
+        console.error('❌ Failed to restart transcript monitor:', error.message);
+      }
+    }
   }
 
   getErrorStatus(error) {
