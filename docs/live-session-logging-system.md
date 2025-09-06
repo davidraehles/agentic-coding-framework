@@ -67,7 +67,7 @@ Status Line Display ← Trajectory Generation
 - 🔄 **Robust Project Detection**: Uses status line's proven project detection logic
 - 🌐 **Cross-Project Routing**: Routes coding content from nano-degree to coding project  
 - ⏰ **Timezone-Aware Processing**: Centralized timezone handling via `.env` configuration
-- 📋 **Real-time LSL Generation**: Creates structured session files as interactions occur
+- 📋 **Unified LSL Generation**: Uses consistent extraction logic for both live monitoring and historical transcript processing
 - 📁 **Simple File-Based Routing**: Routes content based on actual file operations
 - 🔐 **Secret Redaction**: Automatically redacts sensitive information
 
@@ -109,7 +109,7 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 - `🛡️ 8.5` - Constraint compliance score
 - `🔍EX` - Experimentation mode active
 - `🧠 ✅` - Semantic analysis operational  
-- `🔀→coding` - Content being redirected to coding project
+- `🔀→coding` - Content being redirected to coding project (dynamic, shows only during active redirection)
 - `📋1530-1630-session` - Current session with timing warnings
 
 **Timing Warnings**:
@@ -118,7 +118,36 @@ TIMEZONE=Europe/Berlin                        # Timezone for file naming
 - **Warning**: `📋🟠1530-1630-session(3min)` (≤5 minutes remaining)  
 - **Ended**: `📋🔴1530-1630-session(ended)` (session time passed)
 
-### 4. Content Classification System
+### 4. Unified Message Extraction System
+
+**Purpose**: Consistent message processing for both live monitoring and historical transcript processing.
+
+![Unified Message Extraction](images/unified-message-extraction.png)
+
+**Unified Extraction Logic**: The system now uses a single, proven approach for extracting content from Claude exchanges, ensuring consistency between live session logging and historical file processing:
+
+```javascript
+// Unified text extraction used by both live and offline processing
+extractTextContent(content) {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter(item => item && item.type === 'text')
+      .map(item => item.text)
+      .filter(text => text && text.trim())
+      .join('\n');
+  }
+  return '';
+}
+```
+
+**Benefits of Unification**:
+- **Consistency**: Same extraction logic ensures identical formatting for live and historical processing
+- **Maintainability**: Single codebase eliminates duplication and reduces maintenance burden
+- **Reliability**: Uses proven extraction patterns from the LSL generation system
+- **Error Prevention**: Eliminates the risk of divergent processing logic causing format differences
+
+### 5. Content Classification System
 
 **Purpose**: Simple file-based routing of content based on actual file operations.
 
@@ -150,14 +179,22 @@ function isCodingRelated(exchange) {
 
 ### Routing Architecture
 
-The system monitors sessions in one project (e.g., nano-degree) and intelligently routes content to appropriate LSL files:
+The system monitors sessions in one project (e.g., nano-degree) and intelligently routes content to appropriate LSL files based on actual file operations:
 
 ```
-nano-degree session → Enhanced Monitor → Classification → {
+nano-degree session → Enhanced Monitor → File-Based Classification → {
   coding content → /coding/.specstory/history/*_from-nano-degree.md
   nano-degree content → /nano-degree/.specstory/history/*-session.md
 }
 ```
+
+**Key Improvements in Log Redirection**:
+
+- **Simplified Detection**: Replaced complex heuristics with reliable file-based detection
+- **Real-Time Routing**: Content is redirected immediately when coding directory files are touched
+- **Automatic Session Creation**: New sessions are created automatically when redirection occurs
+- **Status Line Integration**: Dynamic `🔀→coding` flag shows active redirection status
+- **Project Detection**: Robust multi-tier detection ensures reliable source project identification
 
 ### File Naming Convention
 
@@ -179,7 +216,11 @@ The system maintains `.redirect-status` files to track active routing:
 }
 ```
 
-This enables the status line to show `🔀→coding` when content is being actively routed.
+![Dynamic Redirect System](images/dynamic-redirect-system.png)
+
+**Dynamic Redirect Flag Behavior**: The status line shows `🔀→coding` only during active redirection periods. The flag automatically disappears after 3 minutes of inactivity to provide dynamic, real-time feedback about current routing status.
+
+**Timeout Configuration**: The redirect flag timeout is set to 180 seconds (3 minutes) to balance responsiveness with stability. This ensures the flag appears immediately when content is routed but disappears promptly when redirection stops.
 
 ## Timezone & Time Window Management
 
@@ -248,7 +289,23 @@ function calculateTimeRemaining(sessionTimeRange) {
 }
 ```
 
+### Enhanced Session File Detection
+
+The status line now uses improved regex patterns to detect various session file naming conventions:
+
+```javascript
+// Enhanced regex patterns for session file detection
+const timeMatch = f.match(/(\d{4})[-_](\d{4})[_-].*session/) || f.match(/(\d{4})-(\d{4})-session/);
+```
+
+This handles multiple naming patterns:
+- `2025-09-05_1530-1630-session.md`
+- `2025-09-05_1530-1630_coding-session-from-nano-degree.md` 
+- `2025-09-05_1530-1630-session-from-coding.md`
+
 ### Service Health Monitoring
+
+![Status Line System](images/status-line-system.png)
 
 The status line monitors:
 
@@ -420,35 +477,65 @@ This session captures real-time tool interactions and exchanges.
 
 ### Trajectory File Format
 
-Trajectory files provide basic documentation of session patterns:
+**Revolutionary Change**: Trajectory files now provide meaningful project capability summaries instead of cryptic activity logs. The new format focuses on **what the project DOES NOW** rather than meaningless temporal patterns.
+
+![Trajectory Flow](images/trajectory-flow.png)
 
 ```markdown  
-# Trajectory Summary: 1530-1630
+# Project Trajectory: Coding Infrastructure
 
 **Generated:** 2025-09-05T16:30:00.000Z
-**Session:** 1530-1630  
-**Focus:** Documentation and system enhancement
-**Source:** nano-degree project
-**Target:** coding project
+**Project:** coding  
+**Focus:** Development infrastructure and tooling ecosystem
+**Source:** Enhanced trajectory generation v2.0
 
 ---
 
-## Session Activities
+## Current Project Capabilities
 
-- Updated LSL documentation to reflect simplified detection logic
-- Modified enhanced transcript monitor for file-based routing
-- Removed complex keyword and semantic analysis features
+- **Live Session Logging (LSL)**: Captures real-time development activities with timezone-aware file management
+- **Dynamic Status Line**: Shows active sessions, redirects, and system health with intelligent timeout behavior
+- **Intelligent Transcript Monitoring**: Automatic content classification with file-based routing logic
+- **Cross-Project Content Routing**: Routes coding content from external projects with dynamic redirect flags
+- **Constraint Monitoring**: Real-time code quality assurance with compliance scoring
+- **Unified Processing**: Consistent message extraction for both live and historical transcript processing
+- **Timezone Management**: Centralized timezone handling with proper UTC to local conversion
+- **Project Detection**: Multi-tier detection system for robust project identification
 
 ---
 
-## Technical Changes
+## Recent Infrastructure Improvements
 
-1. **Simplified Detection**: File-based routing replaces complex heuristics
-2. **Documentation Updates**: Removed references to deprecated features
-3. **Code Cleanup**: Removed unused semantic analysis functions
+- **Fixed message extraction to use proven LSL generation logic**
+- **Made redirect flag dynamic - only shows during active redirections**  
+- **Unified live and offline transcript processing to eliminate code duplication**
+- **Enhanced session file detection with improved regex patterns**
+- **Simplified content classification using reliable file-based detection**
+- **Improved project detection with multi-tier fallback system**
+
+---
+
+## System Architecture Highlights
+
+The coding project serves as a comprehensive development infrastructure platform that enables:
+- Real-time development activity capture and routing
+- Cross-project collaboration with intelligent content classification  
+- Dynamic system monitoring with visual status indicators
+- Comprehensive constraint checking for code quality assurance
+
+This trajectory represents the current state and capabilities of the project,
+not a temporal activity log.
 
 ---
 ```
+
+**Key Improvements in Trajectory Generation**:
+
+- **Capability-Focused**: Shows what the project currently DOES instead of meaningless activity patterns
+- **Hardcoded Meaningful Summaries**: Pre-defined summaries for known projects (coding, nano-degree)
+- **Current State Representation**: Focuses on present capabilities rather than historical activities
+- **User-Valuable Content**: Information that actually helps users understand project state
+- **Infrastructure Documentation**: Serves as living documentation of system capabilities
 
 ## Configuration System
 
@@ -602,7 +689,6 @@ const { formatTimestamp } = require('./scripts/timezone-utils.js');
 console.log(formatTimestamp('2025-09-05T13:33:47.123Z'));
 "
 ```
-
 
 ### Debug Mode
 
