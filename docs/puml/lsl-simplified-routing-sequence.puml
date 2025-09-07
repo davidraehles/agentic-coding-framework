@@ -1,0 +1,74 @@
+@startuml
+!include _standard-style.puml
+
+title LSL Simplified Routing Logic - Timing Sequence
+
+participant "Claude Code Session" as User
+participant "Status Line" as StatusLine  
+participant "Transcript File" as Transcript
+participant "LSL Generator" as LSLGen
+participant "Target Project LSL" as TargetLSL
+participant "Coding Project LSL" as CodingLSL
+
+== Step 1: Read Current Project Context ==
+
+User -> StatusLine : Tool use triggers hook
+note right of StatusLine : Get meta info from statusLine\nto determine current project
+
+StatusLine -> StatusLine : Determine current working directory
+note right of StatusLine : **Key Insight**: Always use statusLine\nmeta info to identify current project
+
+StatusLine --> User : Returns project context
+
+== Step 2: Read Transcript File ==
+
+User -> LSLGen : Process transcript for LSL entry
+LSLGen -> Transcript : Read transcript from current project
+note right of Transcript : **Correct Logic**: Read transcript from\nthe project we're currently running FROM
+
+Transcript --> LSLGen : Transcript content
+
+== Step 3A: Running from Coding Project ==
+
+alt Currently in coding project
+    LSLGen -> LSLGen : Analyze transcript entry
+    LSLGen -> CodingLSL : Write entry directly to coding LSL
+    note right of CodingLSL : **Direct Write**: No redirection needed\nWrites to current coding LSL file
+    
+    alt LSL file doesn't exist
+        LSLGen -> CodingLSL : Create new LSL file
+        CodingLSL --> LSLGen : File created
+    else LSL file exists
+        LSLGen -> CodingLSL : Append entry to existing file
+    end
+    
+    CodingLSL --> User : ✅ Entry written to coding LSL
+    
+== Step 3B: Running from External Project ==
+
+else Currently in external project (e.g., nano-degree)
+    LSLGen -> LSLGen : Check redirect requirements
+    
+    alt Entry needs redirection to coding
+        note right of LSLGen : **Redirect Logic**: Entry contains\ncoding-related content that should\nbe documented in coding project
+        
+        LSLGen -> CodingLSL : Write entry to coding project LSL
+        note right of CodingLSL : **Redirect Target**: Entry gets written\nto coding project with proper attribution
+        
+        CodingLSL --> User : ✅ Entry redirected to coding LSL
+        
+    else Entry stays in current project
+        LSLGen -> TargetLSL : Write entry to current project LSL
+        note right of TargetLSL : **Local Write**: Entry stays in\ncurrent project documentation
+        
+        TargetLSL --> User : ✅ Entry written to local LSL
+    end
+end
+
+== Error Prevention ==
+
+note over LSLGen : **No "No Context" Entries**\n• Always validate entry has meaningful content\n• Skip entries that provide no information value\n• Ensure proper context extraction from transcript
+
+note over StatusLine : **File Naming Convention**\n• Format: *-session-from-[source-project].md\n• NOT: *-coding-session-from-[source-project].md\n• Dropped "coding" prefix for clarity
+
+@enduml

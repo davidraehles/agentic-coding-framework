@@ -534,6 +534,32 @@ node scripts/combined-status-line.js
 
 All v2.0 troubleshooting steps remain valid for file structure, timezone, and LSL generation issues.
 
+## LSL Routing Logic
+
+![LSL Routing Sequence](images/lsl-simplified-routing-sequence.png)
+
+The system uses a two-step routing process:
+
+1. **Read Project Context**: Uses statusLine meta info to determine current project
+2. **Route Content Appropriately**:
+   - **From coding project**: Writes directly to coding LSL files
+   - **From external project**: Checks redirect status and routes accordingly
+
+## Hook Integration
+
+![Status Line Hook Timing](images/status-line-hook-timing.png)
+
+The system relies on Claude Code's PostToolUse hooks for real-time updates. Status line updates occur immediately after each tool use.
+
+## Data Flow Architecture
+
+![Conversation-Based Redirect Data Flow](images/conversation-based-redirect-dataflow.png)
+
+The system provides:
+- Context-aware path resolution using working directory tracking
+- Conversation-based analysis for redirect detection
+- Dynamic redirect flag management with 3-minute timeout
+
 ---
 
 ## Migration from v2.0 to v3.0
@@ -544,20 +570,18 @@ The v3.0 system is backward compatible with v2.0 configurations. No manual migra
 
 ### New Features Available
 
-1. **Start Background Updates**:
-```bash
-node scripts/start-status-line-updater.js
-```
+1. **Enhanced Hook Integration**: Status line updates triggered by Claude Code's native PostToolUse hooks
 
-2. **Enhanced Detection**: Automatically active when using updated `combined-status-line.js`
+2. **Simplified Routing Logic**: Always reads transcript from current project, routes appropriately based on content
 
-3. **Working Directory Tracking**: Enabled automatically with v3.0 system
+3. **Working Directory Tracking**: Enabled automatically with v3.0 system using transcript metadata
 
 ### Recommended Actions
 
-- Start background status updater for continuous updates
-- Monitor logs for working directory context tracking
+- Verify Claude Code hook configuration in `~/.claude/settings.json`
+- Monitor logs for working directory context tracking  
 - Test conversation-based detection with relative paths
+- Validate that "No context" entries are no longer created
 
 ---
 
