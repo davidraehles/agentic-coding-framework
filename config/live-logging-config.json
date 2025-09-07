@@ -82,6 +82,9 @@
     "consolidated_session": "{date}_{time}_consolidated-live-session.md",
     "trajectory_analysis": "{date}_{time}_trajectory-analysis.md"
   },
+  "timezone": {
+    "display_timezone": "Europe/Berlin"
+  },
   "api_key_env_vars": [
     "GROQ_API_KEY",
     "GROK_API_KEY", 

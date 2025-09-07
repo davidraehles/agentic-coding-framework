@@ -447,28 +447,139 @@ class CombinedStatusLine {
 
   async getRedirectStatus() {
     try {
+      // Check for redirect status files from both old and new monitors
+      const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
       const targetProject = process.env.CODING_TARGET_PROJECT || process.cwd();
-      const redirectFile = join(targetProject, '.specstory', '.redirect-status');
       
-      if (!existsSync(redirectFile)) {
+      // New integrated monitor creates .redirect-active in coding directory
+      const newRedirectFile = join(codingPath, '.redirect-active');
+      
+      // Old enhanced monitor creates .redirect-status in project .specstory directory
+      const oldRedirectFile = join(targetProject, '.specstory', '.redirect-status');
+      
+      if (process.env.DEBUG_STATUS) {
+        console.error(`DEBUG: Checking redirect files:`);
+        console.error(`  New: ${newRedirectFile} (exists: ${existsSync(newRedirectFile)})`);
+        console.error(`  Old: ${oldRedirectFile} (exists: ${existsSync(oldRedirectFile)})`);
+      }
+      
+      let redirectInfo = null;
+      let redirectTime = null;
+      
+      // Check new monitor's file first
+      if (existsSync(newRedirectFile)) {
+        redirectInfo = JSON.parse(readFileSync(newRedirectFile, 'utf8'));
+        redirectTime = new Date(redirectInfo.timestamp);
+        if (process.env.DEBUG_STATUS) {
+          console.error(`  Found new redirect file: ${JSON.stringify(redirectInfo)}`);
+        }
+      }
+      // Fall back to old monitor's file
+      else if (existsSync(oldRedirectFile)) {
+        redirectInfo = JSON.parse(readFileSync(oldRedirectFile, 'utf8'));
+        redirectTime = new Date(redirectInfo.timestamp);
+        if (process.env.DEBUG_STATUS) {
+          console.error(`  Found old redirect file: ${JSON.stringify(redirectInfo)}`);
+        }
+      }
+      
+      if (!redirectInfo || !redirectTime) {
+        if (process.env.DEBUG_STATUS) {
+          console.error(`  No redirect info found`);
+        }
         return { active: false };
       }
       
-      const redirectInfo = JSON.parse(readFileSync(redirectFile, 'utf8'));
-      const redirectTime = new Date(redirectInfo.timestamp);
       const now = new Date();
+      const timeDiff = now - redirectTime;
       
-      // Consider redirect active only during recent activity (3 minutes)
-      const isActive = (now - redirectTime) < 180000;
+      // Consider redirect active only during recent activity (2 minutes)
+      const isActive = timeDiff < 120000;
+      
+      if (process.env.DEBUG_STATUS) {
+        console.error(`  Redirect time: ${redirectTime.toISOString()}`);
+        console.error(`  Current time: ${now.toISOString()}`);
+        console.error(`  Time diff: ${timeDiff}ms (active: ${isActive})`);
+      }
       
       return {
         active: isActive,
-        target: redirectInfo.target,
-        tranche: redirectInfo.tranche,
+        target: redirectInfo.target || 'coding',
+        from_project: redirectInfo.from_project,
         timestamp: redirectInfo.timestamp
       };
     } catch (error) {
       return { active: false };
+    }
+  }
+
+  async ensureTranscriptMonitorRunning() {
+    try {
+      // Check if integrated transcript monitor is running by looking for health file
+      const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
+      const healthFile = join(codingPath, '.transcript-monitor-health');
+      
+      if (!existsSync(healthFile)) {
+        // Monitor not running, start it in background
+        if (process.env.DEBUG_STATUS) {
+          console.error('DEBUG: Transcript monitor not detected, starting...');
+        }
+        await this.startTranscriptMonitor();
+        return;
+      }
+      
+      // Check if health file is recent (within last 10 seconds)
+      const stats = fs.statSync(healthFile);
+      const now = Date.now();
+      const age = now - stats.mtime.getTime();
+      
+      if (age > 10000) {
+        // Health file is stale, restart monitor
+        if (process.env.DEBUG_STATUS) {
+          console.error('DEBUG: Transcript monitor health stale, restarting...');
+        }
+        await this.startTranscriptMonitor();
+      }
+    } catch (error) {
+      if (process.env.DEBUG_STATUS) {
+        console.error('DEBUG: Error checking transcript monitor:', error.message);
+      }
+    }
+  }
+
+  async startTranscriptMonitor() {
+    try {
+      const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
+      const monitorScript = join(codingPath, 'scripts', 'integrated-transcript-monitor.js');
+      
+      if (!existsSync(monitorScript)) {
+        return; // Script not found, skip auto-start
+      }
+      
+      const { spawn } = await import('child_process');
+      
+      // Start monitor in background with proper environment
+      const env = {
+        ...process.env,
+        CODING_TOOLS_PATH: codingPath,
+        CODING_TARGET_PROJECT: process.env.CODING_TARGET_PROJECT || process.cwd()
+      };
+      
+      const monitor = spawn('node', [monitorScript], {
+        detached: true,
+        stdio: 'ignore',
+        env
+      });
+      
+      monitor.unref(); // Allow parent to exit without waiting
+      
+      if (process.env.DEBUG_STATUS) {
+        console.error('DEBUG: Started integrated transcript monitor with PID:', monitor.pid);
+      }
+    } catch (error) {
+      if (process.env.DEBUG_STATUS) {
+        console.error('DEBUG: Failed to start transcript monitor:', error.message);
+      }
     }
   }
 
@@ -532,7 +643,7 @@ class CombinedStatusLine {
 
     // Add redirect indicator if active
     if (redirectStatus && redirectStatus.active) {
-      parts.push(`🔀→${redirectStatus.target}`);
+      parts.push(`→${redirectStatus.target}`);
     }
 
     // Add live log target filename inline at the end (compact format)

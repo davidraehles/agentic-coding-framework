@@ -270,28 +270,51 @@ class EnhancedTranscriptMonitor {
    * Check if content involves coding project
    */
   isCodingRelated(exchange) {
-    // Get the coding directory path
     const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
     
-    console.log(`\n🔍 SIMPLE CODING DETECTION:`);
+    console.log(`\n🔍 ENHANCED CODING DETECTION:`);
     console.log(`  Coding path: ${codingPath}`);
     console.log(`  Tools: ${exchange.toolCalls?.map(t => t.name).join(', ') || 'none'}`);
     
-    // Check tool calls for file operations in coding directory
+    // 1. Check tool calls for file operations in coding directory
     for (const toolCall of exchange.toolCalls || []) {
       const toolData = JSON.stringify(toolCall).toLowerCase();
       
-      // Look for file operations (Read, Write, Edit, etc.) that touch coding directory
-      if (toolData.includes(codingPath.toLowerCase())) {
-        console.log(`✅ CODING DETECTED: ${toolCall.name} touches ${codingPath}`);
-        this.debug(`Coding detected: ${toolCall.name} operates on ${codingPath}`);
+      if (toolData.includes(codingPath.toLowerCase()) || toolData.includes('/coding/') || toolData.includes('coding/')) {
+        console.log(`✅ CODING DETECTED (TOOL): ${toolCall.name} touches coding directory`);
+        this.debug(`Coding detected: ${toolCall.name} operates on coding directory`);
         return true;
       }
-      
-      // Also check for explicit coding/ paths in tool parameters
-      if (toolData.includes('/coding/') || toolData.includes('coding/')) {
-        console.log(`✅ CODING DETECTED: ${toolCall.name} references coding/ directory`);
-        this.debug(`Coding detected: ${toolCall.name} references coding/ directory`);
+    }
+    
+    // 2. Check user message and Claude response for coding-related keywords
+    const combinedContent = (exchange.userMessage + ' ' + exchange.claudeResponse).toLowerCase();
+    
+    const codingIndicators = [
+      'enhanced-transcript-monitor',
+      'transcript-monitor',
+      'trajectory system debugging',
+      'trajectory script',
+      'update-comprehensive-trajectory',
+      'coding/scripts/',
+      'coding/bin/',
+      'coding project',
+      'lsl system',
+      'live session logging',
+      'redirect indicator',
+      'status line',
+      'coding tools',
+      'coding_tools_path',
+      'trajectory update',
+      'semantic analysis',
+      'cross-project',
+      'content routing'
+    ];
+    
+    for (const indicator of codingIndicators) {
+      if (combinedContent.includes(indicator)) {
+        console.log(`✅ CODING DETECTED (CONTENT): Found "${indicator}" in exchange`);
+        this.debug(`Coding detected: Content contains "${indicator}"`);
         return true;
       }
     }
@@ -360,8 +383,14 @@ class EnhancedTranscriptMonitor {
   async updateComprehensiveTrajectory(targetProject) {
     try {
       const { spawn } = await import('child_process');
-      const scriptDir = path.dirname(import.meta.url.replace('file://', ''));
-      const updateScript = path.join(scriptDir, 'update-comprehensive-trajectory-v2.js');
+      
+      // Use the CODING_TOOLS_PATH environment variable set by bin/coding
+      const codingToolsPath = process.env.CODING_TOOLS_PATH;
+      if (!codingToolsPath) {
+        throw new Error('CODING_TOOLS_PATH environment variable not set. Run from coding/bin/coding');
+      }
+      
+      const updateScript = path.join(codingToolsPath, 'scripts', 'repository-trajectory-generator.js');
       
       const child = spawn('node', [updateScript], {
         cwd: targetProject,
@@ -579,9 +608,21 @@ class EnhancedTranscriptMonitor {
   async clearRedirectStatus() {
     try {
       const redirectFile = path.join(this.config.projectPath, '.specstory', '.redirect-status');
+      
+      // Only clear if redirect file exists and is older than 5 minutes
       if (fs.existsSync(redirectFile)) {
-        fs.unlinkSync(redirectFile);
-        this.debug(`Cleared redirect status`);
+        const redirectData = JSON.parse(fs.readFileSync(redirectFile, 'utf8'));
+        const redirectTime = new Date(redirectData.timestamp);
+        const now = new Date();
+        const timeDiff = now - redirectTime;
+        
+        // Only clear if redirect is older than 5 minutes (vs 2 minute display window)
+        if (timeDiff > 300000) {
+          fs.unlinkSync(redirectFile);
+          this.debug(`Cleared old redirect status (${Math.round(timeDiff/1000)}s old)`);
+        } else {
+          this.debug(`Keeping recent redirect status (${Math.round(timeDiff/1000)}s old)`);
+        }
       }
     } catch (error) {
       this.debug(`Failed to clear redirect status: ${error.message}`);
