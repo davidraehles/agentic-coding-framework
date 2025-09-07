@@ -18,7 +18,7 @@ function getTargetProject() {
     name: projectName,
     path: targetPath,
     outputDir: `${targetPath}/.specstory/history`,
-    // If we're generating for coding project, always mark files as coming from their origin
+    // Use consistent filename pattern - drop "coding" from filenames
     filenamePattern: (date, window, isFromOtherProject, originProject) => {
       if (projectName === 'coding') {
         if (isFromOtherProject) {
@@ -186,6 +186,7 @@ async function generateLSL() {
         const timestampInfo = parseTimestamp(entry.timestamp);
         const userText = extractUserMessage(entry);
         
+        // Skip entries with no meaningful user message to prevent "No context" entries
         if (!userText || userText.trim().length === 0) continue;
 
         // Collect all related assistant responses and tool interactions

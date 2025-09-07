@@ -267,6 +267,43 @@ class EnhancedTranscriptMonitor {
   }
 
   /**
+   * Determine target project using user's simplified logic:
+   * (1) Read correct transcript file (always from current project via statusLine)
+   * (2a) If running in coding -> write to coding LSL
+   * (2b) If running outside coding -> check redirect status
+   */
+  determineTargetProject(exchange) {
+    const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
+    
+    // Check if we're running from coding directory
+    if (this.config.projectPath.includes('/coding')) {
+      return codingPath;
+    }
+    
+    // Running from outside coding - check redirect status
+    if (this.isCodingRelated(exchange)) {
+      return codingPath; // Redirect to coding
+    }
+    
+    return this.config.projectPath; // Stay in local project
+  }
+
+  /**
+   * Create or append to session file with exclusive routing
+   */
+  async createOrAppendToSessionFile(targetProject, tranche, exchange) {
+    const sessionFile = this.getSessionFilePath(targetProject, tranche);
+    
+    if (!fs.existsSync(sessionFile)) {
+      // Create new session file
+      await this.createEmptySessionFile(targetProject, tranche);
+    }
+    
+    // Note: Entry writing is handled by processUserPromptSetCompletion
+    // This just ensures the file exists
+  }
+
+  /**
    * Check if content involves coding project
    */
   isCodingRelated(exchange) {
@@ -372,8 +409,8 @@ class EnhancedTranscriptMonitor {
       // Local project
       return path.join(targetProject, '.specstory', 'history', `${baseName}-session.md`);
     } else {
-      // Redirected to coding project
-      return path.join(targetProject, '.specstory', 'history', `${baseName}_coding-session-from-${currentProjectName}.md`);
+      // Redirected to coding project - drop "coding" from filename
+      return path.join(targetProject, '.specstory', 'history', `${baseName}-session-from-${currentProjectName}.md`);
     }
   }
 
@@ -486,8 +523,13 @@ class EnhancedTranscriptMonitor {
     const exchangeTime = new Date(exchange.timestamp).toISOString();
     const isRedirected = targetProject !== this.config.projectPath;
     
+    // Skip exchanges with no meaningful user message to prevent "No context" entries
+    if (!exchange.userMessage || exchange.userMessage.trim().length === 0) {
+      return;
+    }
+    
     let content = `### User Prompt - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
-    content += `**Request:** ${exchange.userMessage?.slice(0, 500) || 'No context'}${exchange.userMessage?.length > 500 ? '...' : ''}\n\n`;
+    content += `**Request:** ${exchange.userMessage.slice(0, 500)}${exchange.userMessage.length > 500 ? '...' : ''}\n\n`;
     
     if (exchange.claudeResponse) {
       content += `**Claude Response:** ${exchange.claudeResponse.slice(0, 300)}${exchange.claudeResponse.length > 300 ? '...' : ''}\n\n`;
@@ -527,45 +569,23 @@ class EnhancedTranscriptMonitor {
           
           // Complete previous user prompt set if exists
           if (this.currentUserPromptSet.length > 0) {
-            const targetProject = this.isCodingRelated(this.currentUserPromptSet[0]) ? 
-              (process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding') : 
-              this.config.projectPath;
-            
+            const targetProject = this.determineTargetProject(this.currentUserPromptSet[0]);
             await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
             this.currentUserPromptSet = [];
           }
           
-          // Create new session files for new time boundary
-          const newTargetProject = this.isCodingRelated(exchange) ? 
-            (process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding') : 
-            this.config.projectPath;
-          
-          await this.createEmptySessionFile(newTargetProject, currentTranche);
+          // Create new session files for new time boundary - EXCLUSIVE routing
+          const targetProject = this.determineTargetProject(exchange);
+          await this.createOrAppendToSessionFile(targetProject, currentTranche, exchange);
           this.lastTranche = currentTranche;
           
-          // Manage redirect notification for new session boundary
-          if (newTargetProject !== this.config.projectPath) {
-            await this.notifyStatusLineRedirect(currentTranche);
-          } else {
-            // Clear redirect status when creating local session
-            await this.clearRedirectStatus();
-          }
         } else {
-          // Same session - complete current user prompt set
+          // Same session - complete current user prompt set  
           if (this.currentUserPromptSet.length > 0) {
-            const targetProject = this.isCodingRelated(this.currentUserPromptSet[0]) ? 
-              (process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding') : 
-              this.config.projectPath;
-            
+            const targetProject = this.determineTargetProject(this.currentUserPromptSet[0]);
             await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
             
-            // Manage redirect notification based on target
-            if (targetProject !== this.config.projectPath) {
-              await this.notifyStatusLineRedirect(currentTranche);
-            } else {
-              // Clear redirect status when processing local (non-coding) activities
-              await this.clearRedirectStatus();
-            }
+            // Note: Redirect detection now handled by conversation-based analysis in status line
           }
         }
         
@@ -584,50 +604,7 @@ class EnhancedTranscriptMonitor {
     }
   }
 
-  /**
-   * Notify status line about coding redirect
-   */
-  async notifyStatusLineRedirect(tranche) {
-    try {
-      const redirectFile = path.join(this.config.projectPath, '.specstory', '.redirect-status');
-      const redirectInfo = {
-        timestamp: new Date().toISOString(),
-        tranche: tranche.timeString,
-        target: 'coding'
-      };
-      fs.writeFileSync(redirectFile, JSON.stringify(redirectInfo));
-      this.debug(`Notified status line of redirect to coding`);
-    } catch (error) {
-      this.debug(`Failed to notify status line: ${error.message}`);
-    }
-  }
-
-  /**
-   * Clear redirect status when no active redirection
-   */
-  async clearRedirectStatus() {
-    try {
-      const redirectFile = path.join(this.config.projectPath, '.specstory', '.redirect-status');
-      
-      // Only clear if redirect file exists and is older than 5 minutes
-      if (fs.existsSync(redirectFile)) {
-        const redirectData = JSON.parse(fs.readFileSync(redirectFile, 'utf8'));
-        const redirectTime = new Date(redirectData.timestamp);
-        const now = new Date();
-        const timeDiff = now - redirectTime;
-        
-        // Only clear if redirect is older than 5 minutes (vs 2 minute display window)
-        if (timeDiff > 300000) {
-          fs.unlinkSync(redirectFile);
-          this.debug(`Cleared old redirect status (${Math.round(timeDiff/1000)}s old)`);
-        } else {
-          this.debug(`Keeping recent redirect status (${Math.round(timeDiff/1000)}s old)`);
-        }
-      }
-    } catch (error) {
-      this.debug(`Failed to clear redirect status: ${error.message}`);
-    }
-  }
+  // Removed redirect file methods - status line now uses conversation-based detection
 
   /**
    * Check if transcript has new content
@@ -684,12 +661,12 @@ class EnhancedTranscriptMonitor {
       // Complete any pending user prompt set
       if (this.currentUserPromptSet.length > 0) {
         const currentTranche = this.getCurrentTimetranche();
-        const targetProject = this.isCodingRelated(this.currentUserPromptSet[0]) ? 
-          (process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding') : 
-          this.config.projectPath;
+        const targetProject = this.determineTargetProject(this.currentUserPromptSet[0]);
         
         await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
       }
+      
+      // Note: No longer need to clear redirect files
       
       this.stop();
       process.exit(0);

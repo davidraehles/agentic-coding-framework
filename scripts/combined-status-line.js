@@ -447,68 +447,240 @@ class CombinedStatusLine {
 
   async getRedirectStatus() {
     try {
-      // Check for redirect status files from both old and new monitors
+      // Only show redirect indicator when working OUTSIDE the coding project
       const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
-      const targetProject = process.env.CODING_TARGET_PROJECT || process.cwd();
+      const targetProject = process.env.CODING_TARGET_PROJECT;
       
-      // New integrated monitor creates .redirect-active in coding directory
-      const newRedirectFile = join(codingPath, '.redirect-active');
-      
-      // Old enhanced monitor creates .redirect-status in project .specstory directory
-      const oldRedirectFile = join(targetProject, '.specstory', '.redirect-status');
-      
-      if (process.env.DEBUG_STATUS) {
-        console.error(`DEBUG: Checking redirect files:`);
-        console.error(`  New: ${newRedirectFile} (exists: ${existsSync(newRedirectFile)})`);
-        console.error(`  Old: ${oldRedirectFile} (exists: ${existsSync(oldRedirectFile)})`);
-      }
-      
-      let redirectInfo = null;
-      let redirectTime = null;
-      
-      // Check new monitor's file first
-      if (existsSync(newRedirectFile)) {
-        redirectInfo = JSON.parse(readFileSync(newRedirectFile, 'utf8'));
-        redirectTime = new Date(redirectInfo.timestamp);
+      // If target project is the coding project itself, no redirect needed
+      if (!targetProject || targetProject.includes(codingPath)) {
         if (process.env.DEBUG_STATUS) {
-          console.error(`  Found new redirect file: ${JSON.stringify(redirectInfo)}`);
-        }
-      }
-      // Fall back to old monitor's file
-      else if (existsSync(oldRedirectFile)) {
-        redirectInfo = JSON.parse(readFileSync(oldRedirectFile, 'utf8'));
-        redirectTime = new Date(redirectInfo.timestamp);
-        if (process.env.DEBUG_STATUS) {
-          console.error(`  Found old redirect file: ${JSON.stringify(redirectInfo)}`);
-        }
-      }
-      
-      if (!redirectInfo || !redirectTime) {
-        if (process.env.DEBUG_STATUS) {
-          console.error(`  No redirect info found`);
+          console.error(`DEBUG: Target is coding project (${targetProject}), no redirect needed`);
         }
         return { active: false };
       }
       
-      const now = new Date();
-      const timeDiff = now - redirectTime;
-      
-      // Consider redirect active only during recent activity (2 minutes)
-      const isActive = timeDiff < 120000;
-      
-      if (process.env.DEBUG_STATUS) {
-        console.error(`  Redirect time: ${redirectTime.toISOString()}`);
-        console.error(`  Current time: ${now.toISOString()}`);
-        console.error(`  Time diff: ${timeDiff}ms (active: ${isActive})`);
+      // Check if current conversation involves coding by reading stdin JSON input
+      const input = await this.readStdinInput();
+      if (input && input.transcript_path) {
+        return await this.analyzeConversationForCoding(input.transcript_path);
       }
       
-      return {
-        active: isActive,
-        target: redirectInfo.target || 'coding',
-        from_project: redirectInfo.from_project,
-        timestamp: redirectInfo.timestamp
-      };
+      if (process.env.DEBUG_STATUS) {
+        console.error(`DEBUG: No transcript path available for conversation analysis`);
+      }
+      
+      return { active: false };
     } catch (error) {
+      if (process.env.DEBUG_STATUS) {
+        console.error(`DEBUG: Redirect analysis failed: ${error.message}`);
+      }
+      return { active: false };
+    }
+  }
+
+  async readStdinInput() {
+    try {
+      // Read JSON input from stdin if available
+      if (process.stdin.isTTY) {
+        return null; // No stdin input when run directly
+      }
+      
+      let data = '';
+      for await (const chunk of process.stdin) {
+        data += chunk;
+      }
+      
+      return data.trim() ? JSON.parse(data) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  resolveRelativePaths(input, workingDir) {
+    // Helper to resolve relative paths in tool inputs using working directory context
+    const resolved = { ...input };
+    
+    // Common file path fields in tool inputs
+    const pathFields = ['file_path', 'path', 'command', 'glob'];
+    
+    for (const field of pathFields) {
+      if (resolved[field] && typeof resolved[field] === 'string') {
+        const value = resolved[field];
+        // If it's a relative path and we have a working directory, resolve it
+        if (!value.startsWith('/') && workingDir) {
+          resolved[field] = `${workingDir}/${value}`;
+        }
+      }
+    }
+    
+    return resolved;
+  }
+
+  async analyzeConversationForCoding(transcriptPath) {
+    try {
+      if (!existsSync(transcriptPath)) {
+        return { active: false };
+      }
+
+      const transcript = readFileSync(transcriptPath, 'utf8');
+      const lines = transcript.trim().split('\n').filter(line => line.trim());
+      
+      const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
+      const codingIndicators = [
+        codingPath.toLowerCase(),
+        '/coding/',
+        'coding/',
+        'combined-status-line',
+        'transcript-monitor',
+        'enhanced-transcript',
+        'scripts/',
+        '.js"',
+        '.ts"',
+        'status line',
+        'statusline'
+      ];
+
+      // Find the most recent complete exchange (user prompt + assistant responses)
+      let currentExchangeLines = [];
+      let lastUserMessageIndex = -1;
+      
+      // First, find the last user message
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i];
+        if (!line.trim()) continue;
+        
+        try {
+          const entry = JSON.parse(line);
+          if (entry.type === 'user' && !entry.isMeta) {
+            lastUserMessageIndex = i;
+            break;
+          }
+        } catch (parseError) {
+          continue;
+        }
+      }
+      
+      if (lastUserMessageIndex === -1) {
+        return { active: false }; // No user messages found
+      }
+      
+      // Collect the exchange: last user message + subsequent assistant responses
+      for (let i = lastUserMessageIndex; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim()) continue;
+        
+        try {
+          const entry = JSON.parse(line);
+          // Include the user message and any assistant responses that follow
+          if (entry.type === 'user' || entry.type === 'assistant') {
+            // Stop if we hit a new user message (unless it's the first one we found)
+            if (entry.type === 'user' && i > lastUserMessageIndex) {
+              break;
+            }
+            currentExchangeLines.push(line);
+          }
+        } catch (parseError) {
+          continue;
+        }
+      }
+      
+      // Analyze the current exchange for coding activity with working directory context
+      let currentWorkingDir = null;
+      let foundCodingActivity = false;
+      
+      // Process entries to track working directory changes and detect coding activity
+      for (const line of currentExchangeLines) {
+        try {
+          const entry = JSON.parse(line);
+          
+          // Update working directory context from transcript metadata
+          if (entry.cwd) {
+            currentWorkingDir = entry.cwd;
+          }
+          
+          // Check both USER and ASSISTANT messages for redirect detection
+          // Skip system messages (hooks, internal operations)
+          if (entry.type === 'system') continue;
+          
+          // Only check user and assistant messages
+          if (entry.type !== 'user' && entry.type !== 'assistant') continue;
+          
+          // Extract message content based on entry type
+          let actualContent = '';
+          if (entry.message && entry.message.content) {
+            // Handle different content formats
+            if (typeof entry.message.content === 'string') {
+              actualContent = entry.message.content.toLowerCase();
+            } else if (Array.isArray(entry.message.content)) {
+              for (const item of entry.message.content) {
+                if (item.type === 'text' && item.text) {
+                  actualContent += item.text.toLowerCase() + ' ';
+                } else if (entry.type === 'user' && item.type === 'tool_result') {
+                  // Skip tool results for user messages (they contain previous outputs)
+                  continue;
+                } else if (entry.type === 'assistant' && item.type === 'tool_use') {
+                  // Include tool usage from assistant messages for coding detection
+                  let toolContent = JSON.stringify(item.input).toLowerCase();
+                  
+                  // Resolve relative paths using working directory context
+                  if (currentWorkingDir && item.input && typeof item.input === 'object') {
+                    const resolvedInput = this.resolveRelativePaths(item.input, currentWorkingDir);
+                    toolContent = JSON.stringify(resolvedInput).toLowerCase();
+                  }
+                  
+                  actualContent += toolContent + ' ';
+                }
+              }
+            }
+          } else if (entry.content && typeof entry.content === 'string') {
+            actualContent = entry.content.toLowerCase();
+          }
+          
+          // Skip if no actual content
+          if (!actualContent) continue;
+          
+          // Check for coding indicators
+          for (const indicator of codingIndicators) {
+            if (actualContent.includes(indicator)) {
+              if (process.env.DEBUG_STATUS) {
+                console.error(`DEBUG: Found coding indicator "${indicator}" in ${entry.type} message`);
+                console.error(`DEBUG: Working directory context: ${currentWorkingDir}`);
+              }
+              foundCodingActivity = true;
+              break;
+            }
+          }
+          
+          // Also check if we're currently in the coding directory
+          if (currentWorkingDir && currentWorkingDir.includes('/coding')) {
+            if (process.env.DEBUG_STATUS) {
+              console.error(`DEBUG: Working in coding directory: ${currentWorkingDir}`);
+            }
+            foundCodingActivity = true;
+          }
+          
+          if (foundCodingActivity) break;
+          
+        } catch (parseError) {
+          // Skip malformed JSON lines
+          continue;
+        }
+      }
+      
+      if (foundCodingActivity) {
+        return {
+          active: true,
+          target: 'coding',
+          source: 'current_exchange',
+          workingDir: currentWorkingDir
+        };
+      }
+      
+      return { active: false };
+    } catch (error) {
+      if (process.env.DEBUG_STATUS) {
+        console.error(`DEBUG: Conversation analysis failed: ${error.message}`);
+      }
       return { active: false };
     }
   }

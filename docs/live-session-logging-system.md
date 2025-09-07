@@ -1,541 +1,390 @@
-# Live Session Logging (LSL) System v2.0
+# Live Session Logging System v3.0
+
+**Status**: ✅ Active Production System  
+**Last Updated**: 2025-09-07  
+**Next Review**: Weekly during active development  
+**Version**: 3.0  
+**Compatibility**: Claude Code v1.0+
+
+---
 
 ## Overview
 
-The Live Session Logging (LSL) System provides comprehensive real-time capture, cross-project routing, and semantic analysis of Claude Code interactions. This revamped system automatically creates structured session logs with timezone-aware 60-minute boundaries, intelligent content classification, and robust project detection.
+The Live Session Logging (LSL) system automatically generates comprehensive documentation of Claude Code work sessions in real-time. Version 3.0 introduces **conversation-based redirect detection** with **working directory context tracking**, enabling precise detection of coding activities regardless of relative or absolute file paths, integrated with Claude Code's native hook system.
 
-![LSL Architecture](images/lsl-basic.png)
+![LSL v3.0 Architecture](images/lsl-v3-architecture.png)
+
+> **System Architecture**: The v3.0 LSL system represents a fundamental shift from file-based detection to sophisticated conversation analysis with persistent context tracking.
 
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
+- [Revolutionary v3.0 Features](#revolutionary-v30-features)
+- [Conversation-Based Redirect Detection](#conversation-based-redirect-detection)
+- [Working Directory Context Tracking](#working-directory-context-tracking)
+- [Continuous Status Line Updates](#continuous-status-line-updates)
 - [Core Components](#core-components)
-- [Cross-Project Content Routing](#cross-project-content-routing)
-- [Timezone & Time Window Management](#timezone--time-window-management)
-- [Status Line Integration](#status-line-integration)
-- [Enhanced Project Detection](#enhanced-project-detection)
 - [File Structure & Naming](#file-structure--naming)
 - [Configuration System](#configuration-system)
+- [Usage Examples](#usage-examples)
 - [Troubleshooting](#troubleshooting)
 
 ## Architecture Overview
 
-The LSL system v2.0 introduces several major improvements over the previous version:
+The LSL system v3.0 represents a fundamental shift from file-based detection to sophisticated conversation analysis with persistent context tracking.
 
-### Key Enhancements
+### Revolutionary v3.0 Features
 
-- **Cross-Project Routing**: Intelligent classification routes coding content from the present project context to coding project
-- **Robust Project Detection**: Uses multiple detection methods (environment variables, .specstory directories, current working directory)
-- **Centralized Timezone Handling**: Single source of truth for timezone configuration and conversions
-- **Enhanced Status Line**: Real-time session monitoring with timing warnings and redirect status
-- **Trajectory Generation**: Basic trajectory files documenting session patterns and activities
-- **Real-Time Constraint Monitoring**: Proactive code quality assurance with file change detection
+1. **Conversation-Based Detection**: Analyzes entire conversation context instead of individual files
+2. **Working Directory Context Tracking**: Monitors `cwd` changes from transcript metadata
+3. **Relative Path Resolution**: Automatically resolves relative paths using working directory context
+4. **Enhanced Hook Integration**: Status line updates triggered by tool use events with improved detection accuracy
+5. **Context-Aware Documentation**: Preserves complete conversation flow and decision processes
+6. **Enhanced Redirect Persistence**: Maintains `→coding` indicator when working in coding directory context
 
 ### System State Flow
 
-![LSL System State Chart](images/lsl-state-chart.png)
-
-The LSL system operates through several key states, from idle monitoring through active session processing, content classification, and constraint checking. The system maintains continuous background monitoring while providing real-time feedback through the status line.
-
-### Content Routing Decision Logic
-
-The content routing system uses a **simple, reliable file-based approach** to determine whether content should be redirected to the coding project:
-
-**Rule**: Redirect to coding project **ONLY** when tool calls actually touch files in the coding directory.
-
-**Detection Logic**:
-1. Check each tool call for file operations in `/coding/` directory
-2. Check tool results for coding directory references  
-3. Return `true` only if coding directory is touched, `false` otherwise
-
-### System Flow
-
-```
-Claude Session → Enhanced Transcript Monitor → File-Based Classification → LSL Files
-                                           ↓
-Status Line Display ← Trajectory Generation
+```mermaid
+graph TD
+    A[Claude Code Session] --> B[Enhanced Transcript Monitor v3.0]
+    B --> C[Conversation Context Analyzer]
+    C --> D[Working Directory Tracker]
+    D --> E[Path Resolution Engine]
+    E --> F[LSL Generator] 
+    F --> G[Session Documentation]
+    
+    C --> H[Redirect Detection Engine]
+    H --> I[Claude Code Hook System]
+    I --> J[Event-Driven Status Updates]
+    
+    F --> K[Project Trajectory Integration]
+    K --> L[Comprehensive Trajectory]
 ```
 
-## Core Components
+The LSL v3.0 system operates through sophisticated conversation analysis, maintaining working directory context across tool calls and providing real-time status updates independent of user interactions.
 
-### 1. Enhanced Transcript Monitor (`scripts/enhanced-transcript-monitor.js`)
+### Enhanced Detection Algorithm
 
-**Purpose**: Real-time monitoring with cross-project routing and robust project detection.
+Version 3.0 replaces simple file-based detection with comprehensive conversation analysis:
 
-**Key Features**:
-
-- 🔄 **Robust Project Detection**: Uses status line's proven project detection logic
-- 🌐 **Cross-Project Routing**: Routes coding content from nano-degree to coding project  
-- ⏰ **Timezone-Aware Processing**: Centralized timezone handling via `.env` configuration
-- 📋 **Unified LSL Generation**: Uses consistent extraction logic for both live monitoring and historical transcript processing
-- 📁 **Simple File-Based Routing**: Routes content based on actual file operations
-- 🔐 **Secret Redaction**: Automatically redacts sensitive information
-
-**Configuration Environment Variables**:
-
-```bash
-CODING_TARGET_PROJECT=/path/to/nano-degree    # Source project to monitor
-CODING_REPO=/path/to/coding                   # Target coding project  
-TIMEZONE=Europe/Berlin                        # Timezone for file naming
+```javascript
+// v3.0 Conversation-based detection with working directory tracking
+function analyzeConversationForCoding(transcript) {
+    let foundCodingActivity = false;
+    let currentWorkingDir = null;
+    
+    // Process each transcript entry chronologically
+    for (const entry of transcript) {
+        // Update working directory context from transcript metadata
+        if (entry.cwd) {
+            currentWorkingDir = entry.cwd;
+        }
+        
+        // Check if we're currently in the coding directory
+        if (currentWorkingDir && currentWorkingDir.includes('/coding')) {
+            foundCodingActivity = true;
+        }
+        
+        // Analyze tool interactions with context-aware path resolution
+        if (entry.toolCalls) {
+            for (const tool of entry.toolCalls) {
+                if (tool.input && typeof tool.input === 'object') {
+                    // Resolve relative paths using working directory context
+                    const resolvedInput = this.resolveRelativePaths(tool.input, currentWorkingDir);
+                    const toolContent = JSON.stringify(resolvedInput).toLowerCase();
+                    
+                    // Check for coding-related paths
+                    if (toolContent.includes('/coding') || 
+                        toolContent.includes('coding/')) {
+                        foundCodingActivity = true;
+                    }
+                }
+            }
+        }
+    }
+    
+    return foundCodingActivity;
+}
 ```
 
-### 2. Timezone Utilities (`scripts/timezone-utils.js`)
+## Conversation-Based Redirect Detection
 
-**Purpose**: Centralized timezone handling for consistent timestamp formatting.
+### Evolution from File-Based to Conversation-Based
 
-**Key Functions**:
+**v2.0 Limitation**: Only detected individual file operations  
+**v3.0 Innovation**: Analyzes entire conversation context for comprehensive activity detection
 
-- `parseTimestamp(utcString)` - Convert UTC to local timezone
-- `formatTimestamp(utcString, timezone)` - Format for display (both UTC and local)
-- `getTimeWindow(timestamp)` - Determine 60-minute tranche  
-- `getTimezone()` - Load timezone from `.env` configuration
+### Key Improvements
 
-**Display Format**:
+- **Context Preservation**: Maintains conversation state across multiple tool calls
+- **Session Continuity**: Tracks work sessions from start to finish
+- **Dynamic Context Updates**: Adapts to changing working directories
+- **Persistent Detection**: Once coding context is established, maintains detection throughout session
+
+### Detection Logic Flow
+
+```mermaid
+graph LR
+    A[New Exchange] --> B[Update Working Dir Context]
+    B --> C[Check Current Directory]
+    C --> D{In Coding Dir?}
+    D -->|Yes| E[Mark as Coding Activity]
+    D -->|No| F[Analyze Tool Calls]
+    F --> G[Resolve Relative Paths]
+    G --> H{Contains Coding Paths?}
+    H -->|Yes| E
+    H -->|No| I[No Coding Activity]
+    E --> J[Maintain →coding Indicator]
+    I --> K[Clear Indicator After Timeout]
+```
+
+## Working Directory Context Tracking
+
+### Context Tracking Implementation
+
+The system now maintains working directory state throughout conversations:
+
+```javascript
+// Working directory context tracking
+class WorkingDirectoryTracker {
+    constructor() {
+        this.currentWorkingDir = null;
+    }
+    
+    updateContext(transcriptEntry) {
+        // Update working directory from transcript metadata
+        if (transcriptEntry.cwd) {
+            this.currentWorkingDir = transcriptEntry.cwd;
+            console.log(`Working directory updated: ${this.currentWorkingDir}`);
+        }
+    }
+    
+    resolveRelativePaths(input, workingDir) {
+        const resolved = { ...input };
+        const pathFields = ['file_path', 'path', 'command', 'glob'];
+        
+        for (const field of pathFields) {
+            if (resolved[field] && typeof resolved[field] === 'string') {
+                const value = resolved[field];
+                if (!value.startsWith('/') && workingDir) {
+                    resolved[field] = `${workingDir}/${value}`;
+                }
+            }
+        }
+        return resolved;
+    }
+    
+    isCodingContext() {
+        return this.currentWorkingDir && 
+               this.currentWorkingDir.includes('/coding');
+    }
+}
+```
+
+### Path Resolution Benefits
+
+- **Relative Path Handling**: Converts `docs/file.md` to `/Users/q284340/Agentic/coding/docs/file.md`
+- **Context Awareness**: Understands that operations in coding directory are coding-related
+- **Session Continuity**: Maintains context across directory changes
+- **Accurate Detection**: Eliminates false negatives from relative path usage
+
+## Enhanced Status Line Integration
+
+### Event-Driven Update System
+
+Version 3.0 enhances the existing Claude Code hook system with improved detection:
+
+```javascript
+// Enhanced conversation analysis in combined-status-line.js
+analyzeConversationForCoding(transcript) {
+    let foundCodingActivity = false;
+    let currentWorkingDir = null;
+    
+    for (const entry of transcript) {
+        // Track working directory changes
+        if (entry.cwd) {
+            currentWorkingDir = entry.cwd;
+        }
+        
+        // Check current directory context
+        if (currentWorkingDir && currentWorkingDir.includes('/coding')) {
+            foundCodingActivity = true;
+        }
+        
+        // Analyze tool calls with path resolution
+        // [Implementation details...]
+    }
+    
+    return foundCodingActivity;
+}
+```
+
+### Status Update Features
+
+- **Hook-Driven Updates**: Leverages Claude Code's PostToolUse hooks for updates
+- **Context-Aware Detection**: Working directory tracking provides persistent context
+- **Accurate Indicators**: `→coding` appears when actually working in coding directory
+- **Resource Efficient**: No background processes required
+- **Reliable Integration**: Uses Claude Code's native hook system
+
+### Status Line Display Components
 
 ```
-05/09/2025, 15:33 CEST (2025-09-05 13:33:47 UTC)
-```
-
-### 3. Combined Status Line (`scripts/combined-status-line.js`)
-
-**Purpose**: Real-time visual status with session timing warnings and redirect information.
-
-**Display Components**:
-
-```
-🛡️ 8.5 🔍EX 🔀→coding 📋1530-1630-session
+🛡️ 8.5 🔍EX 🧠 ✅ →coding 📋1230-1330
 ```
 
 - `🛡️ 8.5` - Constraint compliance score
 - `🔍EX` - Experimentation mode active
-- `🧠 ✅` - Semantic analysis operational  
-- `🔀→coding` - Content being redirected to coding project (dynamic, shows only during active redirection)
-- `📋1530-1630-session` - Current session with timing warnings
+- `🧠 ✅` - Semantic analysis operational
+- `→coding` - **NEW**: Context-aware coding indicator (shows when working in coding directory)
+- `📋1230-1330` - Current session with timing
 
-**Timing Warnings**:
+## Core Components
 
-- **Normal**: `📋1530-1630-session` (>5 minutes remaining)
-- **Warning**: `📋🟠1530-1630-session(3min)` (≤5 minutes remaining)  
-- **Ended**: `📋🔴1530-1630-session(ended)` (session time passed)
+### 1. Enhanced Transcript Monitor v3.0 (`scripts/combined-status-line.js`)
 
-### 4. Unified Message Extraction System
+**Revolutionary Changes**:
+- Conversation-based analysis replaces file-based detection
+- Working directory context tracking from transcript `cwd` field
+- Relative path resolution for accurate activity detection
+- Enhanced redirect persistence throughout work sessions
 
-**Purpose**: Consistent message processing for both live monitoring and historical transcript processing.
-
-![Unified Message Extraction](images/unified-message-extraction.png)
-
-**Unified Extraction Logic**: The system now uses a single, proven approach for extracting content from Claude exchanges, ensuring consistency between live session logging and historical file processing:
-
+**Key Features**:
 ```javascript
-// Unified text extraction used by both live and offline processing
-extractTextContent(content) {
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    return content
-      .filter(item => item && item.type === 'text')
-      .map(item => item.text)
-      .filter(text => text && text.trim())
-      .join('\n');
-  }
-  return '';
-}
-```
-
-**Benefits of Unification**:
-- **Consistency**: Same extraction logic ensures identical formatting for live and historical processing
-- **Maintainability**: Single codebase eliminates duplication and reduces maintenance burden
-- **Reliability**: Uses proven extraction patterns from the LSL generation system
-- **Error Prevention**: Eliminates the risk of divergent processing logic causing format differences
-
-### 5. Content Classification System
-
-**Purpose**: Simple file-based routing of content based on actual file operations.
-
-**Classification Logic**:
-
-- **Coding Content**: Tool calls that touch files in the `/coding/` directory
-- **Project Content**: All other content remains in the source project
-
-**Routing Rules**:
-
-```javascript
-// Simple file-based detection
-function isCodingRelated(exchange) {
-  const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
-  
-  // Check tool calls for file operations in coding directory
-  for (const toolCall of exchange.toolCalls || []) {
-    const toolData = JSON.stringify(toolCall).toLowerCase();
-    if (toolData.includes(codingPath.toLowerCase()) || toolData.includes('/coding/')) {
-      return true; // Route to coding project
+// Enhanced conversation analysis
+analyzeConversationForCoding(transcript) {
+    let foundCodingActivity = false;
+    let currentWorkingDir = null;
+    
+    for (const entry of transcript) {
+        // Track working directory changes
+        if (entry.cwd) {
+            currentWorkingDir = entry.cwd;
+        }
+        
+        // Check current directory context
+        if (currentWorkingDir && currentWorkingDir.includes('/coding')) {
+            foundCodingActivity = true;
+        }
+        
+        // Analyze tool calls with path resolution
+        // [Implementation details...]
     }
-  }
-  
-  return false; // Keep in source project
+    
+    return foundCodingActivity;
 }
 ```
 
-## Cross-Project Content Routing
+### 2. Enhanced Status Line Integration (`scripts/combined-status-line-wrapper.js`)
 
-### Routing Architecture
+**Purpose**: Integrates with Claude Code's hook system for event-driven status updates
 
-The system monitors sessions in one project (e.g., nano-degree) and intelligently routes content to appropriate LSL files based on actual file operations:
+**Features**:
+- Hook-triggered updates after each tool use
+- Environment variable management
+- Working directory context integration
+- Resource-efficient operation
 
-```
-nano-degree session → Enhanced Monitor → File-Based Classification → {
-  coding content → /coding/.specstory/history/*_from-nano-degree.md
-  nano-degree content → /nano-degree/.specstory/history/*-session.md
-}
-```
-
-**Key Improvements in Log Redirection**:
-
-- **Simplified Detection**: Replaced complex heuristics with reliable file-based detection
-- **Real-Time Routing**: Content is redirected immediately when coding directory files are touched
-- **Automatic Session Creation**: New sessions are created automatically when redirection occurs
-- **Status Line Integration**: Dynamic `🔀→coding` flag shows active redirection status
-- **Project Detection**: Robust multi-tier detection ensures reliable source project identification
-
-### File Naming Convention
-
-| Content Type | Location | Format |
-|--------------|----------|--------|
-| Source Project | `/nano-degree/.specstory/history/` | `2025-09-05_1530-1630-session.md` |
-| Cross-Project | `/coding/.specstory/history/` | `2025-09-05_1530-1630_coding-session-from-nano-degree.md` |
-| Trajectory | `/coding/.specstory/trajectory/` | `2025-09-05_1530-1630_coding-trajectory-from-nano-degree.md` |
-
-### Redirect Status Tracking
-
-The system maintains `.redirect-status` files to track active routing:
-
+**Integration**:
 ```json
 {
-  "timestamp": "2025-09-05T14:05:56.737Z",
-  "tranche": "1530-1630", 
-  "target": "coding"
-}
-```
-
-![Dynamic Redirect System](images/dynamic-redirect-system.png)
-
-**Dynamic Redirect Flag Behavior**: The status line shows `🔀→coding` only during active redirection periods. The flag automatically disappears after 3 minutes of inactivity to provide dynamic, real-time feedback about current routing status.
-
-**Timeout Configuration**: The redirect flag timeout is set to 180 seconds (3 minutes) to balance responsiveness with stability. This ensures the flag appears immediately when content is routed but disappears promptly when redirection stops.
-
-## Timezone & Time Window Management
-
-![Timezone & Time Window Handling](images/timezone-handling.png)
-
-### Centralized Configuration
-
-All timezone handling is centralized in `.env`:
-
-```bash
-TIMEZONE=Europe/Berlin
-```
-
-### Time Window System
-
-Sessions use 60-minute tranches with 30-minute offsets:
-
-| Time Tranche | File Suffix | Description |
-|--------------|------------|-------------|
-| 06:30-07:30 | `0630-0730` | Morning startup |
-| 07:30-08:30 | `0730-0830` | Early development |
-| 08:30-09:30 | `0830-0930` | Mid-morning focus |
-| 09:30-10:30 | `0930-1030` | Pre-lunch work |
-| 10:30-11:30 | `1030-1130` | Late morning |
-| 11:30-12:30 | `1130-1230` | Pre-lunch session |
-| 12:30-13:30 | `1230-1330` | Afternoon start |
-| 13:30-14:30 | `1330-1430` | Mid-afternoon |
-| 15:30-16:30 | `1530-1630` | Late afternoon |
-
-### UTC to Local Conversion
-
-All Claude transcript timestamps are in UTC and converted to local timezone for file naming and display:
-
-```javascript
-// UTC timestamp from Claude
-"2025-09-05T13:33:47.123Z" 
-
-// Converted to CEST (Europe/Berlin)
-"05/09/2025, 15:33 CEST (2025-09-05 13:33:47 UTC)"
-
-// File name uses local time tranche
-"2025-09-05_1530-1630-session.md"
-```
-
-## Status Line Integration
-
-### Real-Time Project Detection
-
-The status line uses robust project detection that checks:
-
-1. `CODING_TARGET_PROJECT` environment variable
-2. Current working directory for `.specstory` folders
-3. Coding repo directory as fallback
-
-### Session Timing Logic
-
-```javascript
-function calculateTimeRemaining(sessionTimeRange) {
-  // Parse session end time (e.g., "1530-1630" -> 16:30)
-  // Compare with current local time
-  // Return minutes remaining
-  
-  if (remainingMinutes > 5) return normal_display;
-  if (remainingMinutes > 0) return orange_warning;
-  return red_ended;
-}
-```
-
-### Enhanced Session File Detection
-
-The status line now uses improved regex patterns to detect various session file naming conventions:
-
-```javascript
-// Enhanced regex patterns for session file detection
-const timeMatch = f.match(/(\d{4})[-_](\d{4})[_-].*session/) || f.match(/(\d{4})-(\d{4})-session/);
-```
-
-This handles multiple naming patterns:
-- `2025-09-05_1530-1630-session.md`
-- `2025-09-05_1530-1630_coding-session-from-nano-degree.md` 
-- `2025-09-05_1530-1630-session-from-coding.md`
-
-### Service Health Monitoring
-
-![Status Line System](images/status-line-system.png)
-
-The status line monitors:
-
-- **Constraint Monitor**: Compliance scoring (`🛡️ 8.5`)
-- **Live Session**: Current session status (`📋1530-1630-session`)
-- **Content Routing**: Cross-project routing (`🔀→coding`)
-
-## Real-Time Constraint Monitoring
-
-### Overview
-
-The LSL system now integrates with real-time constraint monitoring to automatically detect and report code violations as development occurs. This system works alongside the Enhanced Transcript Monitor to provide proactive code quality assurance.
-
-![Constraint Monitor Integration](images/constraint-monitor-integration.png)
-
-### Key Features
-
-- **File Change Detection**: Automatically monitors code edits using `chokidar`
-- **Real-Time Violation Reporting**: Immediate feedback on constraint violations
-- **PlantUML Validation**: Prevents diagram compilation errors with specialized rules
-- **Status Line Integration**: Compliance scores reflected in live status display
-- **Background Monitoring**: Non-intrusive monitoring that doesn't interrupt development flow
-
-### Constraint Types
-
-#### Code Quality Constraints
-
-- **no-console-log**: Prevents `console.log` usage in production code
-- **no-hardcoded-paths**: Detects hardcoded user-specific file paths
-- **function-complexity**: Warns about overly complex functions
-
-#### PlantUML-Specific Constraints  
-
-- **plantuml-note-syntax**: Enforces single-line note syntax (`note over Element : text`)
-- **plantuml-broken-skinparam**: Detects orphaned skinparam blocks
-- **plantuml-mixed-element-types**: Warns about mixing component types in sequence diagrams
-- **plantuml-standard-include**: Ensures `!include _standard-style.puml` is present
-
-### Integration Architecture
-
-```mermaid
-graph TB
-    A[File Changes] --> B[Chokidar Watcher]
-    B --> C[Constraint Monitor Integration]
-    C --> D[MCP Constraint Monitor]
-    C --> E[Violation Detection]
-    E --> F[Status Line Update]
-    E --> G[Developer Notification]
-    D --> H[Violation History]
-```
-
-### Service Management
-
-#### Starting Constraint Monitoring
-
-```bash
-# Start background monitoring
-./scripts/start-constraint-monitoring.sh
-
-# Manual scan of existing files
-node scripts/constraint-monitor-integration.js scan
-
-# Help and options
-node scripts/constraint-monitor-integration.js help
-```
-
-#### Status Monitoring
-
-The constraint monitoring status is displayed in the combined status line:
-
-```
-🛡️ 8.5 🔍EX 🧠 ✅ 🔀→coding 📋1730-1830
-```
-
-Where `🛡️ 8.5` indicates the current compliance score out of 10.
-
-## Enhanced Project Detection
-
-### Detection Algorithm
-
-The enhanced transcript monitor uses a three-tier detection approach:
-
-```javascript
-function getProjectPath() {
-  const checkPaths = [
-    process.env.CODING_TARGET_PROJECT,  // Explicit target (e.g., nano-degree)
-    process.env.CODING_REPO,            // Coding repository
-    process.cwd()                       // Current working directory
-  ].filter(Boolean);
-  
-  // Look for .specstory directory to confirm valid project
-  for (const checkPath of checkPaths) {
-    if (fs.existsSync(path.join(checkPath, '.specstory'))) {
-      return checkPath;
-    }
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/tool-interaction-hook-wrapper.js"
+          }
+        ]
+      }
+    ]
   }
-  
-  return process.cwd(); // Fallback
 }
 ```
 
-### Validation Criteria
+### 3. Enhanced Redirect Detection (`scripts/combined-status-line.js`)
 
-Projects are validated by checking for:
+**Working Directory Integration**:
+```javascript
+// New working directory tracking methods
+updateWorkingDirectoryContext(entry) {
+    if (entry.cwd) {
+        this.currentWorkingDir = entry.cwd;
+    }
+}
 
-- `.specstory/` directory (primary indicator)
-- `CLAUDE.md` file (secondary indicator)
-- `package.json` or other project files (fallback)
+resolveRelativePaths(input, workingDir) {
+    // Resolves relative paths using working directory context
+    // Handles file_path, path, command, glob fields
+    // Returns fully resolved path object
+}
+
+checkCodingContext() {
+    // Multi-layer detection:
+    // 1. Working directory contains '/coding'
+    // 2. Resolved tool paths reference coding directory
+    // 3. Maintains context throughout conversation
+}
+```
 
 ## File Structure & Naming
 
-### Directory Layout
+### Directory Layout (Unchanged)
 
 ```
 project-root/
 ├── .specstory/
 │   ├── history/                           # LSL session files
-│   │   ├── 2025-09-05_1530-1630-session.md
-│   │   ├── 2025-09-05_1530-1630_coding-session-from-nano-degree.md
+│   │   ├── 2025-09-07_1230-1330-session.md
+│   │   ├── 2025-09-07_1230-1330_coding-session-from-nano-degree.md
 │   │   └── ...
-│   ├── trajectory/                        # Trajectory analysis files  
-│   │   ├── 2025-09-05_1530-1630_coding-trajectory-from-nano-degree.md
-│   │   └── ...
+│   ├── trajectory/                        # Trajectory analysis files
 │   └── .redirect-status                   # Current routing status
 ├── .env                                   # Timezone configuration
 └── scripts/
-    ├── enhanced-transcript-monitor.js     # Core monitoring
-    ├── combined-status-line.js           # Status display
-    ├── timezone-utils.js                 # Timezone handling  
-    └── generate-proper-lsl-from-transcripts.js
+    ├── combined-status-line.js           # Enhanced with v3.0 features
+    ├── start-status-line-updater.js      # NEW: Background daemon
+    ├── timezone-utils.js                 # Timezone handling
+    └── ...
 ```
 
-### LSL File Format
-
-Each LSL file follows a structured markdown format:
+### LSL File Format (Enhanced)
 
 ```markdown
-# WORK SESSION (1530-1630)
+# WORK SESSION (1230-1330)
 
-**Generated:** 2025-09-05T15:30:00.000Z
-**Work Period:** 1530-1630 
-**Focus:** Live session logging development
+**Generated:** 2025-09-07T12:30:00.000Z
+**Work Period:** 1230-1330
+**Focus:** v3.0 LSL System with conversation-based detection
 **Duration:** ~60 minutes
 
 ---
 
 ## Session Overview
 
-This session captures real-time tool interactions and exchanges.
+This session captures real-time tool interactions with enhanced conversation-based 
+redirect detection and working directory context tracking.
 
 ---
 
-## Key Activities  
+## Key Activities
 
-### User Prompt - 2025-09-05T15:33:47.123Z
+### User Prompt - 2025-09-07T12:30:05.310Z
 
-**Request:** Update the LSL documentation with latest changes
+**Request:** Continue updating the documentation for v3.0 LSL system
 
-**Claude Response:** I'll update the documentation to reflect...
+**Analysis:** 🔧 Coding activity (detected via working directory context)
+
+**Working Directory Context**: `/Users/q284340/Agentic/coding`
 
 **Tools Used:**
-- Read: ✅ /path/to/file.md
-- Edit: ✅ Updated documentation
-
-**Analysis:** 📋 General activity
+- Read: ✅ docs/live-session-logging-system.md (resolved from relative path)
+- Edit: ✅ Updated v3.0 documentation
 
 ---
 ```
-
-### Trajectory File Format
-
-**Revolutionary Change**: Trajectory files now provide meaningful project capability summaries instead of cryptic activity logs. The new format focuses on **what the project DOES NOW** rather than meaningless temporal patterns.
-
-![Trajectory Flow](images/trajectory-flow.png)
-
-```markdown  
-# Project Trajectory: Coding Infrastructure
-
-**Generated:** 2025-09-05T16:30:00.000Z
-**Project:** coding  
-**Focus:** Development infrastructure and tooling ecosystem
-**Source:** Enhanced trajectory generation v2.0
-
----
-
-## Current Project Capabilities
-
-- **Live Session Logging (LSL)**: Captures real-time development activities with timezone-aware file management
-- **Dynamic Status Line**: Shows active sessions, redirects, and system health with intelligent timeout behavior
-- **Intelligent Transcript Monitoring**: Automatic content classification with file-based routing logic
-- **Cross-Project Content Routing**: Routes coding content from external projects with dynamic redirect flags
-- **Constraint Monitoring**: Real-time code quality assurance with compliance scoring
-- **Unified Processing**: Consistent message extraction for both live and historical transcript processing
-- **Timezone Management**: Centralized timezone handling with proper UTC to local conversion
-- **Project Detection**: Multi-tier detection system for robust project identification
-
----
-
-## Recent Infrastructure Improvements
-
-- **Fixed message extraction to use proven LSL generation logic**
-- **Made redirect flag dynamic - only shows during active redirections**  
-- **Unified live and offline transcript processing to eliminate code duplication**
-- **Enhanced session file detection with improved regex patterns**
-- **Simplified content classification using reliable file-based detection**
-- **Improved project detection with multi-tier fallback system**
-
----
-
-## System Architecture Highlights
-
-The coding project serves as a comprehensive development infrastructure platform that enables:
-- Real-time development activity capture and routing
-- Cross-project collaboration with intelligent content classification  
-- Dynamic system monitoring with visual status indicators
-- Comprehensive constraint checking for code quality assurance
-
-This trajectory represents the current state and capabilities of the project,
-not a temporal activity log.
-
----
-```
-
-**Key Improvements in Trajectory Generation**:
-
-- **Capability-Focused**: Shows what the project currently DOES instead of meaningless activity patterns
-- **Hardcoded Meaningful Summaries**: Pre-defined summaries for known projects (coding, nano-degree)
-- **Current State Representation**: Focuses on present capabilities rather than historical activities
-- **User-Valuable Content**: Information that actually helps users understand project state
-- **Infrastructure Documentation**: Serves as living documentation of system capabilities
 
 ## Configuration System
 
@@ -549,182 +398,172 @@ TIMEZONE=Europe/Berlin
 CODING_TARGET_PROJECT=/Users/q284340/Agentic/nano-degree
 CODING_REPO=/Users/q284340/Agentic/coding
 
-# Optional API Keys (for future features)
-# XAI_API_KEY=xai-your-key-here
+# v3.0 Status Line Configuration
+STATUS_UPDATE_INTERVAL=3000  # Background update interval (ms)
+ENABLE_CONTINUOUS_UPDATES=true  # Enable background daemon
 
-# Optional: Debugging
+# Debugging
 TRANSCRIPT_DEBUG=true
 DEBUG_STATUS=true
 ```
 
-### LSL Configuration (`config/live-logging-config.json`)
+### Claude Code Settings Integration
+
+The v3.0 system integrates with Claude Code's status line configuration:
 
 ```json
 {
-  "live_logging": {
-    "session_duration": 3600000,
-    "timezone_from_env": true,
-    "cross_project_routing": true,
-    "transcript_monitoring": {
-      "polling_interval": 2000,
-      "max_batch_size": 10,
-      "secret_redaction": true
-    }
+  "statusLine": {
+    "type": "command",
+    "command": "node /Users/q284340/Agentic/coding/scripts/combined-status-line-wrapper.js"
   },
-  "status_line": {
-    "cache_timeout": 5000,
-    "warning_threshold_minutes": 5,
-    "show_redirect_status": true
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command", 
+            "command": "node /Users/q284340/Agentic/coding/scripts/tool-interaction-hook-wrapper.js"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
 ## Usage Examples
 
-### Starting the System
+### Starting the v3.0 System
 
-```bash  
-# Set target project for monitoring
-export CODING_TARGET_PROJECT="/Users/q284340/Agentic/nano-degree"
-
-# Start enhanced transcript monitor
-node /path/to/coding/scripts/enhanced-transcript-monitor.js
-
-# Check status
-/path/to/coding/scripts/combined-status-line.js
-# Output: 🛡️ 8.5 🔍EX 🔀→coding 📋1530-1630-session
-```
-
-### Generating LSL Files Manually
+**Note:** The v3.0 system integrates with Claude Code's native hook system for automatic updates.
 
 ```bash
-# Generate LSL files for specific project
-CODING_TARGET_PROJECT="/Users/q284340/Agentic/nano-degree" \
-node /path/to/coding/scripts/generate-proper-lsl-from-transcripts.js --project=coding
+# 1. Verify Claude Code settings include status line configuration
+cat ~/.claude/settings.json | grep -A 2 statusLine
 
-# Generate for nano-degree content  
-node /path/to/coding/scripts/generate-proper-lsl-from-transcripts.js --project=nano-degree
+# 2. Test status line directly
+/Users/q284340/Agentic/coding/scripts/combined-status-line.js
+# Output: 🛡️ 8.5 🔍EX 🧠 ✅ →coding 📋1230-1330
+
+# 3. Verify hook integration
+cat ~/.claude/settings.json | grep -A 10 hooks
 ```
 
-### Testing Project Detection
+### Testing Conversation-Based Detection
 
 ```bash
-# Test transcript monitor project detection
-CODING_TARGET_PROJECT="/Users/q284340/Agentic/nano-degree" \
-TRANSCRIPT_DEBUG=true \
-node /path/to/coding/scripts/enhanced-transcript-monitor.js --test
+# Test working directory context tracking
+DEBUG_STATUS=1 CODING_TARGET_PROJECT="/Users/q284340/Agentic/nano-degree" \
+node /Users/q284340/Agentic/coding/scripts/combined-status-line.js
+
+# Expected output shows working directory context and resolved paths
+```
+
+### Monitoring System Health
+
+```bash
+# Check current status line output
+node /Users/q284340/Agentic/coding/scripts/combined-status-line.js
+
+# Test working directory detection
+DEBUG_STATUS=1 CODING_TARGET_PROJECT="/path/to/project" \
+node /Users/q284340/Agentic/coding/scripts/combined-status-line.js
+
+# Verify hook execution
+node /Users/q284340/Agentic/coding/scripts/tool-interaction-hook-wrapper.js
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### v3.0 Specific Issues
 
-#### 1. Status Line Shows TBD  
+#### 1. →coding Indicator Not Appearing
 
-**Symptoms**: Status displays `📋1553_TBD` instead of session time
+**Symptoms**: Redirect indicator missing when working in coding directory
 
-**Causes**:
-
-- Enhanced transcript monitor not running
-- Project detection failing  
-- No active transcript found
-
-**Solution**:
-
+**v3.0 Solutions**:
 ```bash
-# Check monitor status  
-ps aux | grep enhanced-transcript-monitor
+# Verify working directory context in transcript
+DEBUG_STATUS=1 CODING_TARGET_PROJECT="/path/to/source/project" \
+node scripts/combined-status-line.js
 
-# Restart with proper environment
-export CODING_TARGET_PROJECT="/path/to/source/project"
-node scripts/enhanced-transcript-monitor.js
+# Check if transcript contains cwd metadata
+grep -r "cwd" ~/.claude/projects/*/
 
-# Verify project detection
-TRANSCRIPT_DEBUG=true node scripts/enhanced-transcript-monitor.js --test
+# Test conversation analysis directly
+node -e "console.log('Test working directory detection')"
 ```
 
-#### 2. Cross-Project Routing Not Working
+#### 2. Working Directory Context Not Tracked
 
-**Symptoms**: All content goes to source project, no `*_from-nano-degree.md` files created
+**Symptoms**: Relative paths not resolved correctly, detection missed
 
-**Causes**:
-
-- Content classification logic not triggered
-- Missing `.redirect-status` updates
-- Environment variables not set
-
-**Solution**:
-
+**Solutions**:
 ```bash
-# Check redirect status
-cat .specstory/.redirect-status
+# Check transcript for cwd field
+grep -r "cwd" ~/.claude/projects/*/
 
-# Verify environment
-echo $CODING_TARGET_PROJECT  
-echo $CODING_REPO
-
-# Test content classification
-node scripts/generate-proper-lsl-from-transcripts.js --project=coding
-```
-
-#### 3. Timezone Issues
-
-**Symptoms**: Files created with wrong time windows, misaligned timestamps
-
-**Causes**:
-
-- Missing or incorrect `TIMEZONE` in `.env`  
-- Timezone utilities not being used
-- UTC vs local time confusion
-
-**Solution**:
-
-```bash
-# Check timezone configuration
-grep TIMEZONE .env
-
-# Test timezone utilities
+# Test path resolution manually
 node -e "
-const { formatTimestamp } = require('./scripts/timezone-utils.js');
-console.log(formatTimestamp('2025-09-05T13:33:47.123Z'));
+const script = require('./scripts/combined-status-line.js');
+console.log(script.resolveRelativePaths({file_path: 'docs/test.md'}, '/Users/q284340/Agentic/coding'));
 "
 ```
 
-### Debug Mode
+#### 3. Hook Integration Issues
 
-Enable detailed logging:
+**Symptoms**: Status line not updating after tool use
 
+**⚠️ Warning:** Missing or incorrect hook configuration will prevent status line updates.
+
+**Solutions**:
 ```bash
-# Enhanced transcript monitor debug
-TRANSCRIPT_DEBUG=true node scripts/enhanced-transcript-monitor.js
+# Verify hook configuration in Claude Code settings
+cat ~/.claude/settings.json | grep -A 10 hooks
 
-# Status line debug
-DEBUG_STATUS=true node scripts/combined-status-line.js  
+# Test hook wrapper directly
+node scripts/tool-interaction-hook-wrapper.js
 
-# Combined debug mode
-TRANSCRIPT_DEBUG=true DEBUG_STATUS=true \
-CODING_TARGET_PROJECT="/path/to/project" \
-node scripts/enhanced-transcript-monitor.js
+# Check status line script directly
+node scripts/combined-status-line.js
 ```
 
-### Log Files
+### Legacy Troubleshooting
 
-Monitor system activity:
+All v2.0 troubleshooting steps remain valid for file structure, timezone, and LSL generation issues.
 
+---
+
+## Migration from v2.0 to v3.0
+
+### Automatic Migration
+
+The v3.0 system is backward compatible with v2.0 configurations. No manual migration required.
+
+### New Features Available
+
+1. **Start Background Updates**:
 ```bash
-# Watch active logs
-tail -f enhanced-transcript-monitor.log
-tail -f combined-status-line.log
-
-# Check service status
-cat .services-running.json
+node scripts/start-status-line-updater.js
 ```
+
+2. **Enhanced Detection**: Automatically active when using updated `combined-status-line.js`
+
+3. **Working Directory Tracking**: Enabled automatically with v3.0 system
+
+### Recommended Actions
+
+- Start background status updater for continuous updates
+- Monitor logs for working directory context tracking
+- Test conversation-based detection with relative paths
 
 ---
 
 ## Quick Start Guide
 
-### 1. Environment Setup
+### 1. Environment Setup (Same as v2.0)
 
 ```bash
 # Configure timezone in .env
@@ -734,39 +573,57 @@ echo "TIMEZONE=Europe/Berlin" >> .env
 export CODING_TARGET_PROJECT="/path/to/nano-degree"
 ```
 
-### 2. Start Monitoring
+### 2. Start v3.0 System
 
-```bash  
-# Start enhanced transcript monitor  
-node scripts/enhanced-transcript-monitor.js &
+```bash
+# Verify Claude Code hook integration
+cat ~/.claude/settings.json | grep -A 10 hooks
 
-# Verify status
+# Test enhanced detection
 scripts/combined-status-line.js
 ```
 
-### 3. Verify Operation
+### 3. Verify v3.0 Operation
 
 ```bash
-# Check for LSL files
-ls -la .specstory/history/
+# Check status line output
+scripts/combined-status-line.js
 
-# Check redirect status  
-cat .specstory/.redirect-status
+# Monitor working directory tracking
+DEBUG_STATUS=1 scripts/combined-status-line.js
 
-# View trajectory files
-ls -la .specstory/trajectory/
-```
-
-### 4. Monitor Activity
-
-```bash
-# Real-time status monitoring
-watch -n 5 scripts/combined-status-line.js
-
-# Live file updates
-watch -n 10 'ls -la .specstory/history/ | tail -5'
+# Verify hook wrapper execution
+node scripts/tool-interaction-hook-wrapper.js
 ```
 
 ---
 
-*For system overview and general usage, see the main [README.md](../README.md).*
+## System Capabilities Summary
+
+### v3.0 Achievements
+
+✅ **Conversation-Based Detection**: Analyzes complete conversation context  
+✅ **Working Directory Tracking**: Maintains context across directory changes  
+✅ **Relative Path Resolution**: Accurately handles relative file paths  
+✅ **Hook-Driven Status Updates**: Integrates with Claude Code's native hook system  
+✅ **Context-Aware Redirect Detection**: `→coding` indicator shows when working in coding directory  
+✅ **Backward Compatibility**: Works with existing v2.0 configurations  
+
+### Next Development Phase
+
+- Enhanced semantic analysis integration
+- Multi-project conversation tracking
+- Advanced redirect routing logic
+- Performance optimization for large conversations
+
+---
+
+## Related Documentation
+
+- **[Trajectory Generation System](trajectory-generation-system.md)** - Integrated trajectory analysis and reporting
+- **[Main README](../README.md)** - System overview and general usage
+- **[Installation Guide](installation/)** - Setup and configuration instructions
+
+---
+
+*This documentation is part of the LSL v3.0 system. For trajectory integration, see [Trajectory Generation System](trajectory-generation-system.md).*

@@ -1,0 +1,49 @@
+@startuml lsl-trajectory-integration-simple
+!include _standard-style.puml
+
+title LSL v3.0 & Trajectory System Integration
+
+package "LSL System v3.0" {
+  [Conversation Analysis] as ConvAnalysis
+  [Working Directory Tracking] as WorkDirTrack
+  [Session Documentation] as SessionDoc
+}
+
+package "Trajectory Generation" {
+  [Repository Analysis] as RepoAnalysis
+  [MCP Semantic Analysis] as MCPSemantic
+  [LSL Data Integration] as LSLIntegration
+  [Report Generation] as ReportGen
+}
+
+package "Integration Output" {
+  [Live Session Reports] as LiveReports
+  [Comprehensive Trajectories] as CompTrajectories
+  [Architecture Documentation] as ArchDoc
+}
+
+ConvAnalysis --> LSLIntegration
+WorkDirTrack --> LSLIntegration
+SessionDoc --> LSLIntegration
+
+RepoAnalysis --> MCPSemantic
+MCPSemantic --> ReportGen
+LSLIntegration --> ReportGen
+
+ReportGen --> LiveReports
+ReportGen --> CompTrajectories
+ReportGen --> ArchDoc
+
+note right of LSLIntegration
+  Processes real-time session data
+  Extracts development patterns
+  Identifies capability evolution
+end note
+
+note right of ReportGen
+  Combines repository analysis
+  with live session insights
+  Creates comprehensive reports
+end note
+
+@enduml
