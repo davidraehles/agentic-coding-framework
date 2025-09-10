@@ -722,7 +722,7 @@ class CombinedStatusLine {
   async startTranscriptMonitor() {
     try {
       const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
-      const monitorScript = join(codingPath, 'scripts', 'integrated-transcript-monitor.js');
+      const monitorScript = join(codingPath, 'scripts', 'enhanced-transcript-monitor.js');
       
       if (!existsSync(monitorScript)) {
         return; // Script not found, skip auto-start

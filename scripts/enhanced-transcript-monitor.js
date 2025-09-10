@@ -10,6 +10,83 @@ import path from 'path';
 import os from 'os';
 import { parseTimestamp, formatTimestamp, getTimeWindow, getTimezone } from './timezone-utils.js';
 
+// Function to redact API keys and secrets from text
+function redactSecrets(text) {
+  if (!text) return text;
+  
+  // List of API key patterns to redact
+  const apiKeyPatterns = [
+    // Environment variable format: KEY=value
+    /\b(ANTHROPIC_API_KEY|OPENAI_API_KEY|GROK_API_KEY|XAI_API_KEY|GROQ_API_KEY|GEMINI_API_KEY|CLAUDE_API_KEY|GPT_API_KEY|DEEPMIND_API_KEY|COHERE_API_KEY|HUGGINGFACE_API_KEY|HF_API_KEY|REPLICATE_API_KEY|TOGETHER_API_KEY|PERPLEXITY_API_KEY|AI21_API_KEY|GOOGLE_API_KEY|AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|AZURE_API_KEY|GCP_API_KEY|GITHUB_TOKEN|GITLAB_TOKEN|BITBUCKET_TOKEN|NPM_TOKEN|PYPI_TOKEN|DOCKER_TOKEN|SLACK_TOKEN|DISCORD_TOKEN|TELEGRAM_TOKEN|STRIPE_API_KEY|SENDGRID_API_KEY|MAILGUN_API_KEY|TWILIO_AUTH_TOKEN|FIREBASE_API_KEY|SUPABASE_API_KEY|MONGODB_URI|POSTGRES_PASSWORD|MYSQL_PASSWORD|REDIS_PASSWORD|DATABASE_URL|CONNECTION_STRING|JWT_SECRET|SESSION_SECRET|ENCRYPTION_KEY|PRIVATE_KEY|SECRET_KEY|CLIENT_SECRET|API_SECRET|WEBHOOK_SECRET)\s*=\s*["']?([^"'\s\n]+)["']?/gi,
+    
+    // sk- prefix (common for various API keys)
+    /\bsk-[a-zA-Z0-9]{20,}/gi,
+    
+    // Common API key formats
+    /\b[a-zA-Z0-9]{32,}[-_][a-zA-Z0-9]{8,}/gi,
+    
+    // Bearer tokens
+    /Bearer\s+[a-zA-Z0-9\-._~+\/]{20,}/gi,
+    
+    // JWT tokens (three base64 parts separated by dots)
+    /\beyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/gi,
+    
+    // MongoDB connection strings
+    /mongodb(\+srv)?:\/\/[^:]+:[^@]+@[^\s]+/gi,
+    
+    // PostgreSQL/MySQL connection strings
+    /postgres(ql)?:\/\/[^:]+:[^@]+@[^\s]+/gi,
+    /mysql:\/\/[^:]+:[^@]+@[^\s]+/gi,
+    
+    // Generic URL with credentials
+    /https?:\/\/[^:]+:[^@]+@[^\s]+/gi,
+    
+    // Email addresses
+    /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/gi,
+    
+    // Corporate user IDs (q followed by 6 digits/letters)
+    /\bq[0-9a-zA-Z]{6}\b/gi,
+    
+    // Common corporate terms
+    /\b(BMW|Mercedes|Audi|Tesla|Microsoft|Google|Apple|Amazon|Meta|Facebook|IBM|Oracle|Cisco|Intel|Dell|HP|Lenovo|Samsung|LG|Sony|Panasonic|Siemens|SAP|Accenture|Deloitte|McKinsey|BCG|Bain|Goldman|Morgan|JPMorgan|Deutsche Bank|Commerzbank|Allianz|Munich Re|BASF|Bayer|Volkswagen|Porsche|Bosch|Continental|Airbus|Boeing|Lockheed|Northrop|Raytheon|General Electric|Ford|General Motors|Chrysler|Fiat|Renault|Peugeot|Citroen|Volvo|Scania|MAN|Daimler|ThyssenKrupp|Siemens Energy|RWE|EON|Uniper|TUI|Lufthansa|DHL|UPS|FedEx|TNT|Deutsche Post|Telekom|Vodafone|Orange|BT|Telefonica|Verizon|ATT|Sprint|TMobile)\b/gi
+  ];
+  
+  let redactedText = text;
+  
+  // Apply each pattern
+  apiKeyPatterns.forEach(pattern => {
+    if (pattern.source.includes('=')) {
+      // For environment variable patterns, preserve the key name
+      redactedText = redactedText.replace(pattern, (match, keyName) => {
+        return `${keyName}=<SECRET_REDACTED>`;
+      });
+    } else if (pattern.source.includes('mongodb') || pattern.source.includes('postgres') || pattern.source.includes('mysql')) {
+      // For connection strings, preserve the protocol
+      redactedText = redactedText.replace(pattern, (match) => {
+        const protocol = match.split(':')[0];
+        return `${protocol}://<CONNECTION_STRING_REDACTED>`;
+      });
+    } else if (pattern.source.includes('Bearer')) {
+      // For Bearer tokens
+      redactedText = redactedText.replace(pattern, 'Bearer <TOKEN_REDACTED>');
+    } else if (pattern.source.includes('@')) {
+      // For email addresses
+      redactedText = redactedText.replace(pattern, '<EMAIL_REDACTED>');
+    } else if (pattern.source.includes('q[0-9a-zA-Z]')) {
+      // For corporate user IDs
+      redactedText = redactedText.replace(pattern, '<USER_ID_REDACTED>');
+    } else if (pattern.source.includes('BMW|Mercedes')) {
+      // For corporate terms
+      redactedText = redactedText.replace(pattern, '<COMPANY_NAME_REDACTED>');
+    } else {
+      // For other patterns, replace with generic redaction
+      redactedText = redactedText.replace(pattern, '<SECRET_REDACTED>');
+    }
+  });
+  
+  return redactedText;
+}
+
 class EnhancedTranscriptMonitor {
   constructor(config = {}) {
     // Initialize debug early so it can be used in getProjectPath
@@ -233,12 +310,12 @@ class EnhancedTranscriptMonitor {
     // Handle different user message structures - using proven logic from LSL script
     if (entry.message?.content) {
       if (typeof entry.message.content === 'string') {
-        return entry.message.content;
+        return redactSecrets(entry.message.content);
       }
-      return this.extractTextContent(entry.message.content);
+      return redactSecrets(this.extractTextContent(entry.message.content));
     }
     if (entry.content) {
-      return this.extractTextContent(entry.content);
+      return redactSecrets(this.extractTextContent(entry.content));
     }
     return '';
   }
@@ -292,15 +369,9 @@ class EnhancedTranscriptMonitor {
    * Create or append to session file with exclusive routing
    */
   async createOrAppendToSessionFile(targetProject, tranche, exchange) {
-    const sessionFile = this.getSessionFilePath(targetProject, tranche);
-    
-    if (!fs.existsSync(sessionFile)) {
-      // Create new session file
-      await this.createEmptySessionFile(targetProject, tranche);
-    }
-    
-    // Note: Entry writing is handled by processUserPromptSetCompletion
-    // This just ensures the file exists
+    // Note: Session file creation is now handled by processUserPromptSetCompletion
+    // Only when there are meaningful exchanges to log
+    // This method is kept for compatibility but no longer creates empty files
   }
 
   /**
@@ -503,24 +574,39 @@ class EnhancedTranscriptMonitor {
   async processUserPromptSetCompletion(completedSet, targetProject, tranche) {
     if (completedSet.length === 0) return;
 
+    // Filter exchanges that have tool calls (meaningful content)
+    const meaningfulExchanges = completedSet.filter(exchange => 
+      exchange.toolCalls && exchange.toolCalls.length > 0
+    );
+    
+    // Only create session file if there are meaningful exchanges to log
+    if (meaningfulExchanges.length === 0) {
+      this.debug(`Skipping empty user prompt set - no tool calls found`);
+      return;
+    }
+
     const sessionFile = this.getSessionFilePath(targetProject, tranche);
     
-    // Log the completed user prompt set to session file
-    for (const exchange of completedSet) {
+    // Create session file only when we have content to write
+    if (!fs.existsSync(sessionFile)) {
+      await this.createEmptySessionFile(targetProject, tranche);
+    }
+    
+    // Log the meaningful exchanges to session file
+    for (const exchange of meaningfulExchanges) {
       await this.logExchangeToSession(exchange, sessionFile, targetProject);
     }
 
     // Update comprehensive trajectory instead of individual trajectory files
     await this.updateComprehensiveTrajectory(targetProject);
     
-    console.log(`📋 Completed user prompt set: ${completedSet.length} exchanges → ${path.basename(sessionFile)}`);
+    console.log(`📋 Completed user prompt set: ${meaningfulExchanges.length}/${completedSet.length} exchanges → ${path.basename(sessionFile)}`);
   }
 
   /**
    * Log exchange to session file
    */
   async logExchangeToSession(exchange, sessionFile, targetProject) {
-    const exchangeTime = new Date(exchange.timestamp).toISOString();
     const isRedirected = targetProject !== this.config.projectPath;
     
     // Skip exchanges with no meaningful user message to prevent "No context" entries
@@ -528,26 +614,78 @@ class EnhancedTranscriptMonitor {
       return;
     }
     
-    let content = `### User Prompt - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
-    content += `**Request:** ${exchange.userMessage.slice(0, 500)}${exchange.userMessage.length > 500 ? '...' : ''}\n\n`;
-    
-    if (exchange.claudeResponse) {
-      content += `**Claude Response:** ${exchange.claudeResponse.slice(0, 300)}${exchange.claudeResponse.length > 300 ? '...' : ''}\n\n`;
+    // Skip exchanges with no tool calls to prevent empty session files
+    if (!exchange.toolCalls || exchange.toolCalls.length === 0) {
+      this.debug(`Skipping exchange with no tool calls: ${exchange.userMessage.substring(0, 50)}...`);
+      return;
     }
     
-    if (exchange.toolCalls.length > 0) {
-      content += `**Tools Used:**\n`;
-      for (const tool of exchange.toolCalls) {
-        const result = exchange.toolResults.find(r => r.tool_use_id === tool.id);
-        const success = result && !result.is_error;
-        content += `- ${tool.name}: ${success ? '✅' : '❌'}\n`;
-      }
-      content += '\n';
+    // Log each tool call individually with detailed format (like original monitor)
+    for (const toolCall of exchange.toolCalls) {
+      const result = exchange.toolResults.find(r => r.tool_use_id === toolCall.id);
+      await this.logDetailedToolCall(exchange, toolCall, result, sessionFile, isRedirected);
     }
-    
-    content += `**Analysis:** ${this.isCodingRelated(exchange) ? '🔧 Coding activity' : '📋 General activity'}\n\n---\n\n`;
+  }
 
+  /**
+   * Log individual tool call with detailed JSON input/output (original monitor format)
+   */
+  async logDetailedToolCall(exchange, toolCall, result, sessionFile, isRedirected) {
+    const exchangeTime = new Date(exchange.timestamp).toISOString();
+    const toolSuccess = result && !result.is_error;
+    
+    // Use built-in fast semantic analysis for routing info (not MCP server)
+    const routingAnalysis = this.analyzeForRouting(exchange, toolCall, result);
+    
+    let content = `### ${toolCall.name} - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
+    content += `**User Request:** ${redactSecrets(exchange.userMessage.slice(0, 200))}${exchange.userMessage.length > 200 ? '...' : ''}\n\n`;
+    content += `**Tool:** ${toolCall.name}\n`;
+    content += `**Input:** \`\`\`json\n${redactSecrets(JSON.stringify(toolCall.input, null, 2))}\n\`\`\`\n\n`;
+    content += `**Result:** ${toolSuccess ? '✅ Success' : '❌ Error'}\n`;
+    
+    if (result?.content) {
+      const output = typeof result.content === 'string' ? result.content : JSON.stringify(result.content, null, 2);
+      content += `**Output:** \`\`\`\n${redactSecrets(output.slice(0, 500))}${output.length > 500 ? '\n...[truncated]' : ''}\n\`\`\`\n\n`;
+    }
+    
+    content += `**AI Analysis:** ${routingAnalysis}\n\n---\n\n`;
     fs.appendFileSync(sessionFile, content);
+  }
+
+  /**
+   * Fast built-in semantic analysis for routing decisions (not MCP server)
+   */
+  analyzeForRouting(exchange, toolCall, result) {
+    const toolInput = JSON.stringify(toolCall.input || {});
+    const resultContent = JSON.stringify(result?.content || '');
+    const userMessage = exchange.userMessage || '';
+    
+    // Check for coding-related file paths and operations
+    const codingPaths = [
+      '/users/q284340/agentic/coding/',
+      'coding/scripts/',
+      'coding/bin/',
+      'coding/src/',
+      'coding/.specstory/',
+      'coding/integrations/'
+    ];
+    
+    const combinedText = (toolInput + resultContent + userMessage).toLowerCase();
+    const isCoding = codingPaths.some(path => combinedText.includes(path));
+    
+    // Determine activity category
+    let category = 'general';
+    if (toolCall.name === 'Edit' || toolCall.name === 'Write' || toolCall.name === 'MultiEdit') {
+      category = 'file_modification';
+    } else if (toolCall.name === 'Read' || toolCall.name === 'Glob') {
+      category = 'file_read';
+    } else if (toolCall.name === 'Bash') {
+      category = 'command_execution';
+    } else if (toolCall.name === 'Grep') {
+      category = 'search_operation';
+    }
+    
+    return `${isCoding ? '🔧 Coding-related' : '📋 General'} ${category} - routing: ${isCoding ? 'coding project' : 'local project'}`;
   }
 
   /**
@@ -697,10 +835,124 @@ class EnhancedTranscriptMonitor {
   }
 }
 
+/**
+ * Batch reprocess all historical transcripts with current format
+ */
+async function reprocessHistoricalTranscripts(projectPath = null) {
+  try {
+    const targetProject = projectPath || process.env.CODING_TARGET_PROJECT || process.cwd();
+    const monitor = new EnhancedTranscriptMonitor({ projectPath: targetProject });
+    
+    console.log('🔄 Starting historical transcript reprocessing...');
+    console.log(`📁 Target project: ${targetProject}`);
+    
+    // Clear existing session files for clean regeneration
+    const historyDir = path.join(targetProject, '.specstory', 'history');
+    if (fs.existsSync(historyDir)) {
+      const sessionFiles = fs.readdirSync(historyDir).filter(file => 
+        file.includes('-session') && file.endsWith('.md')
+      );
+      
+      console.log(`🗑️ Removing ${sessionFiles.length} existing session files for clean regeneration...`);
+      for (const file of sessionFiles) {
+        fs.unlinkSync(path.join(historyDir, file));
+      }
+    }
+    
+    // Also clear redirected session files in coding project if different
+    const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
+    if (targetProject !== codingPath) {
+      const codingHistoryDir = path.join(codingPath, '.specstory', 'history');
+      if (fs.existsSync(codingHistoryDir)) {
+        const redirectedFiles = fs.readdirSync(codingHistoryDir).filter(file => 
+          file.includes('from-' + path.basename(targetProject)) && file.endsWith('.md')
+        );
+        
+        console.log(`🗑️ Removing ${redirectedFiles.length} redirected session files in coding project...`);
+        for (const file of redirectedFiles) {
+          fs.unlinkSync(path.join(codingHistoryDir, file));
+        }
+      }
+    }
+    
+    // Reset processing state to reprocess everything
+    monitor.lastProcessedUuid = null;
+    
+    // Find and process transcript
+    const transcriptFile = monitor.findCurrentTranscript();
+    if (!transcriptFile) {
+      console.log('❌ No transcript file found for this project');
+      return;
+    }
+    
+    console.log(`📊 Processing transcript: ${path.basename(transcriptFile)}`);
+    
+    // Process all exchanges
+    const messages = monitor.readTranscriptMessages(transcriptFile);
+    const exchanges = monitor.extractExchanges(messages);
+    
+    console.log(`🔍 Found ${exchanges.length} total exchanges`);
+    
+    // Process in batches to avoid memory issues
+    const batchSize = 50;
+    let processedCount = 0;
+    
+    for (let i = 0; i < exchanges.length; i += batchSize) {
+      const batch = exchanges.slice(i, i + batchSize);
+      await monitor.processExchanges(batch);
+      processedCount += batch.length;
+      console.log(`⚡ Processed ${processedCount}/${exchanges.length} exchanges...`);
+    }
+    
+    console.log('✅ Historical transcript reprocessing completed!');
+    console.log(`📋 Generated detailed LSL files with current format`);
+    
+    // Show summary of created files
+    if (fs.existsSync(historyDir)) {
+      const newFiles = fs.readdirSync(historyDir).filter(file => 
+        file.includes('-session') && file.endsWith('.md')
+      );
+      console.log(`📁 Created ${newFiles.length} session files in ${path.basename(targetProject)}`);
+    }
+    
+    if (targetProject !== codingPath && fs.existsSync(path.join(codingPath, '.specstory', 'history'))) {
+      const codingFiles = fs.readdirSync(path.join(codingPath, '.specstory', 'history')).filter(file => 
+        file.includes('from-' + path.basename(targetProject)) && file.endsWith('.md')
+      );
+      console.log(`📁 Created ${codingFiles.length} redirected session files in coding project`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to reprocess historical transcripts:', error.message);
+    process.exit(1);
+  }
+}
+
+// CLI interface
+async function main() {
+  try {
+    const args = process.argv.slice(2);
+    
+    // Check for reprocessing mode
+    if (args.includes('--reprocess') || args.includes('--batch')) {
+      const projectArg = args.find(arg => arg.startsWith('--project='));
+      const projectPath = projectArg ? projectArg.split('=')[1] : null;
+      await reprocessHistoricalTranscripts(projectPath);
+      return;
+    }
+    
+    // Normal monitoring mode
+    const monitor = new EnhancedTranscriptMonitor({ debug: true });
+    await monitor.start();
+  } catch (error) {
+    console.error('❌ Failed to start transcript monitor:', error.message);
+    process.exit(1);
+  }
+}
+
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const monitor = new EnhancedTranscriptMonitor({ debug: true });
-  monitor.start();
+  main().catch(console.error);
 }
 
 export default EnhancedTranscriptMonitor;

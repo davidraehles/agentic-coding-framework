@@ -61,7 +61,16 @@ function redactSecrets(text) {
     /mysql:\/\/[^:]+:[^@]+@[^\s]+/gi,
     
     // Generic URL with credentials
-    /https?:\/\/[^:]+:[^@]+@[^\s]+/gi
+    /https?:\/\/[^:]+:[^@]+@[^\s]+/gi,
+    
+    // Email addresses
+    /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/gi,
+    
+    // Corporate user IDs (q followed by 6 digits/letters)
+    /\bq[0-9a-zA-Z]{6}\b/gi,
+    
+    // Common corporate terms
+    /\b(BMW|Mercedes|Audi|Tesla|Microsoft|Google|Apple|Amazon|Meta|Facebook|IBM|Oracle|Cisco|Intel|Dell|HP|Lenovo|Samsung|LG|Sony|Panasonic|Siemens|SAP|Accenture|Deloitte|McKinsey|BCG|Bain|Goldman|Morgan|JPMorgan|Deutsche Bank|Commerzbank|Allianz|Munich Re|BASF|Bayer|Volkswagen|Porsche|Bosch|Continental|Airbus|Boeing|Lockheed|Northrop|Raytheon|General Electric|Ford|General Motors|Chrysler|Fiat|Renault|Peugeot|Citroen|Volvo|Scania|MAN|Daimler|ThyssenKrupp|Siemens Energy|RWE|EON|Uniper|TUI|Lufthansa|DHL|UPS|FedEx|TNT|Deutsche Post|Telekom|Vodafone|Orange|BT|Telefonica|Verizon|ATT|Sprint|TMobile)\b/gi
   ];
   
   let redactedText = text;
@@ -82,6 +91,15 @@ function redactSecrets(text) {
     } else if (pattern.source.includes('Bearer')) {
       // For Bearer tokens
       redactedText = redactedText.replace(pattern, 'Bearer <TOKEN_REDACTED>');
+    } else if (pattern.source.includes('@')) {
+      // For email addresses
+      redactedText = redactedText.replace(pattern, '<EMAIL_REDACTED>');
+    } else if (pattern.source.includes('q[0-9a-zA-Z]')) {
+      // For corporate user IDs
+      redactedText = redactedText.replace(pattern, '<USER_ID_REDACTED>');
+    } else if (pattern.source.includes('BMW|Mercedes')) {
+      // For corporate terms
+      redactedText = redactedText.replace(pattern, '<COMPANY_NAME_REDACTED>');
     } else {
       // For other patterns, replace with generic redaction
       redactedText = redactedText.replace(pattern, '<SECRET_REDACTED>');
