@@ -52,6 +52,10 @@
         "ANTHROPIC_API_KEY": "{{ANTHROPIC_API_KEY}}",
         "CODING_TOOLS_PATH": "{{CODING_TOOLS_PATH}}"
       }
+    },
+    "spec-workflow": {
+      "command": "npx",
+      "args": ["-y", "@pimzino/spec-workflow-mcp@latest", "{{CODING_TOOLS_PATH}}", "--AutoStartDashboard"]
     }
   }
 }

@@ -19,8 +19,14 @@ function redactSecrets(text) {
     // Environment variable format: KEY=value
     /\b(ANTHROPIC_API_KEY|OPENAI_API_KEY|GROK_API_KEY|XAI_API_KEY|GROQ_API_KEY|GEMINI_API_KEY|CLAUDE_API_KEY|GPT_API_KEY|DEEPMIND_API_KEY|COHERE_API_KEY|HUGGINGFACE_API_KEY|HF_API_KEY|REPLICATE_API_KEY|TOGETHER_API_KEY|PERPLEXITY_API_KEY|AI21_API_KEY|GOOGLE_API_KEY|AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|AZURE_API_KEY|GCP_API_KEY|GITHUB_TOKEN|GITLAB_TOKEN|BITBUCKET_TOKEN|NPM_TOKEN|PYPI_TOKEN|DOCKER_TOKEN|SLACK_TOKEN|DISCORD_TOKEN|TELEGRAM_TOKEN|STRIPE_API_KEY|SENDGRID_API_KEY|MAILGUN_API_KEY|TWILIO_AUTH_TOKEN|FIREBASE_API_KEY|SUPABASE_API_KEY|MONGODB_URI|POSTGRES_PASSWORD|MYSQL_PASSWORD|REDIS_PASSWORD|DATABASE_URL|CONNECTION_STRING|JWT_SECRET|SESSION_SECRET|ENCRYPTION_KEY|PRIVATE_KEY|SECRET_KEY|CLIENT_SECRET|API_SECRET|WEBHOOK_SECRET)\s*=\s*["']?([^"'\s\n]+)["']?/gi,
     
+    // JSON format: "apiKey": "sk-..." or "API_KEY": "sk-..." or "xai-..."
+    /"(apiKey|API_KEY|ANTHROPIC_API_KEY|OPENAI_API_KEY|XAI_API_KEY|GROK_API_KEY|api_key|anthropicApiKey|openaiApiKey|xaiApiKey|grokApiKey)":\s*"(sk-[a-zA-Z0-9-_]{20,}|xai-[a-zA-Z0-9-_]{20,}|[a-zA-Z0-9-_]{32,})"/gi,
+    
     // sk- prefix (common for various API keys)
     /\bsk-[a-zA-Z0-9]{20,}/gi,
+    
+    // xai- prefix (XAI/Grok API keys)
+    /\bxai-[a-zA-Z0-9]{20,}/gi,
     
     // Common API key formats
     /\b[a-zA-Z0-9]{32,}[-_][a-zA-Z0-9]{8,}/gi,
@@ -60,6 +66,11 @@ function redactSecrets(text) {
       redactedText = redactedText.replace(pattern, (match, keyName) => {
         return `${keyName}=<SECRET_REDACTED>`;
       });
+    } else if (pattern.source.includes('"(apiKey|API_KEY')) {
+      // For JSON format patterns, preserve the key name and structure
+      redactedText = redactedText.replace(pattern, (match, keyName) => {
+        return `"${keyName}": "<SECRET_REDACTED>"`;
+      });
     } else if (pattern.source.includes('mongodb') || pattern.source.includes('postgres') || pattern.source.includes('mysql')) {
       // For connection strings, preserve the protocol
       redactedText = redactedText.replace(pattern, (match) => {
@@ -98,6 +109,7 @@ class EnhancedTranscriptMonitor {
       debug: this.debug_enabled,
       sessionDuration: config.sessionDuration || 7200000, // 2 hours (generous for debugging)
       timezone: config.timezone || getTimezone(), // Use central timezone config
+      healthFile: path.join(process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || path.join(__dirname, '..'), '.transcript-monitor-health'),
       ...config
     };
 
@@ -406,11 +418,12 @@ class EnhancedTranscriptMonitor {
       'update-comprehensive-trajectory',
       'coding/scripts/',
       'coding/bin/',
-      'coding project',
-      'lsl system',
-      'live session logging',
-      'redirect indicator',
-      'status line',
+      // Removed overly broad keywords that cause false positives
+      // 'coding project', // Too generic
+      // 'lsl system', // Part of normal operation
+      // 'live session logging', // Part of normal operation  
+      // 'redirect indicator', // Part of normal operation
+      // 'status line', // Could be any project
       'coding tools',
       'coding_tools_path',
       'trajectory update',
@@ -775,6 +788,14 @@ class EnhancedTranscriptMonitor {
     console.log(`🔍 Check interval: ${this.config.checkInterval}ms`);
     console.log(`⏰ Session boundaries: Every 30 minutes`);
 
+    // Create initial health file
+    this.updateHealthFile();
+    
+    // Set up health file update interval (every 5 seconds)
+    this.healthIntervalId = setInterval(() => {
+      this.updateHealthFile();
+    }, 5000);
+
     this.intervalId = setInterval(async () => {
       if (this.isProcessing) return;
       if (!this.hasNewContent()) return;
@@ -822,6 +843,11 @@ class EnhancedTranscriptMonitor {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    if (this.healthIntervalId) {
+      clearInterval(this.healthIntervalId);
+      this.healthIntervalId = null;
+    }
+    this.cleanupHealthFile();
     console.log('📋 Enhanced transcript monitor stopped');
   }
 
@@ -831,6 +857,36 @@ class EnhancedTranscriptMonitor {
   debug(message) {
     if (this.config.debug) {
       console.error(`[EnhancedTranscriptMonitor] ${new Date().toISOString()} ${message}`);
+    }
+  }
+
+  /**
+   * Update health file to indicate monitor is running
+   */
+  updateHealthFile() {
+    try {
+      const healthData = {
+        timestamp: Date.now(),
+        projectPath: this.config.projectPath,
+        transcriptPath: this.transcriptPath,
+        status: 'running'
+      };
+      fs.writeFileSync(this.config.healthFile, JSON.stringify(healthData, null, 2));
+    } catch (error) {
+      this.debug(`Failed to update health file: ${error.message}`);
+    }
+  }
+
+  /**
+   * Remove health file on shutdown
+   */
+  cleanupHealthFile() {
+    try {
+      if (fs.existsSync(this.config.healthFile)) {
+        fs.unlinkSync(this.config.healthFile);
+      }
+    } catch (error) {
+      this.debug(`Failed to cleanup health file: ${error.message}`);
     }
   }
 }

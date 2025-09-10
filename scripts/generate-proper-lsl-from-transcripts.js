@@ -41,8 +41,14 @@ function redactSecrets(text) {
     // Environment variable format: KEY=value
     /\b(ANTHROPIC_API_KEY|OPENAI_API_KEY|GROK_API_KEY|XAI_API_KEY|GROQ_API_KEY|GEMINI_API_KEY|CLAUDE_API_KEY|GPT_API_KEY|DEEPMIND_API_KEY|COHERE_API_KEY|HUGGINGFACE_API_KEY|HF_API_KEY|REPLICATE_API_KEY|TOGETHER_API_KEY|PERPLEXITY_API_KEY|AI21_API_KEY|GOOGLE_API_KEY|AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|AZURE_API_KEY|GCP_API_KEY|GITHUB_TOKEN|GITLAB_TOKEN|BITBUCKET_TOKEN|NPM_TOKEN|PYPI_TOKEN|DOCKER_TOKEN|SLACK_TOKEN|DISCORD_TOKEN|TELEGRAM_TOKEN|STRIPE_API_KEY|SENDGRID_API_KEY|MAILGUN_API_KEY|TWILIO_AUTH_TOKEN|FIREBASE_API_KEY|SUPABASE_API_KEY|MONGODB_URI|POSTGRES_PASSWORD|MYSQL_PASSWORD|REDIS_PASSWORD|DATABASE_URL|CONNECTION_STRING|JWT_SECRET|SESSION_SECRET|ENCRYPTION_KEY|PRIVATE_KEY|SECRET_KEY|CLIENT_SECRET|API_SECRET|WEBHOOK_SECRET)\s*=\s*["']?([^"'\s\n]+)["']?/gi,
     
+    // JSON format: "apiKey": "sk-..." or "ANTHROPIC_API_KEY": "sk-..." or "xai-..."
+    /"(apiKey|API_KEY|ANTHROPIC_API_KEY|OPENAI_API_KEY|XAI_API_KEY|GROK_API_KEY|api_key|anthropicApiKey|openaiApiKey|xaiApiKey|grokApiKey)":\s*"(sk-[a-zA-Z0-9-_]{20,}|xai-[a-zA-Z0-9-_]{20,}|[a-zA-Z0-9-_]{32,})"/gi,
+    
     // sk- prefix (common for various API keys)
-    /\bsk-[a-zA-Z0-9]{20,}/gi,
+    /\bsk-[a-zA-Z0-9-_]{20,}/gi,
+    
+    // xai- prefix (XAI/Grok API keys)
+    /\bxai-[a-zA-Z0-9-_]{20,}/gi,
     
     // Common API key formats
     /\b[a-zA-Z0-9]{32,}[-_][a-zA-Z0-9]{8,}/gi,
@@ -81,6 +87,11 @@ function redactSecrets(text) {
       // For environment variable patterns, preserve the key name
       redactedText = redactedText.replace(pattern, (match, keyName) => {
         return `${keyName}=<SECRET_REDACTED>`;
+      });
+    } else if (pattern.source.includes('apiKey|API_KEY')) {
+      // For JSON format API keys, preserve the key name
+      redactedText = redactedText.replace(pattern, (match, keyName) => {
+        return `"${keyName}": "<SECRET_REDACTED>"`;
       });
     } else if (pattern.source.includes('mongodb') || pattern.source.includes('postgres') || pattern.source.includes('mysql')) {
       // For connection strings, preserve the protocol
