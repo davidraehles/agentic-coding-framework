@@ -10,7 +10,7 @@ import fs, { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
-import { getTimeWindow } from './timezone-utils.js';
+import { getTimeWindow, getShortTimeWindow } from './timezone-utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = process.env.CODING_REPO || join(__dirname, '..');
@@ -94,7 +94,7 @@ class CombinedStatusLine {
       // 1. Calculate current time tranche using the same timezone utilities as LSL
       const now = new Date();
       // JavaScript Date already returns local time when using getHours()
-      const currentTranche = getTimeWindow(now); // Pass Date directly - getTimeWindow expects local date
+      const currentTranche = getShortTimeWindow(now); // Use short format for status line display
       
       if (process.env.DEBUG_STATUS) {
         console.error(`DEBUG: UTC time: ${now.getUTCHours()}:${now.getUTCMinutes()}`);
@@ -119,17 +119,19 @@ class CombinedStatusLine {
             console.error(`DEBUG: All files in ${historyDir}:`, allFiles.filter(f => f.includes(today)));
           }
           
+          // Convert short format back to full format for file matching
+          const fullTranche = getTimeWindow(now);
           const currentTrancheFiles = fs.readdirSync(historyDir)
-            .filter(f => f.includes(today) && f.includes(currentTranche) && f.includes('session') && f.endsWith('.md'));
+            .filter(f => f.includes(today) && f.includes(fullTranche) && f.includes('session') && f.endsWith('.md'));
           
           if (process.env.DEBUG_STATUS) {
-            console.error(`DEBUG: Looking for files with: ${today} AND ${currentTranche} AND session.md`);
+            console.error(`DEBUG: Looking for files with: ${today} AND ${fullTranche} AND session.md`);
             console.error(`DEBUG: Found current tranche files:`, currentTrancheFiles);
           }
           
           if (currentTrancheFiles.length > 0) {
             // Found current tranche session file - calculate time remaining
-            const remainingMinutes = this.calculateTimeRemaining(currentTranche);
+            const remainingMinutes = this.calculateTimeRemaining(fullTranche);
             
             if (process.env.DEBUG_STATUS) {
               console.error(`DEBUG: Found current tranche file, remaining minutes: ${remainingMinutes}`);
@@ -148,7 +150,8 @@ class CombinedStatusLine {
       
       // 3. No current tranche file found - show current time window with status
       // We should always show the current time window, not fall back to old sessions
-      const remainingMinutes = this.calculateTimeRemaining(currentTranche);
+      const fullTranche = getTimeWindow(now);
+      const remainingMinutes = this.calculateTimeRemaining(fullTranche);
       
       if (process.env.DEBUG_STATUS) {
         console.error(`DEBUG: No session file for current tranche, showing time window with ${remainingMinutes} min remaining`);

@@ -522,40 +522,7 @@ class EnhancedTranscriptMonitor {
     console.log(`  Coding path: ${codingPath}`);
     console.log(`  Tools: ${exchange.toolCalls?.map(t => t.name).join(', ') || 'none'}`);
     
-    // 1. FIRST: Check tool calls for DIRECT file operations in coding directory
-    // This is fast and definitive - if tools touch coding files, it's clearly coding
-    for (const toolCall of exchange.toolCalls || []) {
-      const toolData = JSON.stringify(toolCall).toLowerCase();
-      
-      // Direct path references to coding directory
-      if (toolData.includes(codingPath.toLowerCase()) || toolData.includes('/coding/') || toolData.includes('coding/')) {
-        console.log(`✅ CODING DETECTED (DIRECT): ${toolCall.name} touches coding directory`);
-        this.debug(`Coding detected: ${toolCall.name} operates on coding directory`);
-        return true;
-      }
-      
-      // LSL generation script patterns
-      if (toolCall.name === 'Bash' && toolData.includes('generate-proper-lsl-from-transcripts.js')) {
-        if (toolData.includes('CODING_TARGET_PROJECT="/Users/q284340/Agentic/coding"') || 
-            toolData.includes('--project=coding')) {
-          console.log(`✅ CODING DETECTED (LSL): LSL generation script targeting coding project`);
-          this.debug(`Coding detected: LSL script targets coding project`);
-          return true;
-        }
-      }
-    }
-    
-    // Check tool results for coding directory references
-    for (const toolResult of exchange.toolResults || []) {
-      const resultData = JSON.stringify(toolResult).toLowerCase();
-      
-      // Direct coding directory references
-      if (resultData.includes(codingPath.toLowerCase()) || resultData.includes('/coding/')) {
-        console.log(`✅ CODING DETECTED (RESULT): Tool result references coding directory`);
-        this.debug(`Coding detected: Tool result references coding directory`);
-        return true;
-      }
-    }
+    // Skip broken "tool touches coding directory" logic - tool usage ≠ coding content
     
     // 2. SECOND: Use reliable coding classifier for local classification (priority)
     if (this.reliableCodingClassifier && this.reliableCodingClassifierReady) {
@@ -793,14 +760,18 @@ class EnhancedTranscriptMonitor {
   async processUserPromptSetCompletion(completedSet, targetProject, tranche) {
     if (completedSet.length === 0) return;
 
-    // Filter exchanges that have tool calls (meaningful content)
-    const meaningfulExchanges = completedSet.filter(exchange => 
-      exchange.toolCalls && exchange.toolCalls.length > 0
-    );
+    // All exchanges are meaningful - capture everything except /sl commands
+    const meaningfulExchanges = completedSet.filter(exchange => {
+      // Skip slash commands (like /sl)
+      if (exchange.userMessage && exchange.userMessage.trim().startsWith('/sl')) {
+        return false;
+      }
+      return true;
+    });
     
-    // Only create session file if there are meaningful exchanges to log
+    // Only skip if literally no exchanges (should be rare)
     if (meaningfulExchanges.length === 0) {
-      this.debug(`Skipping empty user prompt set - no tool calls found`);
+      this.debug(`Skipping empty user prompt set - no meaningful exchanges`);
       return;
     }
 
@@ -827,23 +798,68 @@ class EnhancedTranscriptMonitor {
    */
   async logExchangeToSession(exchange, sessionFile, targetProject) {
     const isRedirected = targetProject !== this.config.projectPath;
+    this.debug(`📝 LOGGING TO SESSION: ${sessionFile} (redirected: ${isRedirected})`);
     
     // Skip exchanges with no meaningful user message to prevent "No context" entries
     if (!exchange.userMessage || exchange.userMessage.trim().length === 0) {
+      this.debug(`Skipping empty user message`);
       return;
     }
     
-    // Skip exchanges with no tool calls to prevent empty session files
-    if (!exchange.toolCalls || exchange.toolCalls.length === 0) {
-      this.debug(`Skipping exchange with no tool calls: ${exchange.userMessage.substring(0, 50)}...`);
+    // Skip /sl commands only, process all other exchanges regardless of tool calls
+    if (exchange.userMessage && exchange.userMessage.trim().startsWith('/sl')) {
+      this.debug(`Skipping /sl command: ${exchange.userMessage.substring(0, 50)}...`);
       return;
     }
     
-    // Log each tool call individually with detailed format (like original monitor)
-    for (const toolCall of exchange.toolCalls) {
-      const result = exchange.toolResults.find(r => r.tool_use_id === toolCall.id);
-      await this.logDetailedToolCall(exchange, toolCall, result, sessionFile, isRedirected);
+    this.debug(`Processing exchange: tools=${exchange.toolCalls ? exchange.toolCalls.length : 0}`);
+    
+    // Log tool calls if present, otherwise log text-only exchange
+    if (exchange.toolCalls && exchange.toolCalls.length > 0) {
+      // Log each tool call individually with detailed format (like original monitor)
+      for (const toolCall of exchange.toolCalls) {
+        const result = exchange.toolResults.find(r => r.tool_use_id === toolCall.id);
+        await this.logDetailedToolCall(exchange, toolCall, result, sessionFile, isRedirected);
+      }
+    } else {
+      // Log text-only exchange (no tool calls)
+      await this.logTextOnlyExchange(exchange, sessionFile, isRedirected);
     }
+  }
+
+  /**
+   * Log text-only exchange (no tool calls)
+   */
+  async logTextOnlyExchange(exchange, sessionFile, isRedirected) {
+    const exchangeTime = new Date(exchange.timestamp).toISOString();
+    
+    // Build exchange entry
+    const exchangeEntry = {
+      timestamp: exchangeTime,
+      user_message: exchange.userMessage,
+      assistant_response: exchange.assistantResponse,
+      type: 'text_exchange',
+      has_tool_calls: false
+    };
+
+    // Add routing information if redirected
+    if (isRedirected) {
+      exchangeEntry.routing_info = {
+        original_project: this.config.projectPath,
+        redirected_to: 'coding',
+        reason: 'coding_content_detected'
+      };
+    }
+
+    // Format and append to session file
+    let content = `### Text Exchange - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
+    content += `**User Message:** ${exchange.userMessage.slice(0, 500)}${exchange.userMessage.length > 500 ? '...' : ''}\n\n`;
+    content += `**Assistant Response:** ${exchange.assistantResponse.slice(0, 500)}${exchange.assistantResponse.length > 500 ? '...' : ''}\n\n`;
+    content += `**Type:** Text-only exchange (no tool calls)\n\n---\n\n`;
+    
+    this.debug(`📝 WRITING TEXT CONTENT: ${content.length} chars to ${sessionFile}`);
+    fs.appendFileSync(sessionFile, content);
+    this.debug(`✅ TEXT WRITE COMPLETE`);
   }
 
   /**
@@ -868,7 +884,9 @@ class EnhancedTranscriptMonitor {
     }
     
     content += `**AI Analysis:** ${routingAnalysis}\n\n---\n\n`;
+    this.debug(`📝 WRITING TOOL CONTENT: ${content.length} chars to ${sessionFile}`);
     fs.appendFileSync(sessionFile, content);
+    this.debug(`✅ TOOL WRITE COMPLETE`);
   }
 
   /**

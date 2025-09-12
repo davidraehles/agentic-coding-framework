@@ -37,42 +37,60 @@ export function utcToLocalTime(utcTimestamp, timezone = null) {
 }
 
 /**
- * Get time window for local time (XX:30 - XX+1:30 format)
+ * Get time window for local time using full-hour marks (XX:00 - XX+1:00 format)
+ * Load session duration from config to support configurable durations
  */
 export function getTimeWindow(localDate) {
   const hours = localDate.getHours();
-  const minutes = localDate.getMinutes();
   
-  // Find the window start (XX:30 format)
-  let windowStart;
-  if (minutes < 30) {
-    // Before XX:30, belongs to previous hour's XX:30 window
-    windowStart = (hours - 1) * 60 + 30;
-    // Handle negative hours (when hours = 0 and minutes < 30)
-    if (windowStart < 0) {
-      windowStart = 23 * 60 + 30; // 23:30 of previous day
+  // Load session duration from config (default 60 minutes)
+  let sessionDurationMs = 3600000; // 60 minutes default
+  try {
+    const configPath = '/Users/q284340/Agentic/coding/config/live-logging-config.json';
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      sessionDurationMs = config.live_logging.session_duration || 3600000;
     }
-  } else {
-    // After XX:30, belongs to this hour's XX:30 window
-    windowStart = hours * 60 + 30;
+  } catch (error) {
+    // Use default duration if config can't be read
   }
   
-  let startHour = Math.floor(windowStart / 60);
-  let endHour = Math.floor((windowStart + 60) / 60);
-  const startMin = windowStart % 60;
-  const endMin = (windowStart + 60) % 60;
+  const sessionDurationHours = sessionDurationMs / (1000 * 60 * 60);
   
-  // Handle day overflow
-  if (endHour >= 24) {
-    endHour = endHour % 24;
+  // Use full-hour marks: 10:00-11:00, 11:00-12:00, etc.
+  const startHour = hours;
+  const endHour = (hours + sessionDurationHours) % 24;
+  
+  const formatTime = (h) => `${Math.floor(h).toString().padStart(2, '0')}00`;
+  
+  return `${formatTime(startHour)}-${formatTime(endHour)}`;
+}
+
+/**
+ * Get short time window format for status line (e.g., "11-12" instead of "1100-1200")
+ */
+export function getShortTimeWindow(localDate) {
+  const hours = localDate.getHours();
+  
+  // Load session duration from config (default 60 minutes)
+  let sessionDurationMs = 3600000; // 60 minutes default
+  try {
+    const configPath = '/Users/q284340/Agentic/coding/config/live-logging-config.json';
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      sessionDurationMs = config.live_logging.session_duration || 3600000;
+    }
+  } catch (error) {
+    // Use default duration if config can't be read
   }
-  if (startHour >= 24) {
-    startHour = startHour % 24;
-  }
   
-  const formatTime = (h, m) => `${h.toString().padStart(2, '0')}${m.toString().padStart(2, '0')}`;
+  const sessionDurationHours = sessionDurationMs / (1000 * 60 * 60);
   
-  return `${formatTime(startHour, startMin)}-${formatTime(endHour, endMin)}`;
+  // Use short format: 11-12, 22-23, etc.
+  const startHour = hours;
+  const endHour = (hours + sessionDurationHours) % 24;
+  
+  return `${Math.floor(startHour)}-${Math.floor(endHour)}`;
 }
 
 /**
