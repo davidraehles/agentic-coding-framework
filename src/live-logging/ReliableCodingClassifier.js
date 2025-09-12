@@ -141,46 +141,53 @@ class ReliableCodingClassifier {
         this.stats.pathAnalysisHits++;
         result = this.formatResult('CODING_INFRASTRUCTURE', 0.95, pathResult.reason, pathAnalysisTime);
       } else {
-        // Layer 2: Semantic Analysis (if available)
-        if (this.semanticAnalyzer && !pathResult.isCoding) {
-          const semanticAnalysisStart = Date.now();
-          const semanticResult = await this.semanticAnalyzer.analyzeSemantics(exchange);
-          const semanticAnalysisTime = Date.now() - semanticAnalysisStart;
-          
-          decisionPath.push({
-            layer: 'semantic',
-            input: { exchange: this.sanitizeForLogging(exchange) },
-            output: semanticResult,
-            duration: semanticAnalysisTime
-          });
-          
-          if (semanticResult.isCoding) {
-            layer = 'semantic';
-            this.stats.semanticAnalysisHits++;
-            result = this.formatResult('CODING_INFRASTRUCTURE', semanticResult.confidence, semanticResult.reason, semanticAnalysisTime);
+        // Layer 2: Keyword Analysis (fast, run before semantic)
+        const keywordAnalysisStart = Date.now();
+        const keywordResult = await this.keywordMatcher.matchKeywords(exchange);
+        const keywordAnalysisTime = Date.now() - keywordAnalysisStart;
+        
+        decisionPath.push({
+          layer: 'keyword',
+          input: { content: this.sanitizeForLogging(exchange.content || '') },
+          output: keywordResult,
+          duration: keywordAnalysisTime
+        });
+        
+        if (keywordResult.isCoding) {
+          layer = 'keyword';
+          this.stats.keywordAnalysisHits++;
+          result = this.formatResult('CODING_INFRASTRUCTURE', keywordResult.confidence, keywordResult.reason, keywordAnalysisTime);
+        } else {
+          // Layer 3: Semantic Analysis (expensive, only if needed)
+          if (this.semanticAnalyzer && !result) {
+            const semanticAnalysisStart = Date.now();
+            const semanticResult = await this.semanticAnalyzer.analyzeSemantics(exchange);
+            const semanticAnalysisTime = Date.now() - semanticAnalysisStart;
+            
+            decisionPath.push({
+              layer: 'semantic',
+              input: { exchange: this.sanitizeForLogging(exchange) },
+              output: semanticResult,
+              duration: semanticAnalysisTime
+            });
+            
+            if (semanticResult.isCoding) {
+              layer = 'semantic';
+              this.stats.semanticAnalysisHits++;
+              result = this.formatResult('CODING_INFRASTRUCTURE', semanticResult.confidence, semanticResult.reason, semanticAnalysisTime);
+            }
           }
         }
         
-        // Layer 3: Keyword Analysis (fallback)
+        // Fallback if no result yet
         if (!result) {
-          const keywordAnalysisStart = Date.now();
-          const keywordResult = await this.keywordMatcher.matchKeywords(exchange);
-          const keywordAnalysisTime = Date.now() - keywordAnalysisStart;
-          
-          decisionPath.push({
-            layer: 'keyword',
-            input: { exchange: this.sanitizeForLogging(exchange) },
-            output: keywordResult,
-            duration: keywordAnalysisTime
-          });
-          
-          layer = 'keyword';
-          this.stats.keywordAnalysisHits++;
+          // Default to NOT_CODING_INFRASTRUCTURE if all layers say no
+          layer = keywordResult.isCoding ? 'keyword' : 'default';
           result = this.formatResult(
-            keywordResult.isCoding ? 'CODING_INFRASTRUCTURE' : 'NOT_CODING_INFRASTRUCTURE',
-            keywordResult.confidence,
-            keywordResult.reason,
-            keywordAnalysisTime
+            'NOT_CODING_INFRASTRUCTURE',
+            0.1,
+            'No coding indicators found in any layer',
+            Date.now() - startTime
           );
         }
       }

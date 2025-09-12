@@ -218,7 +218,10 @@ async function generateLSL() {
 
   // Initialize enhanced transcript monitor for consistent classification logic
   console.log('🧠 Initializing enhanced classification system...');
-  const monitor = new EnhancedTranscriptMonitor({ projectPath: targetProject.path });
+  const monitor = new EnhancedTranscriptMonitor({ 
+    projectPath: targetProject.path,
+    skipSemanticAnalysis: true  // Skip for bulk processing performance
+  });
   
   // Wait for reliable coding classifier to be ready
   let retries = 0;

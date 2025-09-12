@@ -114,6 +114,9 @@ class EnhancedTranscriptMonitor {
       healthFile: path.join(process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || path.join(__dirname, '..'), '.transcript-monitor-health'),
       ...config
     };
+    
+    // Store options for methods to access
+    this.options = config;
 
     this.transcriptPath = this.findCurrentTranscript();
     this.lastProcessedUuid = null;
@@ -494,6 +497,25 @@ class EnhancedTranscriptMonitor {
    * Check if content involves coding project using semantic analysis
    */
   async isCodingRelated(exchange) {
+    // SKIP SEMANTIC ANALYSIS FOR BULK PROCESSING
+    if (this.options?.skipSemanticAnalysis) {
+      // Use only fast path/keyword detection for bulk transcript processing
+      const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
+      
+      // Quick check: if exchange text contains coding path
+      const exchangeText = JSON.stringify(exchange).toLowerCase();
+      if (exchangeText.includes(codingPath.toLowerCase()) || exchangeText.includes('/coding/')) {
+        return true;
+      }
+      
+      // Quick keyword check
+      const keywords = ['ukb', 'vkb', 'ckb', 'knowledge_base', 'semantic analysis', 'coding infrastructure'];
+      const hasKeywords = keywords.some(keyword => exchangeText.includes(keyword.toLowerCase()));
+      
+      return hasKeywords;
+    }
+    
+    // Original detailed analysis for live monitoring
     const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
     
     console.log(`\n🔍 ENHANCED CODING DETECTION:`);
