@@ -8,7 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { parseTimestamp, formatTimestamp, getTimeWindow, getTimezone } from './timezone-utils.js';
+import { parseTimestamp, formatTimestamp, getTimeWindow, getTimezone, utcToLocalTime } from './timezone-utils.js';
 import { SemanticAnalyzer } from '../src/live-logging/SemanticAnalyzer.js';
 import ReliableCodingClassifier from '../src/live-logging/ReliableCodingClassifier.js';
 
@@ -182,6 +182,7 @@ class EnhancedTranscriptMonitor {
         projectPath: this.config.projectPath,
         codingRepo: codingPath,
         apiKey: process.env.XAI_API_KEY || process.env.OPENAI_API_KEY,
+        skipSemanticAnalysis: this.options?.skipSemanticAnalysis || false,
         debug: this.debug
       });
       
@@ -632,26 +633,20 @@ class EnhancedTranscriptMonitor {
 
 
   /**
-   * Get time tranche for given timestamp (XX:30 - (XX+1):30)
+   * Get time tranche for given timestamp using full-hour boundaries (XX:00 - (XX+1):00)
    */
   getCurrentTimetranche(timestamp = null) {
     const targetTime = timestamp ? new Date(timestamp) : new Date();
-    const hours = targetTime.getHours();
-    const minutes = targetTime.getMinutes();
-    const totalMinutes = hours * 60 + minutes;
-    const trancheStart = Math.floor((totalMinutes + 30) / 60) * 60 - 30;
-    const trancheEnd = trancheStart + 60;
-    const startHour = Math.floor(trancheStart / 60);
-    const startMin = trancheStart % 60;
-    const endHour = Math.floor(trancheEnd / 60);
-    const endMin = trancheEnd % 60;
-    const formatTime = (h, m) => `${h.toString().padStart(2, '0')}${m.toString().padStart(2, '0')}`;
+    
+    // Convert UTC timestamp to local time using timezone utils
+    const localDate = timestamp ? utcToLocalTime(timestamp) : new Date();
+    
+    // Use timezone-utils for consistent time window calculation
+    const timeWindow = getTimeWindow(localDate);
     
     return {
-      timeString: `${formatTime(startHour, startMin)}-${formatTime(endHour, endMin)}`,
-      startTime: trancheStart,
-      endTime: trancheEnd,
-      date: targetTime.toISOString().split('T')[0]
+      timeString: timeWindow,
+      date: localDate.toISOString().split('T')[0]
     };
   }
 
@@ -800,9 +795,10 @@ class EnhancedTranscriptMonitor {
     const isRedirected = targetProject !== this.config.projectPath;
     this.debug(`📝 LOGGING TO SESSION: ${sessionFile} (redirected: ${isRedirected})`);
     
-    // Skip exchanges with no meaningful user message to prevent "No context" entries
-    if (!exchange.userMessage || exchange.userMessage.trim().length === 0) {
-      this.debug(`Skipping empty user message`);
+    // Skip exchanges with no meaningful content (no user message AND no tool calls)
+    if ((!exchange.userMessage || exchange.userMessage.trim().length === 0) && 
+        (!exchange.toolCalls || exchange.toolCalls.length === 0)) {
+      this.debug(`Skipping exchange with no meaningful content (no user message and no tool calls)`);
       return;
     }
     
@@ -853,8 +849,12 @@ class EnhancedTranscriptMonitor {
 
     // Format and append to session file
     let content = `### Text Exchange - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
-    content += `**User Message:** ${exchange.userMessage.slice(0, 500)}${exchange.userMessage.length > 500 ? '...' : ''}\n\n`;
-    content += `**Assistant Response:** ${exchange.assistantResponse.slice(0, 500)}${exchange.assistantResponse.length > 500 ? '...' : ''}\n\n`;
+    
+    const userMsg = exchange.userMessage || '(No user message)';
+    const assistantResp = exchange.assistantResponse || '(No response)';
+    
+    content += `**User Message:** ${userMsg.slice(0, 500)}${userMsg.length > 500 ? '...' : ''}\n\n`;
+    content += `**Assistant Response:** ${assistantResp.slice(0, 500)}${assistantResp.length > 500 ? '...' : ''}\n\n`;
     content += `**Type:** Text-only exchange (no tool calls)\n\n---\n\n`;
     
     this.debug(`📝 WRITING TEXT CONTENT: ${content.length} chars to ${sessionFile}`);
@@ -873,7 +873,9 @@ class EnhancedTranscriptMonitor {
     const routingAnalysis = this.analyzeForRouting(exchange, toolCall, result);
     
     let content = `### ${toolCall.name} - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
-    content += `**User Request:** ${redactSecrets(exchange.userMessage.slice(0, 200))}${exchange.userMessage.length > 200 ? '...' : ''}\n\n`;
+    
+    const userMsg = exchange.userMessage || '(Initiated automatically)';
+    content += `**User Request:** ${redactSecrets(userMsg.slice(0, 200))}${userMsg.length > 200 ? '...' : ''}\n\n`;
     content += `**Tool:** ${toolCall.name}\n`;
     content += `**Input:** \`\`\`json\n${redactSecrets(JSON.stringify(toolCall.input, null, 2))}\n\`\`\`\n\n`;
     content += `**Result:** ${toolSuccess ? '✅ Success' : '❌ Error'}\n`;

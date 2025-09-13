@@ -62,6 +62,9 @@ class ReliableCodingClassifier {
     this.operationalLogger = null;
     this.enableLogging = options.enableLogging !== false;
     
+    // Performance optimization options
+    this.skipSemanticAnalysis = options.skipSemanticAnalysis || false;
+    
     this.debug = options.debug || false;
   }
 
@@ -158,8 +161,8 @@ class ReliableCodingClassifier {
           this.stats.keywordAnalysisHits++;
           result = this.formatResult('CODING_INFRASTRUCTURE', keywordResult.confidence, keywordResult.reason, keywordAnalysisTime);
         } else {
-          // Layer 3: Semantic Analysis (expensive, only if needed)
-          if (this.semanticAnalyzer && !result) {
+          // Layer 3: Semantic Analysis (expensive, only if needed and not skipped)
+          if (this.semanticAnalyzer && !result && !this.skipSemanticAnalysis) {
             const semanticAnalysisStart = Date.now();
             const semanticResult = await this.semanticAnalyzer.analyzeSemantics(exchange);
             const semanticAnalysisTime = Date.now() - semanticAnalysisStart;

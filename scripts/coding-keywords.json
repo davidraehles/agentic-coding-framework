@@ -18,7 +18,16 @@
       "fast classification", "keyword matching", "classification system",
       "misclassified", "session misclassified", "session logs", "move all",
       "timeline dependent entries", "log files in coding", "last two sessions",
-      "session classification work", "classification strategy", "fast classifier"
+      "session classification work", "classification strategy", "fast classifier",
+      "LSL", "Live Session Logging", "live session logging", "live session logs",
+      "session logs", "transcript monitor", "transcript monitoring", "batch mode",
+      "foreign mode", "clean mode", "session file generation", "time window",
+      "generate-proper-lsl-from-transcripts", "enhanced-transcript-monitor",
+      "ReliableCodingClassifier", "reliable coding classifier", "coding classifier",
+      "session classification", "redirected files", "foreign files",
+      "session.md", "session-from-", ".specstory/history", "session file",
+      "0800-0900-session", "0900-1000-session", "session files", "remove session",
+      "delete session", "rm session", "session md file"
     ],
     "secondary": [
       "multi-agent", "7-agent", "agent system", "unified agent", "agent-agnostic",
