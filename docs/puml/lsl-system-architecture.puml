@@ -1,64 +1,156 @@
 @startuml lsl-system-architecture
 !include _standard-style.puml
 
-title LSL System Architecture
+title LSL System Architecture - Updated with Global Coordinator
 
-package "Claude Code Session" {
-  [User] as user
-  [Conversation] as conv
+package "Live Session Logging (LSL) System" {
+
+  ' Core Architecture
+  rectangle "Core LSL Architecture" as Core {
+    
+    ' Global Coordination
+    component [Global LSL Coordinator] as GLC {
+      [Session Registry] as Registry
+      [Health Monitor] as Health  
+      [Process Manager] as ProcessMgr
+      [Cleanup Service] as Cleanup
+    }
+    
+    ' Real-time Processing
+    component [Enhanced Transcript Monitor] as ETM {
+      [Real-time Classifier] as RTClassifier
+      [Exchange Parser] as Parser
+      [Content Router] as Router
+      [Session Writer] as Writer
+    }
+    
+    ' Classification Engine
+    component [ReliableCodingClassifier] as RCC {
+      rectangle "Three-Layer Analysis" {
+        [PathAnalyzer] as L1
+        [KeywordMatcher] as L2  
+        [SemanticAnalyzer] as L3
+        L1 --> L2 : "if no paths"
+        L2 --> L3 : "if low confidence"
+      }
+    }
+    
+    ' Batch Processing
+    component [LSL Generation Scripts] as LSLGen {
+      [Transcript Scanner] as Scanner
+      [Parallel Processor] as Parallel
+      [Fast-Path Classifier] as FastPath
+      [Bulk Writer] as BulkWriter
+    }
+    
+  }
+
+  ' Data Storage
+  package "Data Layer" as Data {
+    database "session-registry.json" as SessionDB {
+      [Active Sessions] as ActiveSessions
+      [Monitor PIDs] as MonitorPIDs
+      [Health Status] as HealthStatus
+      [Project Mappings] as ProjectMappings
+    }
+    
+    database "coding-keywords.json" as KeywordDB {
+      [Primary Keywords] as PrimaryKW
+      [Secondary Keywords] as SecondaryKW
+      [File Patterns] as FilePatterns
+      [Path Patterns] as PathPatterns
+    }
+    
+    folder "Claude Transcripts" as Transcripts {
+      file "project-transcript-1.jsonl" as T1
+      file "project-transcript-2.jsonl" as T2
+      file "project-transcript-3.jsonl" as T3
+    }
+  }
+
+  ' Output Layer
+  package "Session Files" as Sessions {
+    folder "coding/.specstory/history/" as CodingHistory {
+      file "YYYY-MM-DD_HHMM-HHMM-session.md" as CodingSession
+      file "YYYY-MM-DD_HHMM-HHMM-session-from-PROJECT.md" as CrossProjectSession
+    }
+    
+    folder "project/.specstory/history/" as ProjectHistory {
+      file "YYYY-MM-DD_HHMM-HHMM-session.md" as ProjectSession
+    }
+    
+    folder "nano-degree/.specstory/history/" as NanoHistory {
+      file "YYYY-MM-DD_HHMM-HHMM-session.md" as NanoSession
+    }
+  }
+
+  ' Integration Points
+  package "Integration Layer" as Integration {
+    [launch-claude.sh] as LaunchScript
+    [Status Line Provider] as StatusLine
+    [coding launcher] as CodingLauncher
+    [MCP Services] as MCP
+  }
+
 }
 
-package "LSL System" {
-  [Enhanced Transcript Monitor] as monitor <<infra>>
-  [ReliableCodingClassifier] as classifier <<core>>
-  [LSL Generation Scripts] as scripts <<util>>
-}
+' Relationships
+GLC --> Registry : "manages"
+GLC --> Health : "monitors"
+GLC --> ProcessMgr : "controls"  
+GLC --> Cleanup : "maintains"
 
-package "Classification Layers" {
-  [PathAnalyzer] as path <<core>>
-  [KeywordMatcher] as keyword <<core>> 
-  [SemanticAnalyzer] as semantic <<api>>
-}
+Health --> ETM : "health checks"
+ProcessMgr --> ETM : "spawn/restart"
+ETM --> RTClassifier : "classifies"
+RTClassifier --> RCC : "uses engine"
+RCC --> KeywordDB : "references"
+Router --> CodingHistory : "coding content"
+Router --> ProjectHistory : "project content"
+Router --> NanoHistory : "all content"
 
-package "Output Destinations" {
-  folder "nano-degree/.specstory/history/" as nano_history <<storage>>
-  folder "coding/.specstory/history/" as coding_history <<storage>>
-}
+LSLGen --> Scanner : "finds transcripts"
+Scanner --> Transcripts : "reads"
+Parallel --> FastPath : "batch classify"
+FastPath --> RCC : "uses classifier"
+BulkWriter --> Sessions : "generates"
 
-package "Data Sources" {
-  database "~/.claude/projects/*.jsonl" as transcripts <<storage>>
-  [coding-keywords.json] as keywords <<storage>>
-}
+Registry --> SessionDB : "persists"
+LaunchScript --> GLC : "ensures LSL"
+ETM --> StatusLine : "provides status"
+CodingLauncher --> LaunchScript : "executes"
 
-' Main flow
-user --> conv : converses
-conv --> monitor : live monitoring
-monitor --> classifier : classify exchange
+note right of GLC
+  **Global Coordinator Features:**
+  - Bulletproof LSL across all sessions
+  - Health monitoring every 30 seconds
+  - Automatic recovery from failures
+  - Cross-project session coordination
+  - Clean process lifecycle management
+end note
 
-' Classification layers
-classifier --> path : 1. file operations
-classifier --> keyword : 2. content matching  
-classifier --> semantic : 3. LLM analysis
+note right of RCC
+  **Three-Layer Classification:**
+  - Layer 1: File operation detection (100% accuracy)
+  - Layer 2: Keyword matching (fast & reliable)
+  - Layer 3: Semantic analysis (selective use)
+  - Performance: 200x speed improvement
+end note
 
-' Data sources
-path --> transcripts : reads paths
-keyword --> keywords : loads dictionary
-semantic --> transcripts : analyzes content
+note bottom of LSLGen
+  **Batch Processing Modes:**
+  - Local mode: All content for main project
+  - Foreign mode: Coding content from other projects
+  - Parallel processing: 5 concurrent workers
+  - Fast-path: Skip semantic analysis for speed
+end note
 
-' Output routing
-classifier --> nano_history : all content
-classifier --> coding_history : coding content only
-
-' Batch processing
-scripts --> transcripts : bulk processing
-scripts --> classifier : batch classification
-scripts --> nano_history : generated sessions
-scripts --> coding_history : generated sessions
-
-note right of classifier : Three-layer decision:\n- PathAnalyzer (100% accuracy)\n- KeywordMatcher (fast)\n- SemanticAnalyzer (selective)
-
-note bottom of nano_history : Receives ALL content\n(main project)
-
-note bottom of coding_history : Receives ONLY\ncoding infrastructure content
+note top of SessionDB
+  **Session Registry:**
+  - Tracks active Claude sessions
+  - Monitors transcript process health
+  - Maps projects to session files
+  - Automatic cleanup of stale entries
+end note
 
 @enduml

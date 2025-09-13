@@ -34,39 +34,41 @@ await mcp__memory__create_entities({
 
 ## 🔴 CRITICAL: CONVERSATION LOGGING ARCHITECTURE
 
-**STATUS**: ✅ **HYBRID WORKING** - Both post-session and real-time logging are now functional.
+**STATUS**: ✅ **LSL (LIVE SESSION LOGGING) PRIMARY** - Live session logging is the primary system, with post-session as fallback.
 
-### **Post-Session Logging (Traditional)**
-- `claude-mcp` automatically starts conversation logging via `post-session-logger.js`
-- **Post-session capture**: After each Claude session ends, the logger processes the session data
-- **Session analysis**: The logger analyzes conversation content and extracts meaningful exchanges
-- **Smart routing**: Content is intelligently analyzed and routed to appropriate `.specstory/history/` directories
-- **Coding-related content** (ukb, vkb, knowledge management, MCP, etc.) always goes to `coding/.specstory/history/`
-- **Other content** goes to the current project's `.specstory/history/`
+### **🥇 PRIMARY: Live Session Logging (LSL)**
+- **Enhanced Transcript Monitor**: `scripts/enhanced-transcript-monitor.js` is automatically started with `coding/bin/coding`
+- **Real-time capture**: Monitors Claude transcripts during active sessions and logs immediately
+- **Intelligent classification**: Uses ReliableCodingClassifier with 3-layer analysis (PathAnalyzer → KeywordMatcher → SemanticAnalyzer)
+- **Smart routing**: Automatically routes coding-related conversations to `coding/.specstory/history/`, project content to local `.specstory/history/`
+- **Parallel session support**: Handles multiple concurrent Claude sessions across different projects
+- **Window-based files**: Creates proper `YYYY-MM-DD_HHMM-HHMM-session.md` format
+- **Never miss conversations**: Captures everything as it happens, no data loss
 
-### **Real-Time Logging (New)**
-- **Simple Real-time Logger**: `scripts/simple-realtime-logger.js` provides immediate session capture
-- **Live session files**: Creates `*_live-session.md` files in `.specstory/history/` during active sessions
-- **Enhanced format**: Captures tool interactions with parameters, results, and timestamps
-- **Real-time updates**: Appends to session log as interactions occur
-- **Session summaries**: Automatic duration tracking and interaction counts
+### **🥈 FALLBACK: Post-Session Logging**
+- **Post-session Logger**: `scripts/post-session-logger.js` runs only when LSL isn't available
+- **Batch processing**: Analyzes completed sessions after Claude exits
+- **Smart routing**: Same intelligent routing as LSL but after-the-fact
+- **File format**: `YYYY-MM-DD_HH-MM-SS_*-session.md` with session details
+- **Use case**: Backup system when LSL fails or wasn't running
 
-### **Architecture Comparison**
+### **🔧 AUTOMATIC STARTUP PROCESS**
 
-| Feature | Post-Session | Real-Time |
-|---------|-------------|-----------|
-| **Timing** | After session ends | During session |
-| **Format** | Traditional exchanges | Enhanced tool interactions |
-| **File naming** | `YYYY-MM-DD_HH-MM-SS_*-session.md` | `YYYY-MM-DD_HH-MM-SS_*_live-session.md` |
-| **Content depth** | Full conversations | Tool-focused with context |
-| **Status** | ✅ Working | ✅ Working |
+When you run `coding` or `coding --claude`:
 
-### **Complex Live Logging System Status**
-- **live-logging-coordinator.js**: ⚠️ **ISSUES** - File interference in `.mcp-sync/` directory
-- **hybrid-session-logger.js**: ✅ Components work individually 
-- **tool-interaction-hook.js**: ❌ **BLOCKED** - Constant rewrites prevent module loading
-- **Root cause**: IDE or background process continuously modifies files in `.mcp-sync/`
-- **Workaround**: Use `simple-realtime-logger.js` outside problematic directory
+1. **Services start**: VKB, MCP servers, and core infrastructure
+2. **LSL automatically starts**: Enhanced transcript monitor begins real-time monitoring
+3. **Session detection**: Automatically finds current Claude session transcript
+4. **Real-time logging**: Immediately starts capturing to proper session files
+5. **Parallel session awareness**: Handles multiple projects simultaneously
+
+### **🚨 CRITICAL ARCHITECTURE BENEFITS**
+
+- **No manual intervention required**: LSL starts automatically with coding startup
+- **Real-time capture**: Never lose conversations due to unexpected session ends
+- **Parallel project support**: Correctly routes conversations from multiple concurrent Claude sessions
+- **Robust classification**: Three-layer analysis ensures accurate content routing
+- **Cross-session continuity**: Session logs available immediately for next session startup
 
 **TECHNICAL IMPLEMENTATION**:
 ```bash

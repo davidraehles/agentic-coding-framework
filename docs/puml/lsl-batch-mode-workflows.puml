@@ -1,0 +1,128 @@
+!include _standard-style.puml
+
+@startuml lsl-batch-mode-workflows
+!theme plain
+
+title LSL Batch Mode Processing Workflows
+
+package "Batch Mode Use Cases" {
+
+  ' Standard Batch Processing
+  rectangle "Standard Batch Processing" as StandardBatch {
+    (Generate LSL for specific project) as GenLSL
+    (Process all historical transcripts) as ProcessAll
+    (Fast-path classification) as FastPath
+    
+    GenLSL --> ProcessAll : "scan ~/.claude/projects/"
+    ProcessAll --> FastPath : "skip semantic analysis"
+    FastPath --> [Session Files Generated] as Output1
+  }
+
+  ' Foreign Mode Processing  
+  rectangle "Foreign Mode Processing" as ForeignMode {
+    (Scan other project transcripts) as ScanOther
+    (Extract coding-related content) as ExtractCoding
+    (Route to coding project) as RouteToCoding
+    
+    ScanOther --> ExtractCoding : "classify each exchange"
+    ExtractCoding --> RouteToCoding : "coding infrastructure only"
+    RouteToCoding --> [Cross-project Sessions] as Output2
+  }
+
+  ' Local Mode Processing
+  rectangle "Local Mode Processing" as LocalMode {
+    (Process project's own transcripts) as ProcessOwn
+    (Include all content) as IncludeAll
+    (Generate native sessions) as GenNative
+    
+    ProcessOwn --> IncludeAll : "no filtering"
+    IncludeAll --> GenNative : "complete conversations"
+    GenNative --> [Native Project Sessions] as Output3
+  }
+
+  ' Parallel Processing
+  rectangle "Parallel Processing Architecture" as Parallel {
+    [Transcript File Queue] as Queue
+    [Worker Pool (5 concurrent)] as Workers
+    [Classification Engine] as Classifier
+    [Output Aggregator] as Aggregator
+    
+    Queue --> Workers : "batch of 5 files"
+    Workers --> Classifier : "process exchanges"
+    Classifier --> Aggregator : "classified results"
+    Aggregator --> [Performance: 200x faster] as PerfOutput
+  }
+
+}
+
+package "Command Examples" {
+  note as Commands
+    **Local Mode (nano-degree project):**
+    ```bash
+    node scripts/generate-proper-lsl-from-transcripts.js \\
+      --mode=local --parallel
+    ```
+    
+    **Foreign Mode (coding infrastructure):**
+    ```bash  
+    node scripts/generate-proper-lsl-from-transcripts.js \\
+      --mode=foreign --parallel
+    ```
+    
+    **Legacy Single Project:**
+    ```bash
+    CODING_TARGET_PROJECT="/path/to/project" \\
+      node scripts/generate-proper-lsl-from-transcripts.js
+    ```
+    
+    **Fast Processing with Timeout:**
+    ```bash
+    timeout 30s node scripts/generate-proper-lsl-from-transcripts.js \\
+      --mode=local --parallel
+    ```
+  end note
+}
+
+package "Performance Optimizations" {
+  rectangle "Fast-Path Classification" as FastPathDetail {
+    [Skip Semantic Analysis] as SkipSemantic
+    [Use Only Path + Keywords] as PathKeywords
+    [Parallel File Processing] as ParallelFiles
+    [Batch Exchange Processing] as BatchExchange
+    
+    SkipSemantic --> PathKeywords : "layer 1 & 2 only"
+    PathKeywords --> ParallelFiles : "5 concurrent workers"
+    ParallelFiles --> BatchExchange : "optimize I/O"
+    BatchExchange --> [200x Speed Improvement] as SpeedResult
+  }
+}
+
+' Relationships between use cases
+StandardBatch --> LocalMode : "typical workflow"
+StandardBatch --> ForeignMode : "cross-project content"
+LocalMode --> Parallel : "uses parallel processing"
+ForeignMode --> Parallel : "uses parallel processing"
+Parallel --> FastPathDetail : "implements optimizations"
+
+note right of Output1
+  **Generated Files:**
+  - YYYY-MM-DD_HHMM-HHMM-session.md
+  - Time-window organized
+  - Complete conversations
+end note
+
+note right of Output2
+  **Cross-project Files:**
+  - YYYY-MM-DD_HHMM-HHMM-session-from-PROJECT.md  
+  - Only coding infrastructure content
+  - Proper attribution
+end note
+
+note right of Output3
+  **Native Sessions:**
+  - All content included
+  - No filtering applied
+  - Full conversation context
+end note
+
+@enduml

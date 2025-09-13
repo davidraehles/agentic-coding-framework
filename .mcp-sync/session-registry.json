@@ -1,0 +1,16 @@
+{
+  "sessions": {
+    "/Users/q284340/Agentic/coding_89717": {
+      "sessionId": "/Users/q284340/Agentic/coding_89717",
+      "projectDir": "/Users/q284340/Agentic/coding",
+      "pid": 89717,
+      "claudeProcess": "unknown",
+      "startTime": 1757758828168,
+      "lastHealthCheck": 1757758828168,
+      "transcriptMonitorPid": 89752,
+      "status": "active"
+    }
+  },
+  "lastCleanup": 1757758828165,
+  "version": "1.0.0"
+}

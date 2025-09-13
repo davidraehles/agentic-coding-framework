@@ -156,32 +156,40 @@ if ! "$CODING_REPO/start-services.sh"; then
   exit 1
 fi
 
-# Simplified transcript monitoring - single process per project
+# Global LSL Coordinator for robust transcript monitoring
 start_transcript_monitoring() {
   local project_dir="$1" 
   local coding_repo="$2"
   
-  # Kill any existing transcript monitors to avoid conflicts
-  pkill -f "enhanced-transcript-monitor.js" 2>/dev/null || true
-  pkill -f "simplified-transcript-monitor.js" 2>/dev/null || true
-  pkill -f "transcript-monitor.js" 2>/dev/null || true
+  log "Using Global LSL Coordinator for robust transcript monitoring: $(basename "$project_dir")"
   
-  # Start enhanced transcript monitor
-  log "Starting enhanced transcript monitoring for project: $(basename "$project_dir")"
-  cd "$project_dir"
-  nohup node "$coding_repo/scripts/enhanced-transcript-monitor.js" > transcript-monitor.log 2>&1 &
-  local new_pid=$!
+  # Create .specstory directory if needed
+  if [ ! -d "$project_dir/.specstory/history" ]; then
+    mkdir -p "$project_dir/.specstory/history"
+  fi
   
-  # Brief startup check
-  sleep 1
-  if kill -0 "$new_pid" 2>/dev/null; then
-    log "Transcript monitoring started (PID: $new_pid)"
+  # Use global coordinator to ensure robust LSL
+  if node "$coding_repo/scripts/global-lsl-coordinator.cjs" ensure "$project_dir" $$; then
+    log "Global LSL Coordinator: LSL setup successful"
   else
-    log "Warning: Transcript monitoring may have failed to start"
+    log "Warning: Global LSL Coordinator setup failed, falling back to direct monitor"
+    
+    # Fallback: direct monitor startup (backward compatibility)
+    pkill -f "enhanced-transcript-monitor.js.*$(basename "$project_dir")" 2>/dev/null || true
+    cd "$project_dir"
+    nohup node "$coding_repo/scripts/enhanced-transcript-monitor.js" > transcript-monitor.log 2>&1 &
+    local new_pid=$!
+    
+    sleep 1
+    if kill -0 "$new_pid" 2>/dev/null; then
+      log "Fallback transcript monitoring started (PID: $new_pid)"
+    else
+      log "Error: Both coordinator and fallback transcript monitoring failed"
+    fi
   fi
 }
 
-# Start simplified transcript monitoring for target project only
+# Start robust transcript monitoring for target project
 if [ -d "$TARGET_PROJECT_DIR/.specstory" ] || mkdir -p "$TARGET_PROJECT_DIR/.specstory/history" 2>/dev/null; then
   start_transcript_monitoring "$TARGET_PROJECT_DIR" "$CODING_REPO"
 else

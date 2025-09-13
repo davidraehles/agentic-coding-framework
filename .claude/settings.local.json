@@ -190,7 +190,9 @@
       "mcp__spec-workflow__delete-approval",
       "mcp__spec-workflow__manage-tasks",
       "mcp__spec-workflow__spec-status",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(awk:*)",
+      "Read(//Users/q284340/.claude/projects/**)"
     ],
     "deny": []
   },
