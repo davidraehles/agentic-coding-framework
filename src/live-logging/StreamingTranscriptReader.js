@@ -12,6 +12,7 @@
 import fs from 'fs';
 import readline from 'readline';
 import { EventEmitter } from 'events';
+import AdaptiveExchangeExtractor from './AdaptiveExchangeExtractor.js';
 
 class StreamingTranscriptReader extends EventEmitter {
   constructor(options = {}) {
@@ -22,7 +23,8 @@ class StreamingTranscriptReader extends EventEmitter {
       maxMemoryMB: options.maxMemoryMB || 100,  // Max memory usage in MB
       progressInterval: options.progressInterval || 100,  // Report progress every N lines
       errorRecovery: options.errorRecovery !== false,  // Continue on parse errors
-      debug: options.debug || false
+      debug: options.debug || false,
+      useAdaptiveExtraction: options.useAdaptiveExtraction !== false  // Enable adaptive extraction by default
     };
     
     this.stats = {
@@ -198,10 +200,27 @@ class StreamingTranscriptReader extends EventEmitter {
   }
 
   /**
-   * Extract exchanges from a batch of messages with streaming
+   * Extract exchanges from a batch of messages with adaptive format detection
+   * Automatically handles any transcript format through learning
+   */
+  static extractExchangesFromBatch(messages, options = {}) {
+    // Use adaptive extraction by default
+    if (options.useAdaptiveExtraction !== false) {
+      return AdaptiveExchangeExtractor.extractExchangesFromBatch(messages, {
+        debug: options.debug || false,
+        configPath: options.formatConfigPath
+      });
+    }
+    
+    // Fallback to manual extraction for backwards compatibility
+    return StreamingTranscriptReader.legacyExtractExchangesFromBatch(messages);
+  }
+
+  /**
+   * Legacy extraction method for backwards compatibility
    * Handles both old format (user/assistant) and new format (human_turn_start/claude_turn_start)
    */
-  static extractExchangesFromBatch(messages) {
+  static legacyExtractExchangesFromBatch(messages) {
     const exchanges = [];
     let currentExchange = null;
     
