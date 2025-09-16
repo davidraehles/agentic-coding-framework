@@ -9,6 +9,16 @@
       "lastHealthCheck": 1757758828168,
       "transcriptMonitorPid": 89752,
       "status": "active"
+    },
+    "/Users/q284340/Agentic/nano-degree_44406": {
+      "sessionId": "/Users/q284340/Agentic/nano-degree_44406",
+      "projectDir": "/Users/q284340/Agentic/nano-degree",
+      "pid": 44406,
+      "claudeProcess": "unknown",
+      "startTime": 1757871924439,
+      "lastHealthCheck": 1757871924439,
+      "transcriptMonitorPid": 44564,
+      "status": "active"
     }
   },
   "lastCleanup": 1757758828165,

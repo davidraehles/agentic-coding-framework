@@ -43,7 +43,8 @@ OPTIONS:
   --help             Show this help
 
 EXAMPLES:
-  coding-agent                    # Use best available agent
+  coding-agent --lsl-status           # Show LSL system status
+  coding-agent --lsl-validate         # Run LSL system validation  coding-agent                    # Use best available agent
   coding-agent --copilot          # Force CoPilot
   coding-agent --copilot-stop     # Stop CoPilot services
   coding-agent --claude           # Force Claude Code
@@ -91,7 +92,12 @@ while [[ $# -gt 0 ]]; do
       VERBOSE=true
       shift
       ;;
-    --help|-h)
+    --lsl-status)
+      exec node "$SCRIPT_DIR/../scripts/live-logging-coordinator.js" --status
+      ;;
+    --lsl-validate)
+      exec node "$SCRIPT_DIR/../tests/integration/final-system-security-validation.js"
+      ;;    --help|-h)
       show_help
       exit 0
       ;;

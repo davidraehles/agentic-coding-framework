@@ -1,0 +1,504 @@
+{
+  "timestamp": "2025-09-14T14:18:38.765Z",
+  "testConfiguration": {
+    "redactionPatterns": {
+      "creditCard": [
+        "4532015112830366",
+        "5555555555554444",
+        "371449635398431",
+        "6011111111111117"
+      ],
+      "ssn": [
+        "123-45-6789",
+        "987-65-4321",
+        "456-78-9012"
+      ],
+      "email": [
+        "user@company.com",
+        "sensitive.email@domain.org",
+        "private@personal.net"
+      ],
+      "apiKeys": [
+        "sk_test_1234567890abcdef",
+        "ghp_1234567890abcdefghijklmnop",
+        "xoxb-1234-5678-9012-abcdef"
+      ],
+      "phone": [
+        "+1-555-123-4567",
+        "(555) 987-6543",
+        "555.456.7890"
+      ],
+      "ipAddress": [
+        "192.168.1.100",
+        "10.0.0.1",
+        "172.16.0.50"
+      ],
+      "filePaths": [
+        "/home/user/.ssh/id_rsa",
+        "C:\\Users\\Admin\\secret.txt",
+        "/etc/passwd"
+      ]
+    },
+    "attackVectors": {
+      "encodingBypass": [
+        "user%40company.com",
+        "555&#45;123&#45;4567",
+        "c2Vuc2l0aXZlZGF0YQ==",
+        "\\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d"
+      ],
+      "unicodeBypass": [
+        "սser@company.com",
+        "555‐123‐4567",
+        "192․168․1․100"
+      ],
+      "caseBypass": [
+        "USER@COMPANY.COM",
+        "User@Company.Com",
+        "uSeR@cOmPaNy.CoM"
+      ],
+      "fragmentationBypass": [
+        "user@comp any.com",
+        "555- 123-4567",
+        "192.168. 1.100"
+      ]
+    },
+    "userIsolationScenarios": [
+      {
+        "name": "Different users, same session data",
+        "users": [
+          "alice",
+          "bob",
+          "charlie"
+        ],
+        "sessionData": "shared-session-content"
+      },
+      {
+        "name": "User hash collision attempt",
+        "users": [
+          "user1",
+          "user2"
+        ],
+        "manipulatedHashes": [
+          "abc123",
+          "abc123"
+        ]
+      },
+      {
+        "name": "Cross-user file access",
+        "users": [
+          "admin",
+          "guest"
+        ],
+        "accessAttempts": [
+          "../admin-files/",
+          "../../other-user/"
+        ]
+      }
+    ]
+  },
+  "results": {
+    "redaction": {
+      "basicEffectiveness": {
+        "passed": false,
+        "effectiveness": 0.7017543859649122,
+        "target": 1,
+        "failedRedactions": 17,
+        "bypassesBlocked": 4,
+        "totalBypassAttempts": 13,
+        "details": {
+          "totalTests": 57,
+          "successfulRedactions": 40,
+          "failedRedactions": [
+            {
+              "exchangeId": "exchange-24",
+              "category": "apiKeys",
+              "originalContent": "This exchange contains sensitive apiKeys: xoxb-1234-5678-9012-abcdef",
+              "redactedContent": "This exchange contains sensitive apiKeys: xoxb-1234-5678-9012-abcdef",
+              "failedPattern": "xoxb-1234-5678-9012-abcdef",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-25",
+              "category": "apiKeys_context",
+              "originalContent": "User mentioned their apiKeys is xoxb-1234-5678-9012-abcdef in the documentation.",
+              "redactedContent": "User mentioned their apiKeys is xoxb-1234-5678-9012-abcdef in the documentation.",
+              "failedPattern": "xoxb-1234-5678-9012-abcdef",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-38",
+              "category": "filePaths",
+              "originalContent": "This exchange contains sensitive filePaths: /home/user/.ssh/id_rsa",
+              "redactedContent": "This exchange contains sensitive filePaths: /home/user/.ssh/id_rsa",
+              "failedPattern": "/home/user/.ssh/id_rsa",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-39",
+              "category": "filePaths_context",
+              "originalContent": "User mentioned their filePaths is /home/user/.ssh/id_rsa in the documentation.",
+              "redactedContent": "User mentioned their filePaths is /home/user/.ssh/id_rsa in the documentation.",
+              "failedPattern": "/home/user/.ssh/id_rsa",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-40",
+              "category": "filePaths",
+              "originalContent": "This exchange contains sensitive filePaths: C:\\Users\\Admin\\secret.txt",
+              "redactedContent": "This exchange contains sensitive filePaths: C:\\Users\\Admin\\secret.txt",
+              "failedPattern": "C:\\Users\\Admin\\secret.txt",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-41",
+              "category": "filePaths_context",
+              "originalContent": "User mentioned their filePaths is C:\\Users\\Admin\\secret.txt in the documentation.",
+              "redactedContent": "User mentioned their filePaths is C:\\Users\\Admin\\secret.txt in the documentation.",
+              "failedPattern": "C:\\Users\\Admin\\secret.txt",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-42",
+              "category": "filePaths",
+              "originalContent": "This exchange contains sensitive filePaths: /etc/passwd",
+              "redactedContent": "This exchange contains sensitive filePaths: /etc/passwd",
+              "failedPattern": "/etc/passwd",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-43",
+              "category": "filePaths_context",
+              "originalContent": "User mentioned their filePaths is /etc/passwd in the documentation.",
+              "redactedContent": "User mentioned their filePaths is /etc/passwd in the documentation.",
+              "failedPattern": "/etc/passwd",
+              "isAttackVector": false
+            },
+            {
+              "exchangeId": "exchange-44",
+              "category": "attack_encodingBypass",
+              "originalContent": "Bypass attempt: user%40company.com",
+              "redactedContent": "Bypass attempt: user%40company.com",
+              "failedPattern": "user%40company.com",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-45",
+              "category": "attack_encodingBypass",
+              "originalContent": "Bypass attempt: 555&#45;123&#45;4567",
+              "redactedContent": "Bypass attempt: 555&#45;123&#45;4567",
+              "failedPattern": "555&#45;123&#45;4567",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-46",
+              "category": "attack_encodingBypass",
+              "originalContent": "Bypass attempt: c2Vuc2l0aXZlZGF0YQ==",
+              "redactedContent": "Bypass attempt: c2Vuc2l0aXZlZGF0YQ==",
+              "failedPattern": "c2Vuc2l0aXZlZGF0YQ==",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-47",
+              "category": "attack_encodingBypass",
+              "originalContent": "Bypass attempt: \\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "redactedContent": "Bypass attempt: \\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "failedPattern": "\\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-49",
+              "category": "attack_unicodeBypass",
+              "originalContent": "Bypass attempt: 555‐123‐4567",
+              "redactedContent": "Bypass attempt: 555‐123‐4567",
+              "failedPattern": "555‐123‐4567",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-50",
+              "category": "attack_unicodeBypass",
+              "originalContent": "Bypass attempt: 192․168․1․100",
+              "redactedContent": "Bypass attempt: 192․168․1․100",
+              "failedPattern": "192․168․1․100",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-54",
+              "category": "attack_fragmentationBypass",
+              "originalContent": "Bypass attempt: user@comp any.com",
+              "redactedContent": "Bypass attempt: user@comp any.com",
+              "failedPattern": "user@comp any.com",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-55",
+              "category": "attack_fragmentationBypass",
+              "originalContent": "Bypass attempt: 555- 123-4567",
+              "redactedContent": "Bypass attempt: 555- 123-4567",
+              "failedPattern": "555- 123-4567",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-56",
+              "category": "attack_fragmentationBypass",
+              "originalContent": "Bypass attempt: 192.168. 1.100",
+              "redactedContent": "Bypass attempt: 192.168. 1.100",
+              "failedPattern": "192.168. 1.100",
+              "isAttackVector": true
+            }
+          ],
+          "bypassAttempts": 13,
+          "successfulBypasses": [
+            {
+              "attackType": "attack_encodingBypass",
+              "bypassPattern": "user%40company.com",
+              "redactedContent": "Bypass attempt: user%40company.com"
+            },
+            {
+              "attackType": "attack_encodingBypass",
+              "bypassPattern": "555&#45;123&#45;4567",
+              "redactedContent": "Bypass attempt: 555&#45;123&#45;4567"
+            },
+            {
+              "attackType": "attack_encodingBypass",
+              "bypassPattern": "c2Vuc2l0aXZlZGF0YQ==",
+              "redactedContent": "Bypass attempt: c2Vuc2l0aXZlZGF0YQ=="
+            },
+            {
+              "attackType": "attack_encodingBypass",
+              "bypassPattern": "\\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "redactedContent": "Bypass attempt: \\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d"
+            },
+            {
+              "attackType": "attack_unicodeBypass",
+              "bypassPattern": "555‐123‐4567",
+              "redactedContent": "Bypass attempt: 555‐123‐4567"
+            },
+            {
+              "attackType": "attack_unicodeBypass",
+              "bypassPattern": "192․168․1․100",
+              "redactedContent": "Bypass attempt: 192․168․1․100"
+            },
+            {
+              "attackType": "attack_fragmentationBypass",
+              "bypassPattern": "user@comp any.com",
+              "redactedContent": "Bypass attempt: user@comp any.com"
+            },
+            {
+              "attackType": "attack_fragmentationBypass",
+              "bypassPattern": "555- 123-4567",
+              "redactedContent": "Bypass attempt: 555- 123-4567"
+            },
+            {
+              "attackType": "attack_fragmentationBypass",
+              "bypassPattern": "192.168. 1.100",
+              "redactedContent": "Bypass attempt: 192.168. 1.100"
+            }
+          ],
+          "effectiveness": 0.7017543859649122
+        }
+      },
+      "advancedBypasses": {
+        "passed": false,
+        "effectiveness": 0.9298245614035088,
+        "target": 0.95,
+        "bypassesPrevented": 9,
+        "successfulBypasses": [
+          {
+            "attackType": "attack_encodingBypass",
+            "bypassPattern": "c2Vuc2l0aXZlZGF0YQ==",
+            "redactedContent": "Bypass attempt: c2Vuc2l0aXZlZGF0YQ=="
+          },
+          {
+            "attackType": "attack_encodingBypass",
+            "bypassPattern": "\\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+            "redactedContent": "Bypass attempt: \\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d"
+          },
+          {
+            "attackType": "attack_unicodeBypass",
+            "bypassPattern": "192․168․1․100",
+            "redactedContent": "Bypass attempt: 192․168․1․100"
+          },
+          {
+            "attackType": "attack_fragmentationBypass",
+            "bypassPattern": "user@comp any.com",
+            "redactedContent": "Bypass attempt: user@comp any.com"
+          }
+        ],
+        "details": {
+          "totalTests": 57,
+          "successfulRedactions": 53,
+          "failedRedactions": [
+            {
+              "exchangeId": "exchange-46",
+              "category": "attack_encodingBypass",
+              "originalContent": "Bypass attempt: c2Vuc2l0aXZlZGF0YQ==",
+              "redactedContent": "Bypass attempt: c2Vuc2l0aXZlZGF0YQ==",
+              "failedPattern": "c2Vuc2l0aXZlZGF0YQ==",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-47",
+              "category": "attack_encodingBypass",
+              "originalContent": "Bypass attempt: \\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "redactedContent": "Bypass attempt: \\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "failedPattern": "\\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-50",
+              "category": "attack_unicodeBypass",
+              "originalContent": "Bypass attempt: 192․168․1․100",
+              "redactedContent": "Bypass attempt: 192․168․1․100",
+              "failedPattern": "192․168․1․100",
+              "isAttackVector": true
+            },
+            {
+              "exchangeId": "exchange-54",
+              "category": "attack_fragmentationBypass",
+              "originalContent": "Bypass attempt: user@comp any.com",
+              "redactedContent": "Bypass attempt: user@comp any.com",
+              "failedPattern": "user@comp any.com",
+              "isAttackVector": true
+            }
+          ],
+          "bypassAttempts": 13,
+          "successfulBypasses": [
+            {
+              "attackType": "attack_encodingBypass",
+              "bypassPattern": "c2Vuc2l0aXZlZGF0YQ==",
+              "redactedContent": "Bypass attempt: c2Vuc2l0aXZlZGF0YQ=="
+            },
+            {
+              "attackType": "attack_encodingBypass",
+              "bypassPattern": "\\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d",
+              "redactedContent": "Bypass attempt: \\x75\\x73\\x65\\x72\\x40\\x63\\x6f\\x6d\\x70\\x61\\x6e\\x79\\x2e\\x63\\x6f\\x6d"
+            },
+            {
+              "attackType": "attack_unicodeBypass",
+              "bypassPattern": "192․168․1․100",
+              "redactedContent": "Bypass attempt: 192․168․1․100"
+            },
+            {
+              "attackType": "attack_fragmentationBypass",
+              "bypassPattern": "user@comp any.com",
+              "redactedContent": "Bypass attempt: user@comp any.com"
+            }
+          ],
+          "effectiveness": 0.9298245614035088
+        }
+      },
+      "unicodeBypasses": {
+        "passed": true,
+        "effectiveness": 1,
+        "target": 0.8,
+        "detectedBypasses": 4,
+        "totalTests": 4,
+        "bypassTests": [
+          {
+            "original": "user@company.com",
+            "encoded": "user%40company.com",
+            "type": "URL_ENCODING"
+          },
+          {
+            "original": "555-123-4567",
+            "encoded": "555&#45;123&#45;4567",
+            "type": "HTML_ENTITY"
+          },
+          {
+            "original": "sensitive",
+            "encoded": "c2Vuc2l0aXZl",
+            "type": "BASE64"
+          },
+          {
+            "original": "user@company.com",
+            "encoded": "սser@company.com",
+            "type": "UNICODE_LOOKALIKE"
+          }
+        ]
+      },
+      "configurability": {
+        "passed": false,
+        "configurabilityScore": 0.6666666666666666,
+        "target": 0.8,
+        "configTestsPassed": 2,
+        "totalConfigTests": 3
+      }
+    },
+    "userIsolation": {
+      "hashUniqueness": {
+        "passed": true,
+        "uniqueness": 1,
+        "target": 1,
+        "collisions": 0,
+        "totalUsers": 5,
+        "uniqueHashes": 5
+      },
+      "fileAccess": {
+        "passed": true,
+        "isolationScore": 1,
+        "target": 1,
+        "accessViolations": 0,
+        "totalAttempts": 20,
+        "isolationEffectiveness": 1
+      },
+      "bufferIsolation": {
+        "passed": true,
+        "bufferIsolationScore": 1,
+        "target": 1,
+        "isolationViolations": 0,
+        "totalChecks": 6
+      },
+      "sessionIsolation": {
+        "passed": true,
+        "sessionIsolationScore": 1,
+        "target": 1,
+        "isolationBreaches": 0,
+        "totalScenarios": 3
+      }
+    },
+    "privacy": {
+      "dataRetention": {
+        "passed": true,
+        "complianceScore": 1,
+        "target": 1,
+        "complianceViolations": 0,
+        "totalPolicies": 4
+      },
+      "consentManagement": {
+        "passed": true,
+        "consentCompliance": 1,
+        "target": 1,
+        "consentViolations": 0,
+        "totalScenarios": 3
+      },
+      "auditLogging": {
+        "passed": true,
+        "auditScore": 1,
+        "target": 0.9,
+        "auditCoverage": 5,
+        "totalEvents": 5
+      },
+      "dataMinimization": {
+        "passed": true,
+        "minimizationScore": 1,
+        "target": 1,
+        "minimizationViolations": 0,
+        "totalCategories": 5
+      }
+    },
+    "overall": {
+      "redactionScore": 0.25,
+      "isolationScore": 1,
+      "privacyScore": 1,
+      "securityScore": 0.7,
+      "totalTests": 12,
+      "testsPassed": 9
+    }
+  },
+  "summary": {
+    "overallSecurityScore": null,
+    "criticalVulnerabilities": [],
+    "riskLevel": "CRITICAL"
+  },
+  "recommendations": []
+}

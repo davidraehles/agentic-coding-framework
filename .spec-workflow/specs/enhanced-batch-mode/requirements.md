@@ -62,7 +62,7 @@ This feature directly supports the coding project's core mission of providing in
 
 #### Acceptance Criteria
 
-1. WHEN CODING_TARGET_PROJECT points to the coding project THEN existing classification SHALL work correctly
+1. WHEN TRANSCRIPT_SOURCE_PROJECT points to the coding project THEN existing classification SHALL work correctly
 2. IF batch processing runs from non-coding project THEN existing environment variables SHALL be configured properly
 3. WHEN foreign mode executes THEN output files SHALL be written to the correct coding project directory using existing path logic
 

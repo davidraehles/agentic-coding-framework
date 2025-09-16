@@ -7,6 +7,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import UserHashGenerator from '../src/live-logging/user-hash-generator.js';
 
 // Load timezone from central config
 function getTimezone() {
@@ -104,19 +105,23 @@ export function formatTimestamp(utcTimestamp, timezone = null) {
   // Format UTC
   const utcFormatted = utcDate.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
   
-  // Format local time
+  // Format local time (full format)
   const month = (localDate.getMonth() + 1).toString().padStart(2, '0');
   const day = localDate.getDate().toString().padStart(2, '0');
   const hours = localDate.getHours().toString().padStart(2, '0');
   const minutes = localDate.getMinutes().toString().padStart(2, '0');
+  const seconds = localDate.getSeconds().toString().padStart(2, '0');
   const tzShort = tz === 'Europe/Berlin' ? 'CEST' : tz.split('/').pop();
   
   const localFormatted = `${month}/${day}/2025, ${hours}:${minutes} ${tzShort}`;
+  const localTimeOnly = `${hours}:${minutes}:${seconds} ${tzShort}`;
   
   return {
     utc: utcFormatted,
     local: localFormatted,
-    combined: `${localFormatted} (${utcFormatted})`
+    localTimeOnly: localTimeOnly,
+    combined: `${localFormatted} (${utcFormatted})`,
+    lslFormat: `${utcFormatted} [${localTimeOnly}]`
   };
 }
 
@@ -142,6 +147,64 @@ export function parseTimestamp(timestamp, timezone = null) {
   };
 }
 
+/**
+ * Generate LSL filename with new format: YYYY-MM-DD_HHMM-HHMM_hash_from-project.md
+ * Replaces old format that included "session" word
+ * @param {Date|number} timestamp - UTC timestamp
+ * @param {string} projectName - Name of the project 
+ * @param {string} targetProject - Path to target project (for local vs redirected logic)
+ * @param {string} sourceProject - Path to source project
+ * @param {object} options - Additional options
+ * @returns {string} Complete filename with new format
+ */
+export function generateLSLFilename(timestamp, projectName, targetProject, sourceProject, options = {}) {
+  const localDate = utcToLocalTime(timestamp);
+  const year = localDate.getFullYear();
+  const month = (localDate.getMonth() + 1).toString().padStart(2, '0');
+  const day = localDate.getDate().toString().padStart(2, '0');
+  
+  // Get time window in HHMM-HHMM format
+  const timeWindow = getTimeWindow(localDate);
+  
+  // Generate user hash for multi-user collision prevention
+  const userHash = UserHashGenerator.generateHash({ debug: options.debug });
+  
+  // Format: YYYY-MM-DD_HHMM-HHMM_hash
+  const baseName = `${year}-${month}-${day}_${timeWindow}_${userHash}`;
+  
+  // Determine if this is a local file or redirected file
+  if (targetProject === sourceProject) {
+    // Local project - no "from-project" suffix
+    return `${baseName}.md`;
+  } else {
+    // Redirected to coding project - add "from-project" suffix
+    // Extract actual project name from source path
+    const sourceProjectName = sourceProject.split('/').pop();
+    return `${baseName}_from-${sourceProjectName}.md`;
+  }
+}
+
+/**
+ * Generate LSL filename for existing tranche object (backward compatibility)
+ * @param {object} tranche - Tranche object with date and timeString
+ * @param {string} projectName - Name of the project
+ * @param {string} targetProject - Path to target project
+ * @param {string} sourceProject - Path to source project  
+ * @param {object} options - Additional options
+ * @returns {string} Complete filename
+ */
+export function generateLSLFilenameFromTranche(tranche, projectName, targetProject, sourceProject, options = {}) {
+  // Convert tranche format to timestamp for new function
+  // tranche.date format: "2025-09-14", tranche.timeString format: "0800-0900"
+  const [year, month, day] = tranche.date.split('-');
+  const [startHour] = tranche.timeString.split('-')[0].match(/(\d{2})(\d{2})/) || ['0800'];
+  
+  // Create timestamp at start of time window
+  const timestamp = new Date(`${year}-${month}-${day}T${startHour.slice(0,2)}:${startHour.slice(2)}:00.000Z`);
+  
+  return generateLSLFilename(timestamp, projectName, targetProject, sourceProject, options);
+}
+
 // Export getTimezone as named export
 export { getTimezone };
 
@@ -150,5 +213,7 @@ export default {
   utcToLocalTime,
   getTimeWindow,
   formatTimestamp,
-  parseTimestamp
+  parseTimestamp,
+  generateLSLFilename,
+  generateLSLFilenameFromTranche
 };

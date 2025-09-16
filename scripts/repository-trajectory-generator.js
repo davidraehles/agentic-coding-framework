@@ -24,7 +24,7 @@ const __dirname = path.dirname(__filename);
 
 class RepositoryTrajectoryGenerator {
   constructor(projectPath, toolsPath) {
-    this.projectPath = projectPath || process.env.CODING_TARGET_PROJECT || process.cwd();
+    this.projectPath = projectPath || process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
     this.toolsPath = toolsPath || process.env.CODING_TOOLS_PATH || path.dirname(__dirname);
     this.projectName = path.basename(this.projectPath);
     
@@ -579,7 +579,7 @@ ${analysisType.includes('Deep MCP') ? '✅ **Change log reset after deep analysi
 
 // Main execution
 async function main() {
-  const projectPath = process.argv[2] || process.env.CODING_TARGET_PROJECT || process.cwd();
+  const projectPath = process.argv[2] || process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
   const toolsPath = process.env.CODING_TOOLS_PATH || process.cwd();
   
   const generator = new RepositoryTrajectoryGenerator(projectPath, toolsPath);

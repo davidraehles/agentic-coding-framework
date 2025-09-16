@@ -10,7 +10,7 @@ import path from 'path';
 import chokidar from 'chokidar';
 
 const CODING_TOOLS_PATH = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
-const CODING_TARGET_PROJECT = process.env.CODING_TARGET_PROJECT || process.cwd();
+const TRANSCRIPT_SOURCE_PROJECT = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
 
 // File patterns to monitor for constraint violations
 const MONITORED_PATTERNS = [
@@ -180,11 +180,11 @@ class ConstraintMonitorIntegration {
     }
 
     console.log('🛡️ Starting constraint monitor integration...');
-    console.log(`Monitoring project: ${CODING_TARGET_PROJECT}`);
+    console.log(`Monitoring project: ${TRANSCRIPT_SOURCE_PROJECT}`);
     
     // Watch file changes
     const watcher = chokidar.watch(MONITORED_PATTERNS, {
-      cwd: CODING_TARGET_PROJECT,
+      cwd: TRANSCRIPT_SOURCE_PROJECT,
       ignored: EXCLUDED_PATTERNS,
       ignoreInitial: true,
       persistent: true,
@@ -196,10 +196,10 @@ class ConstraintMonitorIntegration {
     });
 
     watcher
-      .on('add', (filePath) => this.processFile(path.resolve(CODING_TARGET_PROJECT, filePath), 'add'))
-      .on('change', (filePath) => this.processFile(path.resolve(CODING_TARGET_PROJECT, filePath), 'change'))
+      .on('add', (filePath) => this.processFile(path.resolve(TRANSCRIPT_SOURCE_PROJECT, filePath), 'add'))
+      .on('change', (filePath) => this.processFile(path.resolve(TRANSCRIPT_SOURCE_PROJECT, filePath), 'change'))
       .on('unlink', (filePath) => {
-        const fullPath = path.resolve(CODING_TARGET_PROJECT, filePath);
+        const fullPath = path.resolve(TRANSCRIPT_SOURCE_PROJECT, filePath);
         this.violationCache.delete(fullPath);
       })
       .on('error', (error) => console.error('File watcher error:', error));
@@ -220,7 +220,7 @@ class ConstraintMonitorIntegration {
     console.log('🛡️ Scanning existing files for constraint violations...');
     
     const scanPatterns = MONITORED_PATTERNS.map(pattern => 
-      path.join(CODING_TARGET_PROJECT, pattern)
+      path.join(TRANSCRIPT_SOURCE_PROJECT, pattern)
     );
 
     // Simple glob-like scan
@@ -250,7 +250,7 @@ class ConstraintMonitorIntegration {
         }
       };
       
-      findFiles(CODING_TARGET_PROJECT);
+      findFiles(TRANSCRIPT_SOURCE_PROJECT);
     }
 
     let totalViolations = 0;
@@ -288,7 +288,7 @@ Commands:
   help    - Show this help message
 
 Environment Variables:
-  CODING_TARGET_PROJECT - Project directory to monitor (default: current directory)
+  TRANSCRIPT_SOURCE_PROJECT - Project directory to monitor (default: current directory)
   CODING_TOOLS_PATH     - Path to coding tools (default: /Users/q284340/Agentic/coding)
       `);
       break;

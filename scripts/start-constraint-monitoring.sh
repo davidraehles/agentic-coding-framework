@@ -5,10 +5,10 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 CODING_TOOLS_PATH="${CODING_TOOLS_PATH:-${SCRIPT_DIR}/..}"
-CODING_TARGET_PROJECT="${CODING_TARGET_PROJECT:-$(pwd)}"
+TRANSCRIPT_SOURCE_PROJECT="${TRANSCRIPT_SOURCE_PROJECT:-$(pwd)}"
 
 echo "🛡️ Starting Constraint Monitoring Service"
-echo "Project: $CODING_TARGET_PROJECT"
+echo "Project: $TRANSCRIPT_SOURCE_PROJECT"
 echo "Tools Path: $CODING_TOOLS_PATH"
 
 # Check if chokidar is available
@@ -21,10 +21,10 @@ fi
 CONSTRAINT_LOG="$CODING_TOOLS_PATH/.logs/constraint-monitor.log"
 mkdir -p "$CODING_TOOLS_PATH/.logs"
 
-echo "$(date): Starting constraint monitor for $CODING_TARGET_PROJECT" >> "$CONSTRAINT_LOG"
+echo "$(date): Starting constraint monitor for $TRANSCRIPT_SOURCE_PROJECT" >> "$CONSTRAINT_LOG"
 
 # Export environment variables and start monitoring
-export CODING_TARGET_PROJECT
+export TRANSCRIPT_SOURCE_PROJECT
 export CODING_TOOLS_PATH
 
 node "$SCRIPT_DIR/constraint-monitor-integration.js" start >> "$CONSTRAINT_LOG" 2>&1 &
@@ -39,7 +39,7 @@ cat > "$CODING_TOOLS_PATH/.constraint-monitor-status.json" << EOF
   "status": "running",
   "pid": $MONITOR_PID,
   "started_at": "$(date -Iseconds)",
-  "project": "$CODING_TARGET_PROJECT",
+  "project": "$TRANSCRIPT_SOURCE_PROJECT",
   "log_file": "$CONSTRAINT_LOG"
 }
 EOF

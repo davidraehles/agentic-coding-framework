@@ -1,0 +1,61 @@
+@startuml enhanced-lsl-security-simple
+!include _standard-style.puml
+!define TITLE Enhanced LSL Security Architecture
+
+title TITLE
+
+package "Enhanced LSL Security Layer" {
+  
+  ' Enhanced Security Components
+  component [Enhanced Redaction System] as redaction <<security>>
+  component [User Hash Generator] as userHash <<security>>
+  component [Multi-User Isolation] as isolation <<security>>
+  
+  ' Supporting Components
+  component [Enhanced Operational Logger] as logger <<util>>
+  component [Security Monitor] as monitor <<security>>
+  
+  ' Data Stores
+  database "Threat Intelligence" as threats <<storage>>
+  database "Security Audit Log" as auditLog <<storage>>
+  database "User Sessions" as userSessions <<storage>>
+  
+  ' External
+  component [Raw Content] as raw <<external>>
+  component [Processed Content] as processed <<core>>
+  component [Security Dashboard] as dashboard <<api>>
+}
+
+' Main Security Flow
+raw SYNC_LINE redaction
+redaction SYNC_LINE userHash
+userHash SYNC_LINE isolation
+isolation SYNC_LINE processed
+
+' Monitoring Flow
+redaction DATA_LINE logger
+userHash DATA_LINE logger
+isolation DATA_LINE logger
+logger DATA_LINE auditLog
+
+' Threat Intelligence
+threats DATA_LINE monitor
+monitor CONTROL_LINE redaction
+
+' Dashboard Integration  
+auditLog DATA_LINE dashboard
+logger DATA_LINE dashboard
+
+' Session Management
+isolation DATA_LINE userSessions
+userHash DATA_LINE userSessions
+
+note top of redaction : 98.3% Effectiveness\nBypass Protection\nReal-time Scanning\nUnicode Normalization
+
+note top of userHash : SHA-256 + Entropy\nCollision-free\nPrivacy Protected\nMulti-user Support
+
+note top of isolation : Strict Mode Enabled\nZero Cross-contamination\nEncryption at Rest\nSession Separation
+
+note right of threats : Known Attack Vectors\nSocial Engineering\nObfuscation Techniques\nBypass Patterns
+
+@enduml

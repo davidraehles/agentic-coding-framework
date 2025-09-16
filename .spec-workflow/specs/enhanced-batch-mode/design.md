@@ -30,7 +30,7 @@ Implementation will follow existing project organization:
 
 ### Integration Points
 - **Classification Pipeline**: Insert classifier calls into existing exchange processing loop
-- **Environment Configuration**: Fix CODING_TARGET_PROJECT variable handling in existing getTargetProject()
+- **Environment Configuration**: Fix TRANSCRIPT_SOURCE_PROJECT variable handling in existing getTargetProject()
 - **Performance Tracking**: Extend existing stats reporting to show actual classification metrics
 - **Error Handling**: Replace silent failures with explicit error throwing using existing patterns
 
@@ -69,7 +69,7 @@ graph TD
 - **Reuses:** Current exchange extraction, tool call parsing, time window processing
 
 ### Environment Configuration Fix
-- **Purpose:** Ensure CODING_TARGET_PROJECT points to coding project for proper classification
+- **Purpose:** Ensure TRANSCRIPT_SOURCE_PROJECT points to coding project for proper classification
 - **Interfaces:** Existing getTargetProject() function
 - **Dependencies:** Process environment variables, path resolution utilities
 - **Reuses:** Current project detection and path configuration logic
@@ -133,7 +133,7 @@ graph TD
    - **User Impact:** Information about which exchange caused classification to fail
 
 3. **Environment Configuration Issues**
-   - **Handling:** Validate CODING_TARGET_PROJECT early, throw error with correction guidance
+   - **Handling:** Validate TRANSCRIPT_SOURCE_PROJECT early, throw error with correction guidance
    - **User Impact:** Actionable error message with correct environment variable setup
 
 4. **Foreign File Creation Failure**

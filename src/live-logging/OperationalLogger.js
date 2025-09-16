@@ -149,7 +149,7 @@ class OperationalLogger {
   }
 
   /**
-   * Log performance metrics
+   * Log performance metrics with comprehensive system observability
    * @param {string} component - Component name (PathAnalyzer, SemanticAnalyzer, etc.)
    * @param {Object} metrics - Performance metrics
    * @param {Object} context - Additional context
@@ -162,13 +162,78 @@ class OperationalLogger {
       type: 'performance',
       component,
       metrics: {
+        // Core performance metrics
         processingTime: metrics.processingTime || 0,
         accuracy: metrics.accuracy || null,
         throughput: metrics.throughput || null,
         errorRate: metrics.errorRate || null,
+        
+        // Extended performance metrics
+        memoryUsage: this.getMemoryUsage(),
+        cpuUsage: metrics.cpuUsage || null,
+        
+        // Component-specific metrics
+        totalCalls: metrics.totalCalls || 0,
+        averageTime: metrics.averageTime || 0,
+        minTime: metrics.minTime || 0,
+        maxTime: metrics.maxTime || 0,
+        
+        // Cache and optimization metrics
+        cacheHitRate: metrics.cacheHitRate || null,
+        cacheSize: metrics.cacheSize || null,
+        queueLength: metrics.queueLength || null,
+        
+        // Quality metrics
+        successRate: metrics.successRate || null,
+        retryCount: metrics.retryCount || null,
+        timeout: metrics.timeout || null,
+        
+        // Custom metrics from component
         ...metrics
       },
-      context: this.sanitizeContext(context)
+      context: this.sanitizeContext(context),
+      
+      // System health indicators
+      systemHealth: {
+        uptime: process.uptime(),
+        memoryUtilization: this.getMemoryUtilization(),
+        eventLoopLag: metrics.eventLoopLag || null,
+        activeSessions: context.activeSessions || null
+      }
+    };
+    
+    this.addToBuffer('performance', logEntry);
+    this.stats.performanceMetricsLogged++;
+  }
+  
+  /**
+   * Log structured metrics for specific system components
+   * @param {string} subsystem - Subsystem name (LSL, FileManager, Classifier, etc.)
+   * @param {Object} metrics - Subsystem metrics
+   * @param {Object} metadata - Additional metadata
+   */
+  logStructuredMetrics(subsystem, metrics, metadata = {}) {
+    if (!this.enabled) return;
+    
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      type: 'structured_metrics',
+      subsystem,
+      metrics: {
+        ...metrics,
+        timestamp: Date.now(),
+        sessionId: metadata.sessionId || null
+      },
+      metadata: this.sanitizeContext(metadata),
+      
+      // Correlation data for metrics analysis
+      correlationId: this.generateCorrelationId(subsystem, metadata),
+      
+      // Metric categorization
+      category: this.categorizeMetrics(subsystem, metrics),
+      
+      // Alert triggers
+      alerts: this.checkMetricAlerts(subsystem, metrics)
     };
     
     this.addToBuffer('performance', logEntry);
@@ -512,6 +577,274 @@ class OperationalLogger {
   setEnabled(enabled) {
     this.enabled = enabled;
     this.log(`Logging ${enabled ? 'enabled' : 'disabled'}`, 'info', 'system');
+  }
+
+  /**
+   * Get current memory usage in MB
+   * @returns {Object} Memory usage statistics
+   */
+  getMemoryUsage() {
+    const usage = process.memoryUsage();
+    return {
+      heapUsed: Math.round(usage.heapUsed / 1024 / 1024 * 100) / 100,
+      heapTotal: Math.round(usage.heapTotal / 1024 / 1024 * 100) / 100,
+      external: Math.round(usage.external / 1024 / 1024 * 100) / 100,
+      rss: Math.round(usage.rss / 1024 / 1024 * 100) / 100
+    };
+  }
+  
+  /**
+   * Get memory utilization percentage
+   * @returns {number} Memory utilization percentage
+   */
+  getMemoryUtilization() {
+    const usage = process.memoryUsage();
+    return Math.round(usage.heapUsed / usage.heapTotal * 100);
+  }
+  
+  /**
+   * Generate correlation ID for metrics analysis
+   * @param {string} subsystem - Subsystem name
+   * @param {Object} metadata - Metadata containing session info
+   * @returns {string} Correlation ID
+   */
+  generateCorrelationId(subsystem, metadata) {
+    const components = [
+      subsystem,
+      metadata.sessionId || 'default',
+      Date.now().toString(36)
+    ];
+    return crypto.createHash('md5').update(components.join('|')).digest('hex').substring(0, 12);
+  }
+  
+  /**
+   * Categorize metrics based on subsystem and metric types
+   * @param {string} subsystem - Subsystem name
+   * @param {Object} metrics - Metrics to categorize
+   * @returns {string} Metric category
+   */
+  categorizeMetrics(subsystem, metrics) {
+    // Performance-related metrics
+    if (metrics.processingTime || metrics.averageTime || metrics.throughput) {
+      return 'performance';
+    }
+    
+    // Resource utilization metrics
+    if (metrics.memoryUsage || metrics.cpuUsage || metrics.diskUsage) {
+      return 'resources';
+    }
+    
+    // Quality metrics
+    if (metrics.errorRate || metrics.successRate || metrics.accuracy) {
+      return 'quality';
+    }
+    
+    // Storage and file metrics
+    if (metrics.fileSize || metrics.compressionRatio || metrics.rotationCount) {
+      return 'storage';
+    }
+    
+    // Check if this is explicitly LSLFileManager
+    if (subsystem === 'LSLFileManager') {
+      return 'storage';
+    }
+    
+    // Classification and analysis metrics
+    if (metrics.classificationsPerSecond || metrics.confidence || metrics.layer) {
+      return 'analysis';
+    }
+    
+    // Default category
+    return 'general';
+  }
+  
+  /**
+   * Check metrics against alert thresholds
+   * @param {string} subsystem - Subsystem name
+   * @param {Object} metrics - Metrics to check
+   * @returns {Array} Array of triggered alerts
+   */
+  checkMetricAlerts(subsystem, metrics) {
+    const alerts = [];
+    
+    // Performance alerts
+    if (metrics.processingTime > 10000) { // 10 seconds
+      alerts.push({
+        type: 'performance',
+        severity: 'warning',
+        message: `High processing time: ${metrics.processingTime}ms`,
+        threshold: 10000,
+        value: metrics.processingTime
+      });
+    }
+    
+    if (metrics.errorRate > 10) { // 10% error rate
+      alerts.push({
+        type: 'quality',
+        severity: 'critical',
+        message: `High error rate: ${metrics.errorRate}%`,
+        threshold: 10,
+        value: metrics.errorRate
+      });
+    }
+    
+    // Memory alerts
+    const memoryUtil = this.getMemoryUtilization();
+    if (memoryUtil > 85) { // 85% memory utilization
+      alerts.push({
+        type: 'resources',
+        severity: 'warning',
+        message: `High memory utilization: ${memoryUtil}%`,
+        threshold: 85,
+        value: memoryUtil
+      });
+    }
+    
+    // File size alerts (for LSLFileManager)
+    if (subsystem === 'LSLFileManager' && metrics.fileSize > 45 * 1024 * 1024) { // 45MB
+      alerts.push({
+        type: 'storage',
+        severity: 'info',
+        message: `File approaching rotation threshold: ${Math.round(metrics.fileSize / 1024 / 1024)}MB`,
+        threshold: 45,
+        value: Math.round(metrics.fileSize / 1024 / 1024)
+      });
+    }
+    
+    // Classification performance alerts
+    if (subsystem === 'ReliableCodingClassifier' && metrics.averageTime > 15000) { // 15 seconds
+      alerts.push({
+        type: 'performance',
+        severity: 'warning',
+        message: `Slow classification performance: ${metrics.averageTime}ms average`,
+        threshold: 15000,
+        value: metrics.averageTime
+      });
+    }
+    
+    return alerts;
+  }
+  
+  /**
+   * Log system health metrics
+   * @param {Object} healthData - System health data
+   * @param {Object} context - Additional context
+   */
+  logSystemHealth(healthData, context = {}) {
+    if (!this.enabled) return;
+    
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      type: 'system_health',
+      health: {
+        uptime: process.uptime(),
+        memory: this.getMemoryUsage(),
+        memoryUtilization: this.getMemoryUtilization(),
+        pid: process.pid,
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        ...healthData
+      },
+      context: this.sanitizeContext(context),
+      
+      // Health indicators
+      indicators: {
+        memoryHealthy: this.getMemoryUtilization() < 80,
+        uptimeHealthy: process.uptime() > 60, // Healthy if running for more than 1 minute
+        performanceHealthy: context.lastProcessingTime < 5000 || true // Default healthy if no data
+      }
+    };
+    
+    this.addToBuffer('system', logEntry);
+  }
+  
+  /**
+   * Log operational events with structured format
+   * @param {string} event - Event name
+   * @param {Object} eventData - Event data
+   * @param {string} severity - Event severity (info, warning, error, critical)
+   * @param {Object} context - Additional context
+   */
+  logOperationalEvent(event, eventData, severity = 'info', context = {}) {
+    if (!this.enabled) return;
+    
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      type: 'operational_event',
+      event,
+      severity,
+      data: eventData,
+      context: this.sanitizeContext(context),
+      
+      // Event categorization
+      category: this.categorizeEvent(event),
+      
+      // Correlation data
+      correlationId: this.generateCorrelationId('operational', context),
+      
+      // Impact assessment
+      impact: this.assessEventImpact(event, eventData, severity)
+    };
+    
+    this.addToBuffer('system', logEntry);
+  }
+  
+  /**
+   * Categorize operational events
+   * @param {string} event - Event name
+   * @returns {string} Event category
+   */
+  categorizeEvent(event) {
+    const eventLower = event.toLowerCase();
+    
+    if (eventLower.includes('start') || eventLower.includes('stop') || eventLower.includes('restart')) {
+      return 'lifecycle';
+    }
+    
+    if (eventLower.includes('rotate') || eventLower.includes('archive') || eventLower.includes('cleanup') || eventLower.includes('rotation')) {
+      return 'maintenance';
+    }
+    
+    if (eventLower.includes('error') || eventLower.includes('fail') || eventLower.includes('exception')) {
+      return 'error';
+    }
+    
+    if (eventLower.includes('config') || eventLower.includes('setting')) {
+      return 'configuration';
+    }
+    
+    if (eventLower.includes('performance') || eventLower.includes('metric')) {
+      return 'performance';
+    }
+    
+    return 'general';
+  }
+  
+  /**
+   * Assess event impact level
+   * @param {string} event - Event name
+   * @param {Object} eventData - Event data
+   * @param {string} severity - Event severity
+   * @returns {string} Impact level
+   */
+  assessEventImpact(event, eventData, severity) {
+    if (severity === 'critical') return 'high';
+    if (severity === 'error') return 'medium';
+    if (severity === 'warning') return 'low';
+    
+    // Specific event impact assessment
+    const eventLower = event.toLowerCase();
+    
+    if (eventLower.includes('stop') || eventLower.includes('crash')) {
+      return 'high';
+    }
+    
+    if (eventLower.includes('rotate') || eventLower.includes('restart')) {
+      return 'medium';
+    }
+    
+    return 'low';
   }
 
   /**

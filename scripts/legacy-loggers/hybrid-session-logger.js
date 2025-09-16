@@ -8,6 +8,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { generateLSLFilename, formatTimestamp } from '../timezone-utils.js';
 import SemanticToolInterpreter from './semantic-tool-interpreter.js';
 import ExchangeClassifier from './exchange-classifier.js';
 
@@ -21,7 +22,7 @@ class HybridSessionLogger {
     
     this.currentSession = {
       sessionId: this.generateSessionId(),
-      startTime: new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_'),
+      startTime: formatTimestamp(Date.now()).lslFormat,
       exchanges: [],
       classification: { coding: 0, project: 0, hybrid: 0 }
     };
@@ -62,13 +63,16 @@ class HybridSessionLogger {
   }
 
   initializeSessionFiles() {
-    const timestamp = new Date().toISOString().split('T')[0] + '_' + 
-      new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+    const now = Date.now();
+    const projectName = path.basename(this.projectPath);
     
-    this.logFiles.coding = path.join(this.codingRepo, '.specstory/history', 
-      `${timestamp}_coding-session.md`);
-    this.logFiles.project = path.join(this.projectPath, '.specstory/history', 
-      `${timestamp}_project-session.md`);
+    // Generate LSL filename for coding repository
+    const codingFilename = generateLSLFilename(now, projectName, this.codingRepo, this.projectPath, { debug: false });
+    this.logFiles.coding = path.join(this.codingRepo, '.specstory/history', codingFilename);
+    
+    // Generate LSL filename for project repository (local)
+    const projectFilename = generateLSLFilename(now, projectName, this.projectPath, this.projectPath, { debug: false });
+    this.logFiles.project = path.join(this.projectPath, '.specstory/history', projectFilename);
   }
 
   /**
@@ -126,7 +130,7 @@ Context: ${JSON.stringify(conversationContext, null, 2)}
       // 3. Create exchange object
       const exchange = {
         id: this.currentSession.exchanges.length + 1,
-        timestamp: new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_'),
+        timestamp: formatTimestamp(Date.now()).lslFormat,
         toolCall: {
           name: toolCall.name,
           params: toolCall.params
@@ -294,9 +298,8 @@ Context: ${JSON.stringify(conversationContext, null, 2)}
   }
 
   generateLogHeader(sessionInfo) {
-    const now = new Date();
-    const timestamp = now.toISOString().split('T')[0] + '_' + 
-      now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const now = Date.now();
+    const timestamp = formatTimestamp(now).lslFormat;
     
     return `# ${sessionInfo.sessionType}
 
@@ -364,7 +367,7 @@ ${sessionInfo.classification === 'coding-related' ?
 
   generateSessionSummary() {
     const { exchanges, classification } = this.currentSession;
-    const endTime = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_');
+    const endTime = formatTimestamp(Date.now()).lslFormat;
     
     return `
 
@@ -389,7 +392,7 @@ ${sessionInfo.classification === 'coding-related' ?
   // Static utility method for integration
   static async createFromCurrentContext() {
     // Use environment variables set by the coding launcher if available
-    const projectPath = process.env.CODING_TARGET_PROJECT || process.cwd();
+    const projectPath = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
     const codingRepo = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
     
     return new HybridSessionLogger({

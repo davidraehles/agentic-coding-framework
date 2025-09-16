@@ -45,7 +45,7 @@ StatusScript -> RedirectFile : Check routing status
 StatusScript -> History : Find current session
 StatusScript -> Session : Calculate time remaining
 
-' Status line updates every 5 seconds. Project detection via CODING_TARGET_PROJECT, Current working directory, Coding repo directory
+' Status line updates every 5 seconds. Project detection via TRANSCRIPT_SOURCE_PROJECT, Current working directory, Coding repo directory
 
 ' Timing Logic: Over 5 min (Normal display), Under 5 min (Orange warning), Past end (Red ended)
 

@@ -217,7 +217,7 @@ fi
 # Set environment variables
 export CODING_AGENT="claude"
 export CODING_TOOLS_PATH="$CODING_REPO"
-export CODING_TARGET_PROJECT="$TARGET_PROJECT_DIR"
+export TRANSCRIPT_SOURCE_PROJECT="$TARGET_PROJECT_DIR"
 
 # Change to target project directory before launching Claude
 cd "$TARGET_PROJECT_DIR"

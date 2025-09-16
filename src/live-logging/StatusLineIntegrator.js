@@ -130,14 +130,14 @@ class StatusLineIntegrator {
   async setRedirectEnvironment(target, active) {
     if (active && target) {
       // Set environment variables that combined-status-line.js checks
-      process.env.CODING_TARGET_PROJECT = this.projectPath;
+      process.env.TRANSCRIPT_SOURCE_PROJECT = this.projectPath;
       process.env.CODING_REDIRECT_ACTIVE = 'true';
       process.env.CODING_REDIRECT_TARGET = target;
     } else {
       // Remove environment variables
       delete process.env.CODING_REDIRECT_ACTIVE;
       delete process.env.CODING_REDIRECT_TARGET;
-      // Keep CODING_TARGET_PROJECT as it may be used by other systems
+      // Keep TRANSCRIPT_SOURCE_PROJECT as it may be used by other systems
     }
   }
 
@@ -274,7 +274,7 @@ class StatusLineIntegrator {
       environment: {
         redirectActive: process.env.CODING_REDIRECT_ACTIVE === 'true',
         redirectTarget: process.env.CODING_REDIRECT_TARGET,
-        targetProject: process.env.CODING_TARGET_PROJECT
+        targetProject: process.env.TRANSCRIPT_SOURCE_PROJECT
       }
     };
   }

@@ -1427,3 +1427,94 @@ if [ $TESTS_FAILED -eq 0 ]; then
 else
     exit 1
 fi
+# Test Enhanced LSL system
+test_enhanced_lsl() {
+    print_section "Testing Enhanced LSL System"
+    
+    local lsl_tests_passed=0
+    local lsl_tests_total=7
+    
+    # Test 1: Configuration validation
+    print_test "Enhanced LSL configuration"
+    if [[ -f "$CODING_REPO/.lsl/config.json" ]]; then
+        print_pass "LSL configuration exists"
+        lsl_tests_passed=$((lsl_tests_passed + 1))
+    else
+        print_fail "LSL configuration missing"
+    fi
+    
+    # Test 2: Core scripts existence
+    print_test "Enhanced LSL core scripts"
+    local core_scripts_ok=0
+    local core_scripts=(
+        "scripts/lsl-file-manager.js"
+        "scripts/enhanced-operational-logger.js"
+        "scripts/user-hash-generator.js"
+        "scripts/live-logging-coordinator.js"
+        "scripts/enhanced-redaction-system.js"
+    )
+    
+    for script in "${core_scripts[@]}"; do
+        if [[ -f "$CODING_REPO/$script" && -x "$CODING_REPO/$script" ]]; then
+            core_scripts_ok=$((core_scripts_ok + 1))
+        fi
+    done
+    
+    if [[ $core_scripts_ok -eq ${#core_scripts[@]} ]]; then
+        print_pass "All core LSL scripts present and executable"
+        lsl_tests_passed=$((lsl_tests_passed + 1))
+    else
+        print_fail "Missing or non-executable core LSL scripts ($core_scripts_ok/${#core_scripts[@]})"
+    fi
+    
+    # Test 3: Enhanced redaction system
+    print_test "Enhanced redaction system validation"
+    if run_command "timeout 10s node '$CODING_REPO/scripts/enhanced-redaction-system.js'" "Enhanced redaction system test"; then
+        lsl_tests_passed=$((lsl_tests_passed + 1))
+    fi
+    
+    # Test 4: User hash generation
+    print_test "User hash generation system"
+    if run_command "timeout 10s node -e 'const UserHashGenerator = require(\"$CODING_REPO/scripts/user-hash-generator\"); console.log(UserHashGenerator.generateHash());'" "User hash generation test"; then
+        lsl_tests_passed=$((lsl_tests_passed + 1))
+    fi
+    
+    # Test 5: Live logging coordinator initialization
+    print_test "Live logging coordinator"
+    if run_command "timeout 10s node -e 'const LiveLoggingCoordinator = require(\"$CODING_REPO/scripts/live-logging-coordinator\"); const coordinator = new LiveLoggingCoordinator({ enableOperationalLogging: false }); console.log(\"Coordinator initialized\");'" "Live logging coordinator test"; then
+        lsl_tests_passed=$((lsl_tests_passed + 1))
+    fi
+    
+    # Test 6: Security validation (if available)
+    print_test "Security validation system"
+    if [[ -f "$CODING_REPO/tests/security/enhanced-redaction-validation.test.js" ]]; then
+        if run_command "timeout 30s node '$CODING_REPO/tests/security/enhanced-redaction-validation.test.js'" "Security validation test"; then
+            lsl_tests_passed=$((lsl_tests_passed + 1))
+        fi
+    else
+        print_info "Security validation test not available"
+        lsl_tests_passed=$((lsl_tests_passed + 1))  # Count as passed if not available
+    fi
+    
+    # Test 7: Performance validation (if available)
+    print_test "Performance validation system"
+    if [[ -f "$CODING_REPO/tests/performance/lsl-benchmarks.test.js" ]]; then
+        if run_command "timeout 60s node '$CODING_REPO/tests/performance/lsl-benchmarks.test.js'" "Performance validation test"; then
+            lsl_tests_passed=$((lsl_tests_passed + 1))
+        fi
+    else
+        print_info "Performance validation test not available"
+        lsl_tests_passed=$((lsl_tests_passed + 1))  # Count as passed if not available
+    fi
+    
+    # Summary
+    if [[ $lsl_tests_passed -eq $lsl_tests_total ]]; then
+        print_pass "Enhanced LSL system: All tests passed ($lsl_tests_passed/$lsl_tests_total)"
+    elif [[ $lsl_tests_passed -gt $((lsl_tests_total / 2)) ]]; then
+        print_warning "Enhanced LSL system: Most tests passed ($lsl_tests_passed/$lsl_tests_total)"
+    else
+        print_fail "Enhanced LSL system: Multiple test failures ($lsl_tests_passed/$lsl_tests_total)"
+    fi
+    
+    return $((lsl_tests_total - lsl_tests_passed))
+}

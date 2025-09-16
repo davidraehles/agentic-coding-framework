@@ -15,7 +15,7 @@ import { parseTimestamp, formatTimestamp } from './timezone-utils.js';
 
 // Get the target project from environment or command line
 function getTargetProject() {
-  const targetPath = process.env.CODING_TARGET_PROJECT || process.cwd();
+  const targetPath = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
   const projectName = targetPath.split('/').pop();
   return {
     name: projectName,

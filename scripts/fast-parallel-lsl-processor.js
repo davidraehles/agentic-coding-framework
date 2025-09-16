@@ -27,7 +27,7 @@ const TARGET_TIME = 5000; // 5 seconds max
 
 // Get project configuration
 function getProjectConfig() {
-  const targetPath = process.env.CODING_TARGET_PROJECT || process.cwd();
+  const targetPath = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
   const projectName = targetPath.split('/').pop();
   return {
     name: projectName,

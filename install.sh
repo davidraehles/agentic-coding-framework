@@ -918,7 +918,7 @@ EOF
 }
 
 # Verify installation
-verify_installation() {
+    install_enhanced_lslverify_installation() {
     echo -e "\n${CYAN}🔍 Verifying installation...${NC}"
     
     local errors=0
@@ -1317,7 +1317,7 @@ main() {
     create_example_configs
     setup_mcp_config
     setup_vscode_extension
-    verify_installation
+    install_enhanced_lsl    verify_installation
     
     # Create activation script for immediate use
     cat > "$CODING_REPO/.activate" << EOF
@@ -1393,3 +1393,16 @@ show_installation_status() {
 
 # Run main function
 main "$@"
+# Install Enhanced Live Session Logging system
+install_enhanced_lsl() {
+    echo -e "\n${CYAN}📝 Installing Enhanced LSL system...${NC}"
+    
+    # Run LSL deployment script
+    if [[ -x "$CODING_REPO/scripts/deploy-enhanced-lsl.sh" ]]; then
+        info "Running Enhanced LSL deployment..."
+        "$CODING_REPO/scripts/deploy-enhanced-lsl.sh" --skip-tests || warning "Enhanced LSL installation had warnings"
+        success "Enhanced LSL system installed"
+    else
+        warning "Enhanced LSL deployment script not found or not executable"
+    fi
+}

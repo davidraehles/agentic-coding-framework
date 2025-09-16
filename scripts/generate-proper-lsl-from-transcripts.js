@@ -8,18 +8,18 @@
 
 import fs from 'fs';
 import path from 'path';
-import { parseTimestamp, formatTimestamp } from './timezone-utils.js';
+import { parseTimestamp, formatTimestamp, generateLSLFilename } from './timezone-utils.js';
 // Use the enhanced transcript monitor for consistent classification logic
 import EnhancedTranscriptMonitor from './enhanced-transcript-monitor.js';
 
 // Get the target project from environment or command line
 function getTargetProject() {
-  const targetPath = process.env.CODING_TARGET_PROJECT || process.cwd();
+  const targetPath = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
   const projectName = targetPath.split('/').pop();
   
   // Validation: Ensure we have a valid target project path
   if (!targetPath) {
-    throw new Error('CODING_TARGET_PROJECT environment variable is required but not set');
+    throw new Error('TRANSCRIPT_SOURCE_PROJECT environment variable is required but not set');
   }
   
   if (!fs.existsSync(targetPath)) {
@@ -51,19 +51,38 @@ Current environment:
     // Foreign mode determines output location based on project relationship
     foreignOutputDir: `${codingProjectPath}/.specstory/history`,
     // Use consistent filename pattern with proper foreign mode support
-    filenamePattern: (date, window, isFromOtherProject, originProject) => {
-      if (projectName === 'coding') {
-        if (isFromOtherProject) {
-          return `${date}_${window}-session-from-${originProject}.md`;
-        } else {
-          return `${date}_${window}-session.md`;
-        }
+    filenamePattern: (date, window, isFromOtherProject, originProject, timestamp) => {
+      // Use the Enhanced filename generation with user hash
+      const targetProj = targetPath;
+      // When it's from other project, we need to determine the source project path
+      const sourceProj = isFromOtherProject ? 
+        (originProject === 'nano-degree' ? '/Users/q284340/Agentic/nano-degree' : 
+         originProject === 'coding' ? codingProjectPath : targetPath) : targetPath;
+      const projName = originProject || projectName;
+      
+      // Create a timestamp from date and window
+      if (!timestamp) {
+        const [year, month, day] = date.split('-');
+        const [startTime] = window.split('-');
+        const hours = startTime.slice(0, 2);
+        const minutes = startTime.slice(2, 4);
+        timestamp = new Date(`${year}-${month}-${day}T${hours}:${minutes}:00.000Z`).getTime();
       }
-      return `${date}_${window}-session.md`;
+      
+      return generateLSLFilename(timestamp, projName, targetProj, sourceProj);
     },
     // Enhanced foreign mode filename pattern for cross-project scenarios
-    foreignFilenamePattern: (date, window, sourceProject) => {
-      return `${date}_${window}-session-from-${sourceProject}.md`;
+    foreignFilenamePattern: (date, window, sourceProject, timestamp) => {
+      // Create a timestamp from date and window
+      if (!timestamp) {
+        const [year, month, day] = date.split('-');
+        const [startTime] = window.split('-');
+        const hours = startTime.slice(0, 2);
+        const minutes = startTime.slice(2, 4);
+        timestamp = new Date(`${year}-${month}-${day}T${hours}:${minutes}:00.000Z`).getTime();
+      }
+      
+      return generateLSLFilename(timestamp, sourceProject, codingProjectPath, targetPath);
     }
   };
 }
@@ -91,7 +110,7 @@ function detectCodingProjectPath() {
  * @returns {string[]} - Array of potential paths
  */
 function getCodingPathCandidates() {
-  const targetPath = process.env.CODING_TARGET_PROJECT || process.cwd();
+  const targetPath = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
   const targetParent = path.dirname(targetPath);
   
   return [
@@ -247,7 +266,9 @@ function extractTextContent(content) {
 
 // Helper function to extract date from LSL filename
 function extractDateFromFilename(filename) {
-  // Match pattern like 2025-08-12_1900-2000-session.md or 2025-08-12_1900-2000-session-from-nano-degree.md
+  // Match both old and new patterns:
+  // Old: 2025-08-12_1900-2000-session.md or 2025-08-12_1900-2000-session-from-nano-degree.md
+  // New: 2025-08-12_1900-2000_g9b30a.md or 2025-08-12_1900-2000_g9b30a_from-nano-degree.md
   const match = filename.match(/^(\d{4}-\d{2}-\d{2})_/);
   return match ? match[1] : null;
 }
@@ -481,7 +502,7 @@ async function isCodingInfrastructureExchange(exchangeText, monitor, targetProje
 💡 SUGGESTED ACTIONS:
 - Restart the batch process with fresh initialization
 - Check if coding project directory exists and is accessible
-- Verify environment variables (CODING_TARGET_PROJECT, CODING_REPO)
+- Verify environment variables (TRANSCRIPT_SOURCE_PROJECT, CODING_REPO)
 - Review recent changes to classification system`;
 
         console.error(errorMsg);
@@ -708,30 +729,49 @@ Batch processing cannot continue without proper classification system.`;
     console.log(`🚀 Parallel processing enabled with ${performanceConfig.maxConcurrentFiles} concurrent files`);
   }
 
-  const sessions = new Map();
-  const startTime = Date.now();
-  let filesProcessed = 0;
-  let totalExchanges = 0;
+  // Convert paths to transcript file objects for parallel processing
+  const transcriptFiles = transcriptPaths
+    .filter(path => fs.existsSync(path))
+    .map(path => {
+      const stats = fs.statSync(path);
+      return {
+        path: path,
+        filename: require('path').basename(path),
+        size: stats.size
+      };
+    });
 
-  for (const transcriptPath of transcriptPaths) {
-    if (!fs.existsSync(transcriptPath)) continue;
+  console.log(`Found ${transcriptFiles.length} valid transcript files`);
+  
+  // Use proper parallel processing with streaming for large files
+  const startTime = Date.now();
+  let totalExchanges = 0;
+  
+  if (performanceConfig.parallelEnabled) {
+    console.log(`🚀 Using parallel processing with ${performanceConfig.maxConcurrentFiles} concurrent files`);
+    const results = await monitor.processTranscriptsInParallel(transcriptFiles, performanceConfig.maxConcurrentFiles);
     
-    console.log(`Processing: ${transcriptPath}`);
-    
-    const content = fs.readFileSync(transcriptPath, 'utf8');
-    const lines = content.trim().split('\n').filter(line => line.trim());
-    
-    const entries = [];
-    for (const line of lines) {
-      try {
-        entries.push(JSON.parse(line));
-      } catch (error) {
-        console.error(`Error parsing line: ${error.message}`);
+    // Aggregate results
+    for (const result of results) {
+      totalExchanges += result.exchanges || 0;
+      if (result.status === 'success') {
+        console.log(`✅ ${result.file}: ${result.exchanges} exchanges processed in ${(result.duration / 1000).toFixed(1)}s`);
+      } else {
+        console.log(`❌ ${result.file}: ${result.error || 'Unknown error'}`);
       }
     }
-
-    // Process conversation flows properly
-    let exchangeCount = 0;
+  } else {
+    console.log(`🔄 Using sequential processing`);
+    for (const transcriptFile of transcriptFiles) {
+      const result = await monitor.processSingleTranscript(transcriptFile, true); // Force streaming
+      totalExchanges += result.exchanges || 0;
+      if (result.status === 'success') {
+        console.log(`✅ ${result.file}: ${result.exchanges} exchanges processed in ${(result.duration / 1000).toFixed(1)}s`);
+      } else {
+        console.log(`❌ ${result.file}: ${result.error || 'Unknown error'}`);
+      }
+    }
+  }
     
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
@@ -929,12 +969,12 @@ Batch processing cannot continue without proper classification system.`;
     
     // For foreign mode from non-coding project, write to coding project
     let outputDir = targetProject.outputDir;
-    let filename = targetProject.filenamePattern(actualDate, window, isFromOtherProject, originProject);
+    let filename = targetProject.filenamePattern(actualDate, window, isFromOtherProject, originProject, firstExchange.timestamp.utc.date.getTime());
     
     if (mode === 'foreign' && targetProject.name !== 'coding') {
       // Write foreign files to coding project using dynamic path
       outputDir = targetProject.foreignOutputDir;
-      filename = targetProject.foreignFilenamePattern(actualDate, window, targetProject.name);
+      filename = targetProject.foreignFilenamePattern(actualDate, window, targetProject.name, firstExchange.timestamp.utc.date.getTime());
     }
     
     const filepath = path.join(outputDir, filename);
@@ -1110,7 +1150,7 @@ Usage: node generate-proper-lsl-from-transcripts.js [options]
   --fast          Alias for --parallel (high-speed batch processing)
 
 🔧 Environment Configuration:
-  CODING_TARGET_PROJECT    Target project path (current: ${process.env.CODING_TARGET_PROJECT || 'not set'})
+  TRANSCRIPT_SOURCE_PROJECT    Target project path (current: ${process.env.TRANSCRIPT_SOURCE_PROJECT || 'not set'})
   CODING_TOOLS_PATH       Coding tools repository path (current: ${process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || 'not set'})
 
 📊 Classification System:
@@ -1122,7 +1162,7 @@ Usage: node generate-proper-lsl-from-transcripts.js [options]
 🌍 Foreign Mode Details:
   - Processes coding-related exchanges FROM other projects 
   - Writes TO coding project (.specstory/history/*-from-<project>.md)
-  - Requires both CODING_TARGET_PROJECT and CODING_TOOLS_PATH to be set
+  - Requires both TRANSCRIPT_SOURCE_PROJECT and CODING_TOOLS_PATH to be set
   - Classification always uses coding project context for accuracy
 
 📋 Examples:
@@ -1147,7 +1187,7 @@ Usage: node generate-proper-lsl-from-transcripts.js [options]
 ⚠️  Troubleshooting:
   - "0 hits, 0ms classification time" → Check if ReliableCodingClassifier is properly initialized
   - Classification errors → Check .specstory/logs/ for detailed decision paths
-  - Environment issues → Verify CODING_TARGET_PROJECT and CODING_TOOLS_PATH are set
+  - Environment issues → Verify TRANSCRIPT_SOURCE_PROJECT and CODING_TOOLS_PATH are set
   - Foreign mode failures → Ensure coding project exists and is writable
 `);
     process.exit(0);
@@ -1170,12 +1210,12 @@ Usage: node generate-proper-lsl-from-transcripts.js [options]
   
   // Validate environment for foreign mode
   if (modeArg && modeArg.includes('foreign')) {
-    const targetProject = process.env.CODING_TARGET_PROJECT;
+    const targetProject = process.env.TRANSCRIPT_SOURCE_PROJECT;
     const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO;
     
     if (!targetProject || !codingPath) {
       console.error(`❌ Foreign mode requires environment variables:
-  CODING_TARGET_PROJECT (current: ${targetProject || 'not set'})
+  TRANSCRIPT_SOURCE_PROJECT (current: ${targetProject || 'not set'})
   CODING_TOOLS_PATH or CODING_REPO (current: ${codingPath || 'not set'})
   
 Set these variables and try again.`);
@@ -1221,13 +1261,13 @@ Set these variables and try again.`);
     if (error.message.includes('classifier')) {
       console.error('\n🔍 Troubleshooting classification issues:');
       console.error('1. Check if ReliableCodingClassifier is properly initialized');
-      console.error('2. Verify environment variables CODING_TARGET_PROJECT and CODING_TOOLS_PATH');
+      console.error('2. Verify environment variables TRANSCRIPT_SOURCE_PROJECT and CODING_TOOLS_PATH');
       console.error('3. Look for detailed logs in .specstory/logs/batch-classification-*.jsonl');
     }
     
     if (error.message.includes('foreign')) {
       console.error('\n🌍 Foreign mode troubleshooting:');
-      console.error('1. Ensure CODING_TARGET_PROJECT points to source project');
+      console.error('1. Ensure TRANSCRIPT_SOURCE_PROJECT points to source project');
       console.error('2. Ensure CODING_TOOLS_PATH points to coding repository');
       console.error('3. Check write permissions on coding project .specstory/ directory');
     }

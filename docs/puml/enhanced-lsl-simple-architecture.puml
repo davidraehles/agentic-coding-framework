@@ -1,0 +1,65 @@
+@startuml enhanced-lsl-simple-architecture
+!include _standard-style.puml
+!define TITLE Enhanced LSL System Architecture
+
+title TITLE
+
+package "Enhanced Live Session Logging System" {
+  
+  ' Core Components
+  component [Global LSL Coordinator] as coordinator <<core>>
+  component [LSL File Manager] as fileManager <<storage>>
+  component [Enhanced Transcript Monitor] as monitor <<core>>
+  component [ReliableCodingClassifier] as classifier <<core>>
+  component [LSL Generation Scripts] as generator <<util>>
+  
+  ' Enhanced Security Components  
+  component [Enhanced Redaction System] as redaction <<security>>
+  component [User Hash Generator] as userHash <<security>>
+  
+  ' Enhanced Operational Components
+  component [Enhanced Operational Logger] as opLogger <<util>>
+  component [Live Logging Coordinator] as liveCoordinator <<core>>
+  
+  ' Data Stores
+  database "Session Files" as sessionDB <<storage>>
+  database "Operational Logs" as opLogs <<storage>>
+  database "Performance Metrics" as metrics <<storage>>
+  
+  ' External Systems
+  cloud "Claude Transcripts" as transcripts <<external>>
+  actor "Claude Code Sessions" as claude <<external>>
+  component "Health Monitoring Dashboard" as dashboard <<api>>
+}
+
+' Main Processing Flow
+claude SYNC_LINE monitor
+transcripts SYNC_LINE generator
+monitor SYNC_LINE classifier
+classifier SYNC_LINE redaction
+redaction SYNC_LINE userHash
+userHash SYNC_LINE fileManager
+fileManager SYNC_LINE sessionDB
+
+' Coordination Flow
+coordinator CONTROL_LINE monitor
+coordinator CONTROL_LINE liveCoordinator
+liveCoordinator CONTROL_LINE fileManager
+
+' Operational Monitoring
+opLogger DATA_LINE metrics
+opLogger DATA_LINE opLogs
+metrics DATA_LINE dashboard
+
+' Security & Performance Integration
+redaction DATA_LINE opLogger
+userHash DATA_LINE opLogger
+fileManager DATA_LINE opLogger
+
+note top of redaction : 98.3% Effectiveness\nBypass Protection\nReal-time Scanning
+
+note top of opLogger : Sub-millisecond Response\nReal-time Health Metrics\nAutomated Alerting
+
+note top of fileManager : Automatic Rotation\nGzip Compression\nMulti-user Isolation
+
+@enduml

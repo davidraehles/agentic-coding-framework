@@ -8,96 +8,39 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { parseTimestamp, formatTimestamp, getTimeWindow, getTimezone, utcToLocalTime } from './timezone-utils.js';
+import { parseTimestamp, formatTimestamp, getTimeWindow, getTimezone, utcToLocalTime, generateLSLFilename } from './timezone-utils.js';
 import { SemanticAnalyzer } from '../src/live-logging/SemanticAnalyzer.js';
 import ReliableCodingClassifier from '../src/live-logging/ReliableCodingClassifier.js';
+import StreamingTranscriptReader from '../src/live-logging/StreamingTranscriptReader.js';
+import ConfigurableRedactor from '../src/live-logging/ConfigurableRedactor.js';
+import UserHashGenerator from '../src/live-logging/user-hash-generator.js';
+import LSLFileManager from '../src/live-logging/LSLFileManager.js';
 
-// Function to redact API keys and secrets from text
-function redactSecrets(text) {
+// ConfigurableRedactor instance for consistent redaction
+let redactor = null;
+
+// Initialize redactor with configuration
+async function initializeRedactor() {
+  if (!redactor) {
+    const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
+    redactor = new ConfigurableRedactor({
+      configPath: path.join(codingPath, '.specstory', 'config', 'redaction-patterns.json'),
+      debug: false
+    });
+    
+    // CRITICAL: Actually initialize the redactor - no fallbacks allowed
+    await redactor.initialize();
+  }
+  return redactor;
+}
+
+// Function to redact API keys and secrets from text using ConfigurableRedactor
+async function redactSecrets(text) {
   if (!text) return text;
   
-  // List of API key patterns to redact
-  const apiKeyPatterns = [
-    // Environment variable format: KEY=value
-    /\b(ANTHROPIC_API_KEY|OPENAI_API_KEY|GROK_API_KEY|XAI_API_KEY|GEMINI_API_KEY|CLAUDE_API_KEY|GPT_API_KEY|DEEPMIND_API_KEY|COHERE_API_KEY|HUGGINGFACE_API_KEY|HF_API_KEY|REPLICATE_API_KEY|TOGETHER_API_KEY|PERPLEXITY_API_KEY|AI21_API_KEY|GOOGLE_API_KEY|AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|AZURE_API_KEY|GCP_API_KEY|GITHUB_TOKEN|GITLAB_TOKEN|BITBUCKET_TOKEN|NPM_TOKEN|PYPI_TOKEN|DOCKER_TOKEN|SLACK_TOKEN|DISCORD_TOKEN|TELEGRAM_TOKEN|STRIPE_API_KEY|SENDGRID_API_KEY|MAILGUN_API_KEY|TWILIO_AUTH_TOKEN|FIREBASE_API_KEY|SUPABASE_API_KEY|MONGODB_URI|POSTGRES_PASSWORD|MYSQL_PASSWORD|REDIS_PASSWORD|DATABASE_URL|CONNECTION_STRING|JWT_SECRET|SESSION_SECRET|ENCRYPTION_KEY|PRIVATE_KEY|SECRET_KEY|CLIENT_SECRET|API_SECRET|WEBHOOK_SECRET)\s*=\s*["']?([^"'\s\n]+)["']?/gi,
-    
-    // JSON format: "apiKey": "sk-..." or "API_KEY": "sk-..." or "xai-..."
-    /"(apiKey|API_KEY|ANTHROPIC_API_KEY|OPENAI_API_KEY|XAI_API_KEY|GROK_API_KEY|api_key|anthropicApiKey|openaiApiKey|xaiApiKey|grokApiKey)":\s*"(sk-[a-zA-Z0-9-_]{20,}|xai-[a-zA-Z0-9-_]{20,}|[a-zA-Z0-9-_]{32,})"/gi,
-    
-    // sk- prefix (common for various API keys)
-    /\bsk-[a-zA-Z0-9]{20,}/gi,
-    
-    // xai- prefix (XAI/Grok API keys)
-    /\bxai-[a-zA-Z0-9]{20,}/gi,
-    
-    // Common API key formats
-    /\b[a-zA-Z0-9]{32,}[-_][a-zA-Z0-9]{8,}/gi,
-    
-    // Bearer tokens
-    /Bearer\s+[a-zA-Z0-9\-._~+\/]{20,}/gi,
-    
-    // JWT tokens (three base64 parts separated by dots)
-    /\beyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/gi,
-    
-    // MongoDB connection strings
-    /mongodb(\+srv)?:\/\/[^:]+:[^@]+@[^\s]+/gi,
-    
-    // PostgreSQL/MySQL connection strings
-    /postgres(ql)?:\/\/[^:]+:[^@]+@[^\s]+/gi,
-    /mysql:\/\/[^:]+:[^@]+@[^\s]+/gi,
-    
-    // Generic URL with credentials
-    /https?:\/\/[^:]+:[^@]+@[^\s]+/gi,
-    
-    // Email addresses
-    /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/gi,
-    
-    // Corporate user IDs (q followed by 6 digits/letters)
-    /\bq[0-9a-zA-Z]{6}\b/gi,
-    
-    // Common corporate terms
-    /\b(BMW|Mercedes|Audi|Tesla|Microsoft|Google|Apple|Amazon|Meta|Facebook|IBM|Oracle|Cisco|Intel|Dell|HP|Lenovo|Samsung|LG|Sony|Panasonic|Siemens|SAP|Accenture|Deloitte|McKinsey|BCG|Bain|Goldman|Morgan|JPMorgan|Deutsche Bank|Commerzbank|Allianz|Munich Re|BASF|Bayer|Volkswagen|Porsche|Bosch|Continental|Airbus|Boeing|Lockheed|Northrop|Raytheon|General Electric|Ford|General Motors|Chrysler|Fiat|Renault|Peugeot|Citroen|Volvo|Scania|MAN|Daimler|ThyssenKrupp|Siemens Energy|RWE|EON|Uniper|TUI|Lufthansa|DHL|UPS|FedEx|TNT|Deutsche Post|Telekom|Vodafone|Orange|BT|Telefonica|Verizon|ATT|Sprint|TMobile)\b/gi
-  ];
-  
-  let redactedText = text;
-  
-  // Apply each pattern
-  apiKeyPatterns.forEach(pattern => {
-    if (pattern.source.includes('=')) {
-      // For environment variable patterns, preserve the key name
-      redactedText = redactedText.replace(pattern, (match, keyName) => {
-        return `${keyName}=<SECRET_REDACTED>`;
-      });
-    } else if (pattern.source.includes('"(apiKey|API_KEY')) {
-      // For JSON format patterns, preserve the key name and structure
-      redactedText = redactedText.replace(pattern, (match, keyName) => {
-        return `"${keyName}": "<SECRET_REDACTED>"`;
-      });
-    } else if (pattern.source.includes('mongodb') || pattern.source.includes('postgres') || pattern.source.includes('mysql')) {
-      // For connection strings, preserve the protocol
-      redactedText = redactedText.replace(pattern, (match) => {
-        const protocol = match.split(':')[0];
-        return `${protocol}://<CONNECTION_STRING_REDACTED>`;
-      });
-    } else if (pattern.source.includes('Bearer')) {
-      // For Bearer tokens
-      redactedText = redactedText.replace(pattern, 'Bearer <TOKEN_REDACTED>');
-    } else if (pattern.source.includes('@')) {
-      // For email addresses
-      redactedText = redactedText.replace(pattern, '<EMAIL_REDACTED>');
-    } else if (pattern.source.includes('q[0-9a-zA-Z]')) {
-      // For corporate user IDs
-      redactedText = redactedText.replace(pattern, '<USER_ID_REDACTED>');
-    } else if (pattern.source.includes('BMW|Mercedes')) {
-      // For corporate terms
-      redactedText = redactedText.replace(pattern, '<COMPANY_NAME_REDACTED>');
-    } else {
-      // For other patterns, replace with generic redaction
-      redactedText = redactedText.replace(pattern, '<SECRET_REDACTED>');
-    }
-  });
-  
-  return redactedText;
+  // NO FALLBACKS - fail properly if redactor can't initialize
+  const redactorInstance = await initializeRedactor();
+  return redactorInstance.redact(text);
 }
 
 class EnhancedTranscriptMonitor {
@@ -120,7 +63,20 @@ class EnhancedTranscriptMonitor {
 
     this.transcriptPath = this.findCurrentTranscript();
     this.lastProcessedUuid = null;
+    this.exchangeCount = 0;
     this.lastFileSize = 0;
+    
+    // Initialize LSL File Manager for size monitoring and rotation
+    this.fileManager = new LSLFileManager({
+      maxFileSize: config.maxFileSize || (50 * 1024 * 1024), // 50MB default
+      rotationThreshold: config.rotationThreshold || (40 * 1024 * 1024), // 40MB rotation trigger
+      enableCompression: config.enableCompression !== false,
+      compressionLevel: config.compressionLevel || 6,
+      maxArchivedFiles: config.maxArchivedFiles || 50,
+      monitoringInterval: config.fileMonitoringInterval || (5 * 60 * 1000), // 5 minutes
+      enableRealTimeMonitoring: config.enableFileMonitoring !== false,
+      debug: this.debug_enabled
+    });
     this.isProcessing = false;
     this.currentUserPromptSet = [];
     this.lastUserPromptTime = null;
@@ -273,6 +229,304 @@ class EnhancedTranscriptMonitor {
     }
   }
 
+  /**
+   * Find all transcript files for parallel processing
+   */
+  findAllTranscripts() {
+    const baseDir = path.join(os.homedir(), '.claude', 'projects');
+    const projectName = this.getProjectDirName();
+    const projectDir = path.join(baseDir, projectName);
+    
+    if (!fs.existsSync(projectDir)) {
+      this.debug(`Project directory not found: ${projectDir}`);
+      return [];
+    }
+
+    this.debug(`Looking for all transcripts in: ${projectDir}`);
+
+    try {
+      const files = fs.readdirSync(projectDir)
+        .filter(file => file.endsWith('.jsonl'))
+        .map(file => {
+          const filePath = path.join(projectDir, file);
+          const stats = fs.statSync(filePath);
+          return { 
+            path: filePath, 
+            filename: file,
+            mtime: stats.mtime, 
+            size: stats.size,
+            exchanges: 0 // Will be populated later
+          };
+        })
+        .sort((a, b) => b.mtime - a.mtime); // Most recent first
+
+      this.debug(`Found ${files.length} transcript files`);
+      return files;
+    } catch (error) {
+      this.debug(`Error finding transcripts: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Process a single transcript file and return summary statistics
+   * Now supports both streaming and non-streaming modes
+   */
+  async processSingleTranscript(transcriptFile, useStreaming = false) {
+    const startTime = Date.now();
+    let processedExchanges = 0;
+    
+    try {
+      this.debug(`Processing transcript: ${path.basename(transcriptFile.path)}`);
+      
+      // Use streaming for large files (>10MB)
+      const shouldStream = useStreaming || transcriptFile.size > 10 * 1024 * 1024;
+      
+      if (shouldStream) {
+        // Use memory-efficient streaming processing
+        return await this.processSingleTranscriptStreaming(transcriptFile);
+      }
+      
+      // Original non-streaming processing for smaller files
+      const messages = this.readTranscriptMessages(transcriptFile.path);
+      const exchanges = this.extractExchanges(messages);
+      
+      transcriptFile.exchanges = exchanges.length;
+      
+      if (exchanges.length === 0) {
+        return { 
+          file: transcriptFile.filename, 
+          exchanges: 0, 
+          processed: 0, 
+          duration: Date.now() - startTime,
+          status: 'empty',
+          mode: 'batch'
+        };
+      }
+      
+      // Process exchanges in batches to avoid memory issues
+      const batchSize = 25; // Smaller batch for parallel processing
+      
+      for (let i = 0; i < exchanges.length; i += batchSize) {
+        const batch = exchanges.slice(i, i + batchSize);
+        await this.processExchanges(batch);
+        processedExchanges += batch.length;
+      }
+      
+      return { 
+        file: transcriptFile.filename, 
+        exchanges: exchanges.length, 
+        processed: processedExchanges, 
+        duration: Date.now() - startTime,
+        status: 'success',
+        mode: 'batch'
+      };
+      
+    } catch (error) {
+      console.error(`❌ Error processing ${transcriptFile.filename}: ${error.message}`);
+      return { 
+        file: transcriptFile.filename, 
+        exchanges: transcriptFile.exchanges || 0, 
+        processed: processedExchanges, 
+        duration: Date.now() - startTime,
+        status: 'error',
+        error: error.message,
+        mode: 'batch'
+      };
+    }
+  }
+
+  /**
+   * Process a single transcript file using memory-efficient streaming
+   */
+  async processSingleTranscriptStreaming(transcriptFile) {
+    const startTime = Date.now();
+    let totalExchanges = 0;
+    let processedExchanges = 0;
+    
+    try {
+      console.log(`🌊 Using streaming mode for large file: ${transcriptFile.filename} (${(transcriptFile.size / 1024 / 1024).toFixed(1)}MB)`);
+      
+      const reader = new StreamingTranscriptReader({
+        batchSize: 20,  // Process 20 messages at a time
+        maxMemoryMB: 50,  // Limit memory usage to 50MB
+        progressInterval: 100,  // Report progress every 100 lines
+        debug: this.config.debug
+      });
+      
+      // Set up event handlers
+      reader.on('progress', (stats) => {
+        if (this.config.debug) {
+          console.log(`   📊 Progress: ${stats.progress}% | Lines: ${stats.linesRead} | Memory: ${stats.memoryMB}MB`);
+        }
+      });
+      
+      reader.on('batch', (stats) => {
+        totalExchanges = stats.totalProcessed;
+      });
+      
+      reader.on('error', (error) => {
+        console.warn(`   ⚠️ Stream error: ${error.error}`);
+      });
+      
+      // CRITICAL FIX: Accumulate all exchanges from streaming instead of processing them immediately
+      const allExchanges = [];
+      
+      // Process the file with streaming - accumulate exchanges only
+      const stats = await reader.processFile(transcriptFile.path, async (messageBatch) => {
+        // Extract exchanges from this batch
+        const exchanges = StreamingTranscriptReader.extractExchangesFromBatch(messageBatch);
+        
+        if (exchanges.length > 0) {
+          // FIXED: Just accumulate exchanges, don't process them yet
+          allExchanges.push(...exchanges);
+          processedExchanges += exchanges.length;
+        }
+      });
+      
+      // CRITICAL FIX: Process all accumulated exchanges using proper historical processing
+      if (allExchanges.length > 0) {
+        console.log(`🔄 Processing ${allExchanges.length} accumulated exchanges from streaming in time order`);
+        
+        // Sort exchanges by timestamp for proper chronological processing
+        allExchanges.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        
+        // Process exchanges in batches using the non-streaming logic (designed for historical processing)
+        const batchSize = 50;
+        for (let i = 0; i < allExchanges.length; i += batchSize) {
+          const batch = allExchanges.slice(i, i + batchSize);
+          
+          // Process each exchange individually to respect session boundaries and build prompt sets
+          for (const exchange of batch) {
+            const currentTranche = this.getCurrentTimetranche(exchange.timestamp);
+            
+            // Check for session boundaries and complete prompt sets as needed
+            if (this.isNewSessionBoundary(currentTranche, this.lastTranche)) {
+              // Complete previous user prompt set if exists
+              if (this.currentUserPromptSet.length > 0) {
+                const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
+                await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
+                this.currentUserPromptSet = [];
+              }
+              this.lastTranche = currentTranche;
+            }
+            
+            // Add exchange to current user prompt set if it's a user prompt
+            if (exchange.isUserPrompt) {
+              this.currentUserPromptSet.push(exchange);
+            }
+          }
+        }
+        
+        // Complete any remaining user prompt set
+        if (this.currentUserPromptSet.length > 0) {
+          console.log(`🔄 Completing final user prompt set with ${this.currentUserPromptSet.length} exchanges after streaming`);
+          const currentTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
+          const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
+          console.log(`🎯 Final target project for streaming: ${targetProject}`);
+          await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+          this.currentUserPromptSet = [];
+        }
+      }
+      
+      return {
+        file: transcriptFile.filename,
+        exchanges: totalExchanges,
+        processed: processedExchanges,
+        duration: Date.now() - startTime,
+        status: 'success',
+        mode: 'streaming',
+        stats: {
+          linesRead: stats.linesRead,
+          batches: stats.batches,
+          errors: stats.errors,
+          throughput: stats.throughput
+        }
+      };
+      
+    } catch (error) {
+      console.error(`❌ Stream error processing ${transcriptFile.filename}: ${error.message}`);
+      return {
+        file: transcriptFile.filename,
+        exchanges: totalExchanges,
+        processed: processedExchanges,
+        duration: Date.now() - startTime,
+        status: 'error',
+        error: error.message,
+        mode: 'streaming'
+      };
+    }
+  }
+
+  /**
+   * Process multiple transcript files in parallel with concurrency control
+   */
+  async processTranscriptsInParallel(transcriptFiles, maxConcurrency = 3) {
+    if (!transcriptFiles || transcriptFiles.length === 0) {
+      console.log('📄 No transcript files to process');
+      return [];
+    }
+
+    console.log(`🚀 Starting parallel processing of ${transcriptFiles.length} transcript files (max concurrency: ${maxConcurrency})`);
+    const startTime = Date.now();
+    
+    // Process files with controlled concurrency
+    const results = [];
+    const activePromises = [];
+    
+    for (const transcriptFile of transcriptFiles) {
+      // Wait if we've reached max concurrency
+      if (activePromises.length >= maxConcurrency) {
+        const completedResult = await Promise.race(activePromises);
+        results.push(completedResult.result);
+        
+        // Remove completed promise from active list
+        const completedIndex = activePromises.findIndex(p => p.result === completedResult.result);
+        if (completedIndex !== -1) {
+          activePromises.splice(completedIndex, 1);
+        }
+        
+        console.log(`✅ Completed ${completedResult.result.file} (${results.length}/${transcriptFiles.length})`);
+      }
+      
+      // Start processing this file
+      const promise = this.processSingleTranscript(transcriptFile).then(result => ({ result }));
+      activePromises.push(promise);
+    }
+    
+    // Wait for all remaining promises to complete
+    const remainingResults = await Promise.all(activePromises);
+    results.push(...remainingResults.map(r => r.result));
+    
+    const totalDuration = Date.now() - startTime;
+    const totalExchanges = results.reduce((sum, r) => sum + r.exchanges, 0);
+    const totalProcessed = results.reduce((sum, r) => sum + r.processed, 0);
+    const successCount = results.filter(r => r.status === 'success').length;
+    const errorCount = results.filter(r => r.status === 'error').length;
+    const streamingCount = results.filter(r => r.mode === 'streaming').length;
+    const batchCount = results.filter(r => r.mode === 'batch').length;
+    
+    console.log(`\n🏁 Parallel processing completed:`);
+    console.log(`   📊 Total files: ${transcriptFiles.length}`);
+    console.log(`   ✅ Successful: ${successCount}`);
+    console.log(`   ❌ Errors: ${errorCount}`);
+    console.log(`   🌊 Streaming mode: ${streamingCount} files`);
+    console.log(`   📦 Batch mode: ${batchCount} files`);
+    console.log(`   📝 Total exchanges: ${totalExchanges}`);
+    console.log(`   ⚡ Processed exchanges: ${totalProcessed}`);
+    console.log(`   ⏱️  Total duration: ${(totalDuration / 1000).toFixed(1)}s`);
+    console.log(`   🚄 Average per file: ${(totalDuration / transcriptFiles.length / 1000).toFixed(1)}s`);
+    
+    if (errorCount > 0) {
+      console.log(`\n❌ Files with errors:`);
+      results.filter(r => r.status === 'error').forEach(r => {
+        console.log(`   • ${r.file}: ${r.error}`);
+      });
+    }
+    
+    return results;
+  }
+
   // Timezone utilities are now imported from timezone-utils.js
 
   /**
@@ -284,7 +538,7 @@ class EnhancedTranscriptMonitor {
     
     // Check target project first (like status line does), then coding repo, then current directory
     const checkPaths = [
-      process.env.CODING_TARGET_PROJECT, // Target project (e.g., nano-degree)
+      process.env.TRANSCRIPT_SOURCE_PROJECT, // Source project to monitor transcripts from (e.g., nano-degree)
       rootDir,                           // Coding repo 
       process.cwd()                      // Current working directory
     ].filter(Boolean); // Remove null/undefined values
@@ -344,9 +598,13 @@ class EnhancedTranscriptMonitor {
   extractExchanges(messages) {
     const exchanges = [];
     let currentExchange = null;
+    let userMessageCount = 0;
+    let filteredUserMessageCount = 0;
 
     for (const message of messages) {
-      if (message.type === 'user' && message.message?.role === 'user') {
+      // Skip tool result messages - they are NOT user prompts
+      if (message.type === 'user' && message.message?.role === 'user' && 
+          !this.isToolResultMessage(message)) {
         // New user prompt - complete previous exchange and start new one
         if (currentExchange) {
           currentExchange.isUserPrompt = true;
@@ -356,7 +614,7 @@ class EnhancedTranscriptMonitor {
         currentExchange = {
           id: message.uuid,
           timestamp: message.timestamp || Date.now(),
-          userMessage: this.extractUserMessage(message.message) || '',
+          userMessage: this.extractUserMessage(message) || '',
           claudeResponse: '',
           toolCalls: [],
           toolResults: [],
@@ -397,6 +655,7 @@ class EnhancedTranscriptMonitor {
       exchanges.push(currentExchange);
     }
 
+    console.log(`📊 EXTRACTION SUMMARY: ${userMessageCount} total user messages, ${filteredUserMessageCount} actual user prompts, ${exchanges.length} exchanges created`);
     return exchanges;
   }
 
@@ -414,28 +673,42 @@ class EnhancedTranscriptMonitor {
     return '';
   }
 
-  extractTextContent(content) {
-    if (typeof content === 'string') return content;
-    if (Array.isArray(content)) {
-      return content
-        .filter(item => item && item.type === 'text')
-        .map(item => item.text)
-        .filter(text => text && text.trim())
-        .join('\n');
+  /**
+   * Check if a message is a tool result (not an actual user message)
+   */
+  isToolResultMessage(message) {
+    if (!message.message?.content || !Array.isArray(message.message.content)) {
+      return false;
     }
-    return '';
+    
+    // Tool result messages have content array with tool_result items
+    return message.message.content.some(item => 
+      item.type === 'tool_result' && item.tool_use_id
+    );
   }
 
-  extractUserMessage(entry) {
+  /**
+   * Analyze exchange content for categorization (stub implementation)
+   */
+  analyzeExchangeContent(exchange) {
+    return {
+      categories: [],
+      confidence: 0.5,
+      reasoning: 'Basic analysis'
+    };
+  }
+
+
+  async extractUserMessage(entry) {
     // Handle different user message structures - using proven logic from LSL script
     if (entry.message?.content) {
       if (typeof entry.message.content === 'string') {
-        return redactSecrets(entry.message.content);
+        return await redactSecrets(entry.message.content);
       }
-      return redactSecrets(this.extractTextContent(entry.message.content));
+      return await redactSecrets(this.extractTextContent(entry.message.content));
     }
     if (entry.content) {
-      return redactSecrets(this.extractTextContent(entry.content));
+      return await redactSecrets(this.extractTextContent(entry.content));
     }
     return '';
   }
@@ -487,11 +760,12 @@ class EnhancedTranscriptMonitor {
 
   /**
    * Create or append to session file with exclusive routing
+   * DEPRECATED: Files should only be created when there's content to write
    */
   async createOrAppendToSessionFile(targetProject, tranche, exchange) {
-    // Note: Session file creation is now handled by processUserPromptSetCompletion
-    // Only when there are meaningful exchanges to log
-    // This method is kept for compatibility but no longer creates empty files
+    // DISABLED: Empty file creation removed
+    // Files are now only created in processUserPromptSetCompletion when there's actual content
+    this.debug('⚠️ createOrAppendToSessionFile called but disabled - files only created with content');
   }
 
   /**
@@ -503,17 +777,49 @@ class EnhancedTranscriptMonitor {
       // Use only fast path/keyword detection for bulk transcript processing
       const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
       
-      // Quick check: if exchange text contains coding path
       const exchangeText = JSON.stringify(exchange).toLowerCase();
-      if (exchangeText.includes(codingPath.toLowerCase()) || exchangeText.includes('/coding/')) {
+      
+      // EXPLICIT PATH INDICATORS - absolute positive indicators
+      if (exchangeText.includes(codingPath.toLowerCase()) || 
+          exchangeText.includes('/coding/') ||
+          exchangeText.includes('coding infrastructure') ||
+          exchangeText.includes('coding project')) {
         return true;
       }
       
-      // Quick keyword check
-      const keywords = ['ukb', 'vkb', 'ckb', 'knowledge_base', 'semantic analysis', 'coding infrastructure'];
-      const hasKeywords = keywords.some(keyword => exchangeText.includes(keyword.toLowerCase()));
+      // CODING-SPECIFIC INDICATORS - ONLY infrastructure terms unique to coding project
+      // Removed all general terms that could appear in course content
+      const codingSpecificKeywords = [
+        // Exact system component names (cannot appear in course content)
+        'synchronizationagent', 'ukb-cli', 'vkb-cli', 'lslfilemanager',
+        'pathanalyzer', 'keywordmatcher', 'semanticanalyzer',
+        'enhanced-transcript-monitor', 'global-lsl-coordinator',
+        
+        // Exact script filenames (unique to coding infrastructure)
+        'generate-lsl-from-transcripts', 'generate-proper-lsl-from-transcripts',
+        'enhanced-transcript-monitor.js', 'trajectory-generation',
+        'comprehensive-trajectory', 'timezone-utils.js',
+        
+        // Technical infrastructure paths (cannot appear in course content)
+        'ukb/', 'vkb/', '/coding/scripts/', '/coding/src/',
+        'shared-memory.json', 'graphology', 'mcp memory',
+        '.specstory/history/', 'live-logging-config.json',
+        
+        // Exact function/API names (unique to coding infrastructure)  
+        'determine_insights', 'update_knowledge_base', 'lessons_learned',
+        'processTranscriptsInParallel', 'generateLSLFilename',
+        'getCurrentTimetranche', 'isCodingRelated',
+        
+        // Specific technical implementation terms (infrastructure only)
+        'mcp-server-constraint-monitor', 'mcp-server-semantic-analysis',
+        'constraint compliance', 'agent-agnostic design', 'multi-database sync'
+      ];
       
-      return hasKeywords;
+      const hasCodingKeywords = codingSpecificKeywords.some(keyword => 
+        exchangeText.includes(keyword.toLowerCase())
+      );
+      
+      return hasCodingKeywords;
     }
     
     // Original detailed analysis for live monitoring
@@ -639,14 +945,16 @@ class EnhancedTranscriptMonitor {
     const targetTime = timestamp ? new Date(timestamp) : new Date();
     
     // Convert UTC timestamp to local time using timezone utils
-    const localDate = timestamp ? utcToLocalTime(timestamp) : new Date();
+    const localDate = utcToLocalTime(targetTime);
     
     // Use timezone-utils for consistent time window calculation
     const timeWindow = getTimeWindow(localDate);
     
     return {
       timeString: timeWindow,
-      date: localDate.toISOString().split('T')[0]
+      date: localDate.toISOString().split('T')[0],
+      // CRITICAL FIX: Preserve original timestamp to avoid timezone reconstruction bugs
+      originalTimestamp: timestamp || targetTime.getTime()
     };
   }
 
@@ -654,15 +962,21 @@ class EnhancedTranscriptMonitor {
    * Get session file path with multi-project naming
    */
   getSessionFilePath(targetProject, tranche) {
-    const baseName = `${tranche.date}_${tranche.timeString}`;
     const currentProjectName = path.basename(this.config.projectPath);
     
+    // CRITICAL FIX: Use the original exchange timestamp directly, not reconstructed from tranche
+    // The tranche object should preserve the original exchange timestamp
+    const timestamp = tranche.originalTimestamp || 
+      new Date(`${tranche.date}T${tranche.timeString.split('-')[0].slice(0,2)}:${tranche.timeString.split('-')[0].slice(2)}:00.000Z`).getTime();
+    
     if (targetProject === this.config.projectPath) {
-      // Local project
-      return path.join(targetProject, '.specstory', 'history', `${baseName}-session.md`);
+      // Local project - use generateLSLFilename with same target/source
+      const filename = generateLSLFilename(timestamp, currentProjectName, targetProject, targetProject);
+      return path.join(targetProject, '.specstory', 'history', filename);
     } else {
-      // Redirected to coding project - drop "coding" from filename
-      return path.join(targetProject, '.specstory', 'history', `${baseName}-session-from-${currentProjectName}.md`);
+      // Redirected to coding project - use generateLSLFilename with different target/source
+      const filename = generateLSLFilename(timestamp, currentProjectName, targetProject, this.config.projectPath);
+      return path.join(targetProject, '.specstory', 'history', filename);
     }
   }
 
@@ -684,7 +998,7 @@ class EnhancedTranscriptMonitor {
       const child = spawn('node', [updateScript], {
         cwd: targetProject,
         stdio: 'pipe',
-        env: { ...process.env, CODING_TARGET_PROJECT: targetProject }
+        env: { ...process.env, TRANSCRIPT_SOURCE_PROJECT: targetProject }
       });
       
       child.stdout.on('data', (data) => {
@@ -717,17 +1031,21 @@ class EnhancedTranscriptMonitor {
   }
 
   /**
-   * Create empty session file only (trajectory handled centrally)
+   * Create session file with initial content (no longer creates empty files)
    */
-  async createEmptySessionFile(targetProject, tranche) {
+  async createSessionFileWithContent(targetProject, tranche, initialContent) {
     const sessionFile = this.getSessionFilePath(targetProject, tranche);
     
-    // Ensure directory exists
-    const sessionDir = path.dirname(sessionFile);
-    if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
+    try {
+      // Ensure directory exists
+      const sessionDir = path.dirname(sessionFile);
+      if (!fs.existsSync(sessionDir)) {
+        fs.mkdirSync(sessionDir, { recursive: true });
+        console.log(`📁 Created directory: ${sessionDir}`);
+      }
 
-    // Create empty session file
-    if (!fs.existsSync(sessionFile)) {
+      // Create session file with actual content (not empty)
+      if (!fs.existsSync(sessionFile)) {
       const currentProjectName = path.basename(this.config.projectPath);
       const isRedirected = targetProject !== this.config.projectPath;
       
@@ -741,11 +1059,36 @@ class EnhancedTranscriptMonitor {
         `This session captures ${isRedirected ? 'coding-related activities redirected from ' + currentProjectName : 'real-time tool interactions and exchanges'}.\n\n` +
         `---\n\n## Key Activities\n\n`;
       
-      fs.writeFileSync(sessionFile, sessionHeader);
-      console.log(`📝 Created ${isRedirected ? 'redirected' : 'new'} session: ${path.basename(sessionFile)}`);
-    }
+        // Write header + initial content in one operation
+        fs.writeFileSync(sessionFile, sessionHeader + initialContent);
+        
+        // CRITICAL FIX: Verify file was actually created
+        if (fs.existsSync(sessionFile)) {
+          console.log(`📝 Created ${isRedirected ? 'redirected' : 'new'} session with content: ${path.basename(sessionFile)}`);
+          
+          // Add to file manager for size monitoring and rotation
+          this.fileManager.watchFile(sessionFile, {
+            projectPath: targetProject,
+            tranche: tranche,
+            isRedirected: isRedirected,
+            startTime: new Date()
+          });
+          
+        } else {
+          throw new Error(`Failed to create session file: ${sessionFile}`);
+        }
+      }
 
-    return sessionFile;
+      return sessionFile;
+      
+    } catch (error) {
+      console.error(`🚨 SESSION FILE CREATION FAILED: ${sessionFile}`);
+      console.error(`Error: ${error.message}`);
+      
+      // Health monitor should detect this
+      this.logHealthError(`Session file creation failed: ${sessionFile} - ${error.message}`);
+      throw error;
+    }
   }
 
 
@@ -758,7 +1101,7 @@ class EnhancedTranscriptMonitor {
     // All exchanges are meaningful - capture everything except /sl commands
     const meaningfulExchanges = completedSet.filter(exchange => {
       // Skip slash commands (like /sl)
-      if (exchange.userMessage && exchange.userMessage.trim().startsWith('/sl')) {
+      if (exchange.userMessage && typeof exchange.userMessage === 'string' && exchange.userMessage.trim().startsWith('/sl')) {
         return false;
       }
       return true;
@@ -772,20 +1115,116 @@ class EnhancedTranscriptMonitor {
 
     const sessionFile = this.getSessionFilePath(targetProject, tranche);
     
-    // Create session file only when we have content to write
-    if (!fs.existsSync(sessionFile)) {
-      await this.createEmptySessionFile(targetProject, tranche);
+    // Create session file with the actual content (no empty files)
+    let sessionContent = '';
+    for (const exchange of meaningfulExchanges) {
+      sessionContent += await this.formatExchangeForLogging(exchange, targetProject !== this.config.projectPath);
     }
     
-    // Log the meaningful exchanges to session file
-    for (const exchange of meaningfulExchanges) {
-      await this.logExchangeToSession(exchange, sessionFile, targetProject);
+    if (!fs.existsSync(sessionFile)) {
+      // Create file with content immediately
+      await this.createSessionFileWithContent(targetProject, tranche, sessionContent);
+    } else {
+      // Check if file needs rotation before appending
+      const rotationCheck = await this.fileManager.checkFileRotation(sessionFile);
+      
+      if (rotationCheck.needsRotation) {
+        this.debug(`File rotated: ${path.basename(sessionFile)} (${this.fileManager.formatBytes(rotationCheck.currentSize)})`);
+        
+        // After rotation, create new session file with current content
+        await this.createSessionFileWithContent(targetProject, tranche, sessionContent);
+      } else {
+        // Append to existing file
+        try {
+          fs.appendFileSync(sessionFile, sessionContent);
+          this.debug(`📝 Appended ${meaningfulExchanges.length} exchanges to ${path.basename(sessionFile)}`);
+        } catch (error) {
+          this.logHealthError(`Failed to append to session file: ${error.message}`);
+        }
+      }
     }
 
     // Update comprehensive trajectory instead of individual trajectory files
     await this.updateComprehensiveTrajectory(targetProject);
     
     console.log(`📋 Completed user prompt set: ${meaningfulExchanges.length}/${completedSet.length} exchanges → ${path.basename(sessionFile)}`);
+  }
+
+  /**
+   * Format exchange content for logging (returns formatted string instead of writing to file)
+   */
+  async formatExchangeForLogging(exchange, isRedirected) {
+    const timestamp = formatTimestamp(exchange.timestamp);
+    const exchangeTime = timestamp.lslFormat;
+    
+    if (exchange.toolCalls && exchange.toolCalls.length > 0) {
+      // Format tool calls
+      let content = '';
+      for (const toolCall of exchange.toolCalls) {
+        const result = exchange.toolResults.find(r => r.tool_use_id === toolCall.id);
+        content += await this.formatToolCallContent(exchange, toolCall, result, exchangeTime, isRedirected);
+      }
+      return content;
+    } else {
+      // Format text-only exchange
+      return this.formatTextOnlyContent(exchange, exchangeTime, isRedirected);
+    }
+  }
+
+  /**
+   * Format tool call content
+   */
+  async formatToolCallContent(exchange, toolCall, result, exchangeTime, isRedirected) {
+    const toolSuccess = result && !result.is_error;
+    
+    // Handle both old and new tool call formats
+    const toolName = toolCall.function?.name || toolCall.name || 'Unknown Tool';
+    const toolArgs = toolCall.function?.arguments || toolCall.input || toolCall.parameters || {};
+    
+    let content = `### ${toolName} - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
+    
+    const userMessage = exchange.userMessage || '(Initiated automatically)';
+    // Handle Promise objects that might be from redactSecrets calls
+    const userMessageStr = userMessage && typeof userMessage === 'object' && userMessage.then ? 
+      await userMessage : 
+      (typeof userMessage === 'string' ? userMessage : JSON.stringify(userMessage));
+    content += `**User Request:** ${userMessageStr}\n\n`;
+    
+    content += `**Tool:** ${toolName}\n`;
+    content += `**Input:** \`\`\`json\n${JSON.stringify(toolArgs, null, 2)}\n\`\`\`\n\n`;
+    
+    const status = toolSuccess ? '✅ Success' : '❌ Error';
+    content += `**Result:** ${status}\n`;
+    
+    if (result) {
+      const analysis = this.analyzeExchangeContent(exchange);
+      if (analysis.categories.length > 0) {
+        content += `**AI Analysis:** ${analysis.categories.join(', ')} - routing: ${isRedirected ? 'coding project' : 'local project'}\n`;
+      }
+    }
+    
+    content += `\n---\n\n`;
+    return content;
+  }
+
+  /**
+   * Format text-only exchange content
+   */
+  formatTextOnlyContent(exchange, exchangeTime, isRedirected) {
+    let content = `### Text Exchange - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
+    
+    const userMsg = exchange.userMessage || '(No user message)';
+    const assistantResp = exchange.assistantResponse || '(No response)';
+    
+    // Ensure userMsg and assistantResp are strings
+    const userMsgStr = typeof userMsg === 'string' ? userMsg : JSON.stringify(userMsg);
+    const assistantRespStr = typeof assistantResp === 'string' ? assistantResp : JSON.stringify(assistantResp);
+    
+    content += `**User Message:** ${userMsgStr.slice(0, 500)}${userMsgStr.length > 500 ? '...' : ''}\n\n`;
+    content += `**Assistant Response:** ${assistantRespStr.slice(0, 500)}${assistantRespStr.length > 500 ? '...' : ''}\n\n`;
+    content += `**Type:** Text-only exchange (no tool calls)\n\n---\n\n`;
+    
+    return content;
   }
 
   /**
@@ -796,14 +1235,14 @@ class EnhancedTranscriptMonitor {
     this.debug(`📝 LOGGING TO SESSION: ${sessionFile} (redirected: ${isRedirected})`);
     
     // Skip exchanges with no meaningful content (no user message AND no tool calls)
-    if ((!exchange.userMessage || exchange.userMessage.trim().length === 0) && 
+    if ((!exchange.userMessage || (typeof exchange.userMessage === 'string' && exchange.userMessage.trim().length === 0)) && 
         (!exchange.toolCalls || exchange.toolCalls.length === 0)) {
       this.debug(`Skipping exchange with no meaningful content (no user message and no tool calls)`);
       return;
     }
     
     // Skip /sl commands only, process all other exchanges regardless of tool calls
-    if (exchange.userMessage && exchange.userMessage.trim().startsWith('/sl')) {
+    if (exchange.userMessage && typeof exchange.userMessage === 'string' && exchange.userMessage.trim().startsWith('/sl')) {
       this.debug(`Skipping /sl command: ${exchange.userMessage.substring(0, 50)}...`);
       return;
     }
@@ -827,7 +1266,8 @@ class EnhancedTranscriptMonitor {
    * Log text-only exchange (no tool calls)
    */
   async logTextOnlyExchange(exchange, sessionFile, isRedirected) {
-    const exchangeTime = new Date(exchange.timestamp).toISOString();
+    const timestamp = formatTimestamp(exchange.timestamp);
+    const exchangeTime = timestamp.lslFormat;
     
     // Build exchange entry
     const exchangeEntry = {
@@ -853,20 +1293,38 @@ class EnhancedTranscriptMonitor {
     const userMsg = exchange.userMessage || '(No user message)';
     const assistantResp = exchange.assistantResponse || '(No response)';
     
-    content += `**User Message:** ${userMsg.slice(0, 500)}${userMsg.length > 500 ? '...' : ''}\n\n`;
-    content += `**Assistant Response:** ${assistantResp.slice(0, 500)}${assistantResp.length > 500 ? '...' : ''}\n\n`;
+    // Ensure userMsg and assistantResp are strings
+    const userMsgStr = typeof userMsg === 'string' ? userMsg : JSON.stringify(userMsg);
+    const assistantRespStr = typeof assistantResp === 'string' ? assistantResp : JSON.stringify(assistantResp);
+    
+    content += `**User Message:** ${userMsgStr.slice(0, 500)}${userMsgStr.length > 500 ? '...' : ''}\n\n`;
+    content += `**Assistant Response:** ${assistantRespStr.slice(0, 500)}${assistantRespStr.length > 500 ? '...' : ''}\n\n`;
     content += `**Type:** Text-only exchange (no tool calls)\n\n---\n\n`;
     
-    this.debug(`📝 WRITING TEXT CONTENT: ${content.length} chars to ${sessionFile}`);
-    fs.appendFileSync(sessionFile, content);
-    this.debug(`✅ TEXT WRITE COMPLETE`);
+    try {
+      this.debug(`📝 WRITING TEXT CONTENT: ${content.length} chars to ${sessionFile}`);
+      fs.appendFileSync(sessionFile, content);
+      
+      // CRITICAL FIX: Verify content was actually written
+      if (fs.existsSync(sessionFile)) {
+        this.debug(`✅ TEXT WRITE COMPLETE`);
+      } else {
+        throw new Error(`File disappeared after write: ${sessionFile}`);
+      }
+    } catch (error) {
+      console.error(`🚨 TEXT CONTENT WRITE FAILED: ${sessionFile}`);
+      console.error(`Error: ${error.message}`);
+      this.logHealthError(`Text content write failed: ${sessionFile} - ${error.message}`);
+      throw error;
+    }
   }
 
   /**
    * Log individual tool call with detailed JSON input/output (original monitor format)
    */
   async logDetailedToolCall(exchange, toolCall, result, sessionFile, isRedirected) {
-    const exchangeTime = new Date(exchange.timestamp).toISOString();
+    const timestamp = formatTimestamp(exchange.timestamp);
+    const exchangeTime = timestamp.lslFormat;
     const toolSuccess = result && !result.is_error;
     
     // Use built-in fast semantic analysis for routing info (not MCP server)
@@ -875,20 +1333,38 @@ class EnhancedTranscriptMonitor {
     let content = `### ${toolCall.name} - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
     
     const userMsg = exchange.userMessage || '(Initiated automatically)';
-    content += `**User Request:** ${redactSecrets(userMsg.slice(0, 200))}${userMsg.length > 200 ? '...' : ''}\n\n`;
+    // Handle Promise objects that might be from redactSecrets calls
+    const resolvedUserMsg = userMsg && typeof userMsg === 'object' && userMsg.then ? 
+      await userMsg : userMsg;
+    // Ensure userMsg is a string before using slice
+    const userMsgStr = typeof resolvedUserMsg === 'string' ? resolvedUserMsg : JSON.stringify(resolvedUserMsg);
+    content += `**User Request:** ${await redactSecrets(userMsgStr.slice(0, 200))}${userMsgStr.length > 200 ? '...' : ''}\n\n`;
     content += `**Tool:** ${toolCall.name}\n`;
-    content += `**Input:** \`\`\`json\n${redactSecrets(JSON.stringify(toolCall.input, null, 2))}\n\`\`\`\n\n`;
+    content += `**Input:** \`\`\`json\n${await redactSecrets(JSON.stringify(toolCall.input, null, 2))}\n\`\`\`\n\n`;
     content += `**Result:** ${toolSuccess ? '✅ Success' : '❌ Error'}\n`;
     
     if (result?.content) {
       const output = typeof result.content === 'string' ? result.content : JSON.stringify(result.content, null, 2);
-      content += `**Output:** \`\`\`\n${redactSecrets(output.slice(0, 500))}${output.length > 500 ? '\n...[truncated]' : ''}\n\`\`\`\n\n`;
+      content += `**Output:** \`\`\`\n${await redactSecrets(output.slice(0, 500))}${output.length > 500 ? '\n...[truncated]' : ''}\n\`\`\`\n\n`;
     }
     
     content += `**AI Analysis:** ${routingAnalysis}\n\n---\n\n`;
-    this.debug(`📝 WRITING TOOL CONTENT: ${content.length} chars to ${sessionFile}`);
-    fs.appendFileSync(sessionFile, content);
-    this.debug(`✅ TOOL WRITE COMPLETE`);
+    try {
+      this.debug(`📝 WRITING TOOL CONTENT: ${content.length} chars to ${sessionFile}`);
+      fs.appendFileSync(sessionFile, content);
+      
+      // CRITICAL FIX: Verify content was actually written
+      if (fs.existsSync(sessionFile)) {
+        this.debug(`✅ TOOL WRITE COMPLETE`);
+      } else {
+        throw new Error(`File disappeared after write: ${sessionFile}`);
+      }
+    } catch (error) {
+      console.error(`🚨 TOOL CONTENT WRITE FAILED: ${sessionFile}`);
+      console.error(`Error: ${error.message}`);
+      this.logHealthError(`Tool content write failed: ${sessionFile} - ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -934,11 +1410,18 @@ class EnhancedTranscriptMonitor {
     if (!exchanges || exchanges.length === 0) return;
 
     this.debug(`Processing ${exchanges.length} exchanges`);
+    let userPromptCount = 0;
+    let nonUserPromptCount = 0;
 
     for (const exchange of exchanges) {
-      const currentTranche = this.getCurrentTimetranche(exchange.timestamp);
+      // CRITICAL FIX: Use exchange timestamp for proper time tranche calculation
+      const currentTranche = this.getCurrentTimetranche(exchange.timestamp); // Use exchange timestamp
+      console.log(`🐛 DEBUG TRANCHE: ${JSON.stringify(currentTranche)} for exchange at ${new Date(exchange.timestamp).toISOString()}`);
       
       if (exchange.isUserPrompt) {
+        userPromptCount++;
+        const userMessageText = typeof exchange.userMessage === 'string' ? exchange.userMessage : JSON.stringify(exchange.userMessage);
+        console.log(`🔵 USER PROMPT ${userPromptCount}: ${userMessageText?.substring(0, 100)}...`);
         // New user prompt detected
         
         // Check if we crossed session boundary
@@ -951,10 +1434,10 @@ class EnhancedTranscriptMonitor {
             this.currentUserPromptSet = [];
           }
           
-          // Create new session files for new time boundary - EXCLUSIVE routing
-          const targetProject = await this.determineTargetProject(exchange);
-          await this.createOrAppendToSessionFile(targetProject, currentTranche, exchange);
+          // NO LONGER CREATE EMPTY FILES AT SESSION BOUNDARIES
+          // Files are only created when processUserPromptSetCompletion has content to write
           this.lastTranche = currentTranche;
+          this.debug('🕒 Session boundary crossed, but not creating empty files');
           
         } else {
           // Same session - complete current user prompt set  
@@ -971,6 +1454,7 @@ class EnhancedTranscriptMonitor {
         this.lastUserPromptTime = exchange.timestamp;
         
       } else {
+        nonUserPromptCount++;
         // Add to current user prompt set
         if (this.currentUserPromptSet.length > 0) {
           this.currentUserPromptSet.push(exchange);
@@ -978,6 +1462,19 @@ class EnhancedTranscriptMonitor {
       }
       
       this.lastProcessedUuid = exchange.id;
+      this.exchangeCount++;
+    }
+
+    console.log(`📊 EXCHANGE SUMMARY: ${userPromptCount} user prompts, ${nonUserPromptCount} non-user prompts (total: ${exchanges.length})`);
+    
+    // Process any remaining user prompt set
+    if (this.currentUserPromptSet.length > 0) {
+      console.log(`🔄 Processing final user prompt set with ${this.currentUserPromptSet.length} exchanges`);
+      const currentTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
+      const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
+      console.log(`🎯 Final target project: ${targetProject}`);
+      await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+      this.currentUserPromptSet = [];
     }
   }
 
@@ -1054,7 +1551,7 @@ class EnhancedTranscriptMonitor {
       
       // Note: No longer need to clear redirect files
       
-      this.stop();
+      await this.stop();
       process.exit(0);
     };
 
@@ -1065,7 +1562,7 @@ class EnhancedTranscriptMonitor {
   /**
    * Stop monitoring
    */
-  stop() {
+  async stop() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -1074,6 +1571,13 @@ class EnhancedTranscriptMonitor {
       clearInterval(this.healthIntervalId);
       this.healthIntervalId = null;
     }
+    
+    // Shutdown file manager gracefully
+    if (this.fileManager) {
+      await this.fileManager.shutdown();
+      this.debug('📁 LSL File Manager shut down gracefully');
+    }
+    
     this.cleanupHealthFile();
     console.log('📋 Enhanced transcript monitor stopped');
   }
@@ -1092,16 +1596,64 @@ class EnhancedTranscriptMonitor {
    */
   updateHealthFile() {
     try {
+      // Generate user hash for multi-user collision prevention
+      const userHash = UserHashGenerator.generateHash({ debug: false });
+      
+      // Get current process and system metrics
+      const memUsage = process.memoryUsage();
+      const cpuUsage = process.cpuUsage();
+      const uptime = process.uptime();
+      
       const healthData = {
         timestamp: Date.now(),
         projectPath: this.config.projectPath,
         transcriptPath: this.transcriptPath,
-        status: 'running'
+        status: 'running',
+        userHash: userHash,
+        metrics: {
+          memoryMB: Math.round(memUsage.heapUsed / 1024 / 1024),
+          memoryTotalMB: Math.round(memUsage.heapTotal / 1024 / 1024),
+          cpuUser: cpuUsage.user,
+          cpuSystem: cpuUsage.system,
+          uptimeSeconds: Math.round(uptime),
+          processId: process.pid
+        },
+        lastExchange: this.lastProcessedUuid || null,
+        exchangeCount: this.exchangeCount || 0,
+        streamingActive: this.streamingReader !== null,
+        errors: this.healthErrors || []
       };
       fs.writeFileSync(this.config.healthFile, JSON.stringify(healthData, null, 2));
     } catch (error) {
       this.debug(`Failed to update health file: ${error.message}`);
     }
+  }
+
+  /**
+   * Log health error for monitoring
+   */
+  logHealthError(errorMessage) {
+    if (!this.healthErrors) {
+      this.healthErrors = [];
+    }
+    
+    const error = {
+      timestamp: Date.now(),
+      message: errorMessage,
+      isoTime: new Date().toISOString()
+    };
+    
+    this.healthErrors.push(error);
+    
+    // Keep only last 10 errors to avoid bloating
+    if (this.healthErrors.length > 10) {
+      this.healthErrors = this.healthErrors.slice(-10);
+    }
+    
+    // Immediately update health file to reflect error
+    this.updateHealthFile();
+    
+    console.error(`🚨 HEALTH ERROR LOGGED: ${errorMessage}`);
   }
 
   /**
@@ -1123,7 +1675,7 @@ class EnhancedTranscriptMonitor {
  */
 async function reprocessHistoricalTranscripts(projectPath = null) {
   try {
-    const targetProject = projectPath || process.env.CODING_TARGET_PROJECT || process.cwd();
+    const targetProject = projectPath || process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
     const monitor = new EnhancedTranscriptMonitor({ projectPath: targetProject });
     
     console.log('🔄 Starting historical transcript reprocessing...');
@@ -1161,30 +1713,38 @@ async function reprocessHistoricalTranscripts(projectPath = null) {
     // Reset processing state to reprocess everything
     monitor.lastProcessedUuid = null;
     
-    // Find and process transcript
-    const transcriptFile = monitor.findCurrentTranscript();
-    if (!transcriptFile) {
-      console.log('❌ No transcript file found for this project');
+    // Find and process all transcript files
+    const transcriptFiles = monitor.findAllTranscripts();
+    if (transcriptFiles.length === 0) {
+      console.log('❌ No transcript files found for this project');
       return;
     }
     
-    console.log(`📊 Processing transcript: ${path.basename(transcriptFile)}`);
+    console.log(`📊 Found ${transcriptFiles.length} transcript files to process`);
     
-    // Process all exchanges
-    const messages = monitor.readTranscriptMessages(transcriptFile);
-    const exchanges = monitor.extractExchanges(messages);
+    // Check if parallel processing is requested via environment variable
+    const useParallel = process.env.LSL_PARALLEL_PROCESSING !== 'false';
+    const maxConcurrency = parseInt(process.env.LSL_MAX_CONCURRENCY || '3');
     
-    console.log(`🔍 Found ${exchanges.length} total exchanges`);
-    
-    // Process in batches to avoid memory issues
-    const batchSize = 50;
-    let processedCount = 0;
-    
-    for (let i = 0; i < exchanges.length; i += batchSize) {
-      const batch = exchanges.slice(i, i + batchSize);
-      await monitor.processExchanges(batch);
-      processedCount += batch.length;
-      console.log(`⚡ Processed ${processedCount}/${exchanges.length} exchanges...`);
+    if (useParallel && transcriptFiles.length > 1) {
+      console.log(`🚀 Using parallel processing with max concurrency: ${maxConcurrency}`);
+      await monitor.processTranscriptsInParallel(transcriptFiles, maxConcurrency);
+    } else {
+      console.log(`🔄 Using sequential processing...`);
+      
+      // Fallback to sequential processing for single files or when disabled
+      let totalProcessed = 0;
+      for (let i = 0; i < transcriptFiles.length; i++) {
+        const transcriptFile = transcriptFiles[i];
+        console.log(`📊 Processing transcript ${i + 1}/${transcriptFiles.length}: ${transcriptFile.filename}`);
+        
+        const result = await monitor.processSingleTranscript(transcriptFile);
+        totalProcessed += result.processed;
+        
+        console.log(`✅ Processed ${result.processed} exchanges from ${result.file} in ${(result.duration / 1000).toFixed(1)}s`);
+      }
+      
+      console.log(`⚡ Total processed exchanges: ${totalProcessed}`);
     }
     
     console.log('✅ Historical transcript reprocessing completed!');
@@ -1220,6 +1780,20 @@ async function main() {
     if (args.includes('--reprocess') || args.includes('--batch')) {
       const projectArg = args.find(arg => arg.startsWith('--project='));
       const projectPath = projectArg ? projectArg.split('=')[1] : null;
+      
+      // Set environment variables for parallel processing options
+      if (args.includes('--parallel')) {
+        process.env.LSL_PARALLEL_PROCESSING = 'true';
+      }
+      if (args.includes('--no-parallel')) {
+        process.env.LSL_PARALLEL_PROCESSING = 'false';
+      }
+      
+      const concurrencyArg = args.find(arg => arg.startsWith('--concurrency='));
+      if (concurrencyArg) {
+        process.env.LSL_MAX_CONCURRENCY = concurrencyArg.split('=')[1];
+      }
+      
       await reprocessHistoricalTranscripts(projectPath);
       return;
     }

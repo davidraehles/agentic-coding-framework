@@ -104,7 +104,7 @@ class CombinedStatusLine {
       
       // 2. Look for current tranche session files in BOTH coding and target project
       const today = new Date().toISOString().split('T')[0];
-      const targetProject = process.env.CODING_TARGET_PROJECT || process.cwd();
+      const targetProject = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
       const checkDirs = [
         join(rootDir, '.specstory/history'),           // Coding repo
         join(targetProject, '.specstory/history')      // Target project
@@ -434,7 +434,7 @@ class CombinedStatusLine {
     try {
       // Only show redirect indicator when working OUTSIDE the coding project
       const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
-      const targetProject = process.env.CODING_TARGET_PROJECT;
+      const targetProject = process.env.TRANSCRIPT_SOURCE_PROJECT;
       
       // If target project is the coding project itself, no redirect needed
       if (!targetProject || targetProject.includes(codingPath)) {
@@ -719,7 +719,7 @@ class CombinedStatusLine {
       const env = {
         ...process.env,
         CODING_TOOLS_PATH: codingPath,
-        CODING_TARGET_PROJECT: process.env.CODING_TARGET_PROJECT || process.cwd()
+        TRANSCRIPT_SOURCE_PROJECT: process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd()
       };
       
       const monitor = spawn('node', [monitorScript], {
@@ -897,7 +897,7 @@ class CombinedStatusLine {
       }
       
       // Transcript monitor is not running - restart it
-      const targetProject = process.env.CODING_TARGET_PROJECT || process.cwd();
+      const targetProject = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
       const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
       
       // Start transcript monitor in background

@@ -6,12 +6,12 @@ This helps provide better AI agent guidance beyond simple "work on this task" pr
 
 - [x] 1. Fix Environment Configuration in Batch Processing Script
   - File: scripts/generate-proper-lsl-from-transcripts.js
-  - Fix getTargetProject() function to properly handle CODING_TARGET_PROJECT environment variable
+  - Fix getTargetProject() function to properly handle TRANSCRIPT_SOURCE_PROJECT environment variable
   - Ensure classification works correctly regardless of execution context
   - Purpose: Correct environment variable handling for proper classification initialization
   - _Leverage: Existing getTargetProject() function, environment variable patterns_
   - _Requirements: 4.1, 4.2, 4.3_
-  - _Prompt: Role: DevOps Engineer specializing in environment configuration and Node.js scripts | Task: Fix getTargetProject() function in scripts/generate-proper-lsl-from-transcripts.js to properly handle CODING_TARGET_PROJECT environment variable following requirements 4.1-4.3, ensuring classification works correctly when run from any project context | Restrictions: Do not modify existing project detection logic unnecessarily, maintain backward compatibility with current usage, do not change filename patterns | Success: CODING_TARGET_PROJECT correctly points to coding project during classification, batch processing works from both coding and non-coding projects, environment variables are validated with meaningful error messages_
+  - _Prompt: Role: DevOps Engineer specializing in environment configuration and Node.js scripts | Task: Fix getTargetProject() function in scripts/generate-proper-lsl-from-transcripts.js to properly handle TRANSCRIPT_SOURCE_PROJECT environment variable following requirements 4.1-4.3, ensuring classification works correctly when run from any project context | Restrictions: Do not modify existing project detection logic unnecessarily, maintain backward compatibility with current usage, do not change filename patterns | Success: TRANSCRIPT_SOURCE_PROJECT correctly points to coding project during classification, batch processing works from both coding and non-coding projects, environment variables are validated with meaningful error messages_
 
 - [x] 2. Add Classification Calls to Exchange Processing Loop
   - File: scripts/generate-proper-lsl-from-transcripts.js

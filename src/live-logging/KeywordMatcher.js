@@ -206,12 +206,18 @@ class KeywordMatcher {
   extractKeyParameters(params, parts) {
     const keyFields = [
       'file_path', 'path', 'directory', 'command', 'pattern', 
-      'url', 'query', 'content', 'description'
+      'url', 'query', 'content', 'description', 'todos'
     ];
     
     for (const field of keyFields) {
-      if (params[field] && typeof params[field] === 'string') {
-        parts.push(params[field]);
+      if (params[field]) {
+        if (typeof params[field] === 'string') {
+          parts.push(params[field]);
+        } else if (Array.isArray(params[field]) || typeof params[field] === 'object') {
+          // Handle complex fields like todos arrays by converting to searchable text
+          const text = JSON.stringify(params[field]);
+          parts.push(text);
+        }
       }
     }
   }

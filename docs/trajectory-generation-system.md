@@ -488,11 +488,11 @@ The system supports both manual and automatic trajectory updates:
 **Manual Generation**:
 ```bash
 # Generate light trajectory report
-CODING_TARGET_PROJECT="/path/to/project" \
+TRANSCRIPT_SOURCE_PROJECT="/path/to/project" \
 node scripts/repository-trajectory-generator.js --level=light
 
 # Generate comprehensive deep analysis
-CODING_TARGET_PROJECT="/path/to/project" \
+TRANSCRIPT_SOURCE_PROJECT="/path/to/project" \
 node scripts/repository-trajectory-generator.js --level=deep
 ```
 
@@ -507,7 +507,7 @@ node scripts/repository-trajectory-generator.js --level=deep
 
 ```bash
 # Trajectory generation configuration
-CODING_TARGET_PROJECT=/Users/q284340/Agentic/nano-degree  # Target project
+TRANSCRIPT_SOURCE_PROJECT=/Users/q284340/Agentic/nano-degree  # Target project
 CODING_TOOLS_PATH=/Users/q284340/Agentic/coding            # Tools location
 TRAJECTORY_ANALYSIS_LEVEL=light                            # Default analysis depth
 TRAJECTORY_AUTO_UPDATE=true                                # Enable automatic updates
@@ -576,7 +576,7 @@ node scripts/repository-trajectory-generator.js
 node scripts/repository-trajectory-generator.js --level=deep
 
 # Generate trajectory for specific project
-CODING_TARGET_PROJECT="/path/to/project" \
+TRANSCRIPT_SOURCE_PROJECT="/path/to/project" \
 node scripts/repository-trajectory-generator.js --level=light
 ```
 
@@ -600,7 +600,7 @@ node scripts/repository-trajectory-generator.js --level=deep
 
 ```bash
 # Generate trajectory with LSL session integration
-CODING_TARGET_PROJECT="/path/to/nano-degree" \
+TRANSCRIPT_SOURCE_PROJECT="/path/to/nano-degree" \
 CODING_TOOLS_PATH="/path/to/coding" \
 node scripts/repository-trajectory-generator.js --include-lsl-data
 
@@ -613,10 +613,10 @@ node scripts/repository-trajectory-generator.js --update-from-lsl
 ```bash
 # Set up automated trajectory generation (cron example)
 # Daily light analysis at 6 AM
-0 6 * * * cd /path/to/coding && CODING_TARGET_PROJECT=/path/to/project node scripts/repository-trajectory-generator.js --level=light
+0 6 * * * cd /path/to/coding && TRANSCRIPT_SOURCE_PROJECT=/path/to/project node scripts/repository-trajectory-generator.js --level=light
 
 # Weekly deep analysis on Sundays at 2 AM
-0 2 * * 0 cd /path/to/coding && CODING_TARGET_PROJECT=/path/to/project node scripts/repository-trajectory-generator.js --level=deep
+0 2 * * 0 cd /path/to/coding && TRANSCRIPT_SOURCE_PROJECT=/path/to/project node scripts/repository-trajectory-generator.js --level=deep
 ```
 
 ## Troubleshooting

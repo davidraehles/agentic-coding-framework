@@ -66,7 +66,7 @@ package "Command Examples" {
     
     **Legacy Single Project:**
     ```bash
-    CODING_TARGET_PROJECT="/path/to/project" \\
+    TRANSCRIPT_SOURCE_PROJECT="/path/to/project" \\
       node scripts/generate-proper-lsl-from-transcripts.js
     ```
     

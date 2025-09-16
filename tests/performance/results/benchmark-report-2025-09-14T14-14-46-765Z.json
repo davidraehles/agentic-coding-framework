@@ -1,0 +1,440 @@
+{
+  "timestamp": "2025-09-14T14:14:46.765Z",
+  "targets": {
+    "classification": {
+      "processingTime": 500,
+      "accuracy": 0.85,
+      "throughput": 100,
+      "memoryEfficiency": 0.8
+    },
+    "fileOperations": {
+      "rotation": 3000,
+      "compression": 5000,
+      "archiveCleanup": 2000,
+      "indexing": 1000
+    },
+    "coordination": {
+      "initialization": 2000,
+      "bufferProcessing": 1000,
+      "userHashGeneration": 10,
+      "sessionFinalization": 1500
+    },
+    "scalability": {
+      "multiUserConcurrency": 10,
+      "maxFileSize": 104857600,
+      "maxBufferSize": 1000,
+      "memoryLeakThreshold": 1.5
+    },
+    "costOptimization": {
+      "semanticAnalysisReduction": 0.3,
+      "tokenUsageEfficiency": 0.8,
+      "processingCostPerExchange": 0.01,
+      "storageEfficiency": 0.6
+    }
+  },
+  "results": {
+    "classification": {
+      "processingTime": {
+        "passed": true,
+        "avgProcessingTime": 0.0025959000000000286,
+        "maxProcessingTime": 0.008709000000003186,
+        "target": 500,
+        "details": [
+          {
+            "exchangeId": "exchange-0",
+            "processingTime": 0.008709000000003186,
+            "classification": {
+              "type": "analysis",
+              "confidence": 0.6710454343303067,
+              "tokens": 4,
+              "complexity": 0.08843416849946184
+            }
+          },
+          {
+            "exchangeId": "exchange-1",
+            "processingTime": 0.0021249999999994884,
+            "classification": {
+              "type": "coding",
+              "confidence": 0.8083668586807243,
+              "tokens": 10,
+              "complexity": 0.7342732138937565
+            }
+          },
+          {
+            "exchangeId": "exchange-2",
+            "processingTime": 0.0017909999999972115,
+            "classification": {
+              "type": "analysis",
+              "confidence": 0.8395733669285025,
+              "tokens": 25,
+              "complexity": 0.8655301328864735
+            }
+          },
+          {
+            "exchangeId": "exchange-3",
+            "processingTime": 0.0018749999999982947,
+            "classification": {
+              "type": "coding",
+              "confidence": 0.8971456995093179,
+              "tokens": 25,
+              "complexity": 0.20885864961163725
+            }
+          },
+          {
+            "exchangeId": "exchange-4",
+            "processingTime": 0.0021249999999994884,
+            "classification": {
+              "type": "documentation",
+              "confidence": 0.950047179192473,
+              "tokens": 19,
+              "complexity": 0.8653824371170267
+            }
+          },
+          {
+            "exchangeId": "exchange-5",
+            "processingTime": 0.0020000000000024443,
+            "classification": {
+              "type": "troubleshooting",
+              "confidence": 0.9522928649513959,
+              "tokens": 28,
+              "complexity": 0.036305571770423595
+            }
+          },
+          {
+            "exchangeId": "exchange-6",
+            "processingTime": 0.001624999999997101,
+            "classification": {
+              "type": "troubleshooting",
+              "confidence": 0.9955215016603287,
+              "tokens": 16,
+              "complexity": 0.31759853901022694
+            }
+          },
+          {
+            "exchangeId": "exchange-7",
+            "processingTime": 0.0020000000000024443,
+            "classification": {
+              "type": "documentation",
+              "confidence": 0.6177481485935006,
+              "tokens": 31,
+              "complexity": 0.42582371416049636
+            }
+          },
+          {
+            "exchangeId": "exchange-8",
+            "processingTime": 0.0017089999999981842,
+            "classification": {
+              "type": "coding",
+              "confidence": 0.6138999357777375,
+              "tokens": 13,
+              "complexity": 0.5723147318489791
+            }
+          },
+          {
+            "exchangeId": "exchange-9",
+            "processingTime": 0.0020000000000024443,
+            "classification": {
+              "type": "coding",
+              "confidence": 0.8425511839549968,
+              "tokens": 31,
+              "complexity": 0.48270195078475797
+            }
+          }
+        ]
+      },
+      "accuracy": {
+        "passed": true,
+        "accuracy": 0.9166666666666666,
+        "target": 0.85,
+        "correctPredictions": 11,
+        "totalCases": 12,
+        "details": [
+          {
+            "input": "Write a function to calculate fibonacci",
+            "expected": "coding",
+            "predicted": "coding",
+            "correct": true
+          },
+          {
+            "input": "Update the README documentation",
+            "expected": "documentation",
+            "predicted": "documentation",
+            "correct": true
+          },
+          {
+            "input": "Analyze the performance bottleneck",
+            "expected": "analysis",
+            "predicted": "analysis",
+            "correct": true
+          },
+          {
+            "input": "Fix the authentication error",
+            "expected": "troubleshooting",
+            "predicted": "troubleshooting",
+            "correct": true
+          },
+          {
+            "input": "Write a function to calculate fibonacci",
+            "expected": "coding",
+            "predicted": "coding",
+            "correct": true
+          },
+          {
+            "input": "Update the README documentation",
+            "expected": "documentation",
+            "predicted": "documentation",
+            "correct": true
+          },
+          {
+            "input": "Analyze the performance bottleneck",
+            "expected": "analysis",
+            "predicted": "analysis",
+            "correct": true
+          },
+          {
+            "input": "Fix the authentication error",
+            "expected": "troubleshooting",
+            "predicted": "troubleshooting",
+            "correct": true
+          },
+          {
+            "input": "Write a function to calculate fibonacci",
+            "expected": "coding",
+            "predicted": "coding",
+            "correct": true
+          },
+          {
+            "input": "Update the README documentation",
+            "expected": "documentation",
+            "predicted": "troubleshooting",
+            "correct": false
+          },
+          {
+            "input": "Analyze the performance bottleneck",
+            "expected": "analysis",
+            "predicted": "analysis",
+            "correct": true
+          },
+          {
+            "input": "Fix the authentication error",
+            "expected": "troubleshooting",
+            "predicted": "troubleshooting",
+            "correct": true
+          }
+        ]
+      },
+      "throughput": {
+        "passed": true,
+        "throughput": 20213.142058076923,
+        "target": 100,
+        "successRate": 1,
+        "totalDuration": 148.418291,
+        "errorRate": 0
+      },
+      "memoryEfficiency": {
+        "passed": false,
+        "memoryEfficiency": 1.123923212805862,
+        "target": 0.8,
+        "memoryDelta": {
+          "heapUsed": 727344,
+          "heapTotal": 327680,
+          "external": -36638
+        },
+        "duration": 0.7467079999999839
+      }
+    },
+    "fileOperations": {
+      "rotation": {
+        "passed": true,
+        "duration": 21.925624999999997,
+        "target": 3000,
+        "fileSize": 1110000
+      },
+      "compression": {
+        "passed": true,
+        "duration": 260.57457999999997,
+        "target": 5000,
+        "originalSize": 10900000,
+        "actualDuration": 26.057457999999997
+      },
+      "archiveCleanup": {
+        "passed": true,
+        "duration": 3.4194169999999815,
+        "target": 2000,
+        "filesRemoved": 12,
+        "filesRemaining": 8
+      },
+      "indexing": {
+        "passed": true,
+        "duration": 0.21170799999998735,
+        "target": 1000,
+        "filesIndexed": 10
+      }
+    },
+    "coordination": {
+      "initialization": {
+        "passed": true,
+        "duration": 51.93575000000004,
+        "target": 2000,
+        "initialized": false
+      },
+      "bufferProcessing": {
+        "passed": true,
+        "duration": 2.17025000000001,
+        "target": 1000,
+        "interactionsProcessed": 100
+      },
+      "userHashGeneration": {
+        "passed": true,
+        "avgDuration": 0.002106720000001019,
+        "maxDuration": 0.01779199999998582,
+        "target": 10,
+        "measurements": 100
+      },
+      "sessionFinalization": {
+        "passed": true,
+        "duration": 0.12920800000000554,
+        "target": 1500,
+        "summary": 9
+      }
+    },
+    "scalability": {
+      "multiUserConcurrency": {
+        "passed": true,
+        "duration": 94.10804200000001,
+        "successCount": 10,
+        "target": 10,
+        "successRate": 1
+      },
+      "maxFileSize": {
+        "passed": true,
+        "duration": 0.05291699999997945,
+        "fileSize": 4100000,
+        "target": 104857600,
+        "fileInfo": 6
+      },
+      "maxBufferSize": {
+        "passed": true,
+        "duration": 0.5294160000000829,
+        "bufferSize": 1000,
+        "target": 1000
+      },
+      "memoryLeakResistance": {
+        "passed": true,
+        "memoryGrowth": 1.0648881089242472,
+        "target": 1.5,
+        "initialMemory": 10,
+        "finalMemory": 11,
+        "iterations": 1000
+      }
+    },
+    "costOptimization": {
+      "semanticAnalysisReduction": {
+        "passed": true,
+        "actualReduction": 0.39999999999999997,
+        "target": 0.3,
+        "baselineCost": 100,
+        "optimizedCost": 60.00000000000001,
+        "techniques": [
+          {
+            "name": "Batch Processing",
+            "reduction": 0.15,
+            "costSaving": 15
+          },
+          {
+            "name": "Caching",
+            "reduction": 0.08,
+            "costSaving": 8
+          },
+          {
+            "name": "Compression",
+            "reduction": 0.12,
+            "costSaving": 12
+          },
+          {
+            "name": "Smart Filtering",
+            "reduction": 0.05,
+            "costSaving": 5
+          }
+        ]
+      },
+      "tokenUsageEfficiency": {
+        "passed": true,
+        "efficiency": 0.8620689655172413,
+        "target": 0.8,
+        "totalTokens": 29,
+        "usefulTokens": 25,
+        "wasteTokens": 4
+      },
+      "processingCostPerExchange": {
+        "passed": true,
+        "avgCostPerExchange": 0.005399999999999999,
+        "target": 0.01,
+        "costs": [
+          {
+            "complexity": "simple",
+            "tokenCost": 0.001,
+            "processingCost": 0.0001,
+            "totalCost": 0.0011
+          },
+          {
+            "complexity": "medium",
+            "tokenCost": 0.004,
+            "processingCost": 0.0003,
+            "totalCost": 0.0043
+          },
+          {
+            "complexity": "complex",
+            "tokenCost": 0.01,
+            "processingCost": 0.0008,
+            "totalCost": 0.0108
+          }
+        ],
+        "totalCost": 0.0162
+      },
+      "storageEfficiency": {
+        "passed": false,
+        "storageReduction": 0.496,
+        "target": 0.6,
+        "originalSize": 89128960,
+        "optimizedSize": 44920995.84,
+        "optimizations": [
+          {
+            "technique": "compression",
+            "ratio": 0.7,
+            "sizeBefore": 89128960,
+            "sizeAfter": 62390271.99999999,
+            "saving": 26738688.000000007
+          },
+          {
+            "technique": "deduplication",
+            "ratio": 0.9,
+            "sizeBefore": 62390271.99999999,
+            "sizeAfter": 56151244.8,
+            "saving": 6239027.1999999955
+          },
+          {
+            "technique": "archiving",
+            "ratio": 0.8,
+            "sizeBefore": 56151244.8,
+            "sizeAfter": 44920995.84,
+            "saving": 11230248.959999993
+          }
+        ]
+      }
+    }
+  },
+  "summary": {
+    "totalTests": 20,
+    "passedTests": 18,
+    "failedTests": 2,
+    "overallScore": 0.9,
+    "categoryScores": {
+      "classification": 0.75,
+      "fileOperations": 1,
+      "coordination": 1,
+      "scalability": 1,
+      "costOptimization": 0.75
+    }
+  }
+}

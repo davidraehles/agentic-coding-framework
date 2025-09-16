@@ -7,6 +7,8 @@
  */
 
 import HybridSessionLogger from './hybrid-session-logger.js';
+import UserHashGenerator from '../../src/live-logging/user-hash-generator.js';
+import { generateLSLFilename } from '../timezone-utils.js';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -18,6 +20,10 @@ class LiveLoggingCoordinator {
     this.toolCallBuffer = [];
     this.maxBufferSize = 100;
     
+    // User hash integration for multi-user support
+    this.userHash = UserHashGenerator.generateHash({ debug: false });
+    this.userIdentifier = null;
+    
     // Integration with constraint monitor
     this.constraintMonitorIntegrated = false;
     this.statusFilePath = join(process.cwd(), '.services-running.json');
@@ -27,6 +33,9 @@ class LiveLoggingCoordinator {
 
   async initialize() {
     try {
+      // Initialize user identification
+      this.initializeUserIdentification();
+      
       // Create hybrid session logger
       this.logger = await HybridSessionLogger.createFromCurrentContext();
       
@@ -37,14 +46,22 @@ class LiveLoggingCoordinator {
       await this.setupMonitoringHooks();
       
       this.isActive = true;
-      console.log(`🚀 Live logging coordinator initialized (Session: ${this.sessionId})`);
+      console.log(`🚀 Live logging coordinator initialized (User: ${this.userHash}, Session: ${this.sessionId})`);
     } catch (error) {
       console.error('Failed to initialize live logging coordinator:', error);
     }
   }
 
   generateSessionId() {
-    return `live-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    return `live-${Date.now()}-${this.userHash}-${Math.random().toString(36).substr(2, 6)}`;
+  }
+
+  initializeUserIdentification() {
+    // Get comprehensive user information
+    const userInfo = UserHashGenerator.getSystemInfo({ debug: false });
+    this.userIdentifier = userInfo.userIdentifier;
+    
+    console.log(`👤 User identification: ${this.userIdentifier} -> ${this.userHash}`);
   }
 
   checkConstraintMonitorIntegration() {
@@ -70,11 +87,11 @@ class LiveLoggingCoordinator {
   }
 
   async createHookInterface() {
-    // Create a simple file-based interface for tool interaction capture
+    // Create user-specific hook interface with user hash integration
     const hookPath = join(process.cwd(), '.mcp-sync/tool-interaction-hook.js');
     
     const hookContent = `
-// Tool Interaction Hook for Live Logging
+// Tool Interaction Hook for Live Logging (User: ${this.userHash})
 // This file is called by the constraint monitor or statusLine to capture tool interactions
 
 const { existsSync, appendFileSync } = require('fs');
@@ -84,12 +101,19 @@ function captureToolInteraction(toolCall, result, context = {}) {
   const interaction = {
     timestamp: new Date().toISOString(),
     sessionId: '${this.sessionId}',
+    userHash: '${this.userHash}',
+    userIdentifier: '${this.userIdentifier}',
     toolCall: toolCall,
     result: result,
-    context: context
+    context: {
+      ...context,
+      multiUser: true,
+      coordinatorVersion: '2.0'
+    }
   };
   
-  const bufferPath = path.join(process.cwd(), '.mcp-sync/tool-interaction-buffer.jsonl');
+  // User-specific buffer file to prevent multi-user conflicts
+  const bufferPath = path.join(process.cwd(), '.mcp-sync/tool-interaction-buffer-${this.userHash}.jsonl');
   
   try {
     appendFileSync(bufferPath, JSON.stringify(interaction) + '\\n');
@@ -110,7 +134,8 @@ module.exports = { captureToolInteraction };
   }
 
   async processBufferedInteractions() {
-    const bufferPath = join(process.cwd(), '.mcp-sync/tool-interaction-buffer.jsonl');
+    // Process user-specific buffer to prevent multi-user conflicts
+    const bufferPath = join(process.cwd(), `.mcp-sync/tool-interaction-buffer-${this.userHash}.jsonl`);
     
     if (!existsSync(bufferPath)) {
       return;
@@ -124,9 +149,13 @@ module.exports = { captureToolInteraction };
       
       const interactions = bufferContent.split('\n')
         .filter(line => line.trim())
-        .map(line => JSON.parse(line));
+        .map(line => JSON.parse(line))
+        .filter(interaction => {
+          // Only process interactions from this user to prevent cross-contamination
+          return !interaction.userHash || interaction.userHash === this.userHash;
+        });
       
-      // Process each interaction
+      // Process each interaction with enhanced multi-user context
       for (const interaction of interactions) {
         await this.processToolInteraction(interaction);
       }
@@ -153,14 +182,18 @@ module.exports = { captureToolInteraction };
         this.toolCallBuffer.shift();
       }
       
-      // Process with hybrid session logger
+      // Process with hybrid session logger and enhanced multi-user context
       const exchange = await this.logger.onToolInteraction(
         interaction.toolCall,
         interaction.result,
         {
           ...interaction.context,
           sessionId: this.sessionId,
-          workingDirectory: process.cwd()
+          userHash: this.userHash,
+          userIdentifier: this.userIdentifier,
+          workingDirectory: process.cwd(),
+          multiUserCoordination: true,
+          coordinatorVersion: '2.0'
         }
       );
       
@@ -205,27 +238,34 @@ module.exports = { captureToolInteraction };
     // Finalize the hybrid session logger
     const summary = await this.logger.finalizeSession();
     
-    console.log(`✅ Session finalized: ${summary.exchangeCount} exchanges logged`);
+    console.log(`✅ Session finalized (User: ${this.userHash}): ${summary.exchangeCount} exchanges logged`);
     console.log(`   - Coding-related: ${summary.classification.coding}`);
     console.log(`   - Project-specific: ${summary.classification.project}`);
     console.log(`   - Hybrid: ${summary.classification.hybrid}`);
+    console.log(`   - User: ${this.userIdentifier} (${this.userHash})`);
     
     this.isActive = false;
     
     return summary;
   }
 
-  // Statistics and monitoring
+  // Enhanced statistics and monitoring with user hash support
   getSessionStats() {
     return {
       sessionId: this.sessionId,
+      userHash: this.userHash,
+      userIdentifier: this.userIdentifier,
       isActive: this.isActive,
       bufferSize: this.toolCallBuffer.length,
       constraintMonitorIntegrated: this.constraintMonitorIntegrated,
+      multiUserSupport: true,
+      coordinatorVersion: '2.0',
       recentInteractions: this.toolCallBuffer.slice(-5).map(i => ({
         tool: i.toolCall.name,
-        timestamp: i.timestamp
-      }))
+        timestamp: i.timestamp,
+        userHash: i.userHash || this.userHash
+      })),
+      bufferFilePath: `.mcp-sync/tool-interaction-buffer-${this.userHash}.jsonl`
     };
   }
 
@@ -233,10 +273,10 @@ module.exports = { captureToolInteraction };
   async cleanup() {
     await this.finalizeSession();
     
-    // Clean up hook files
+    // Clean up user-specific hook files
     const hookFiles = [
       '.mcp-sync/tool-interaction-hook.js',
-      '.mcp-sync/tool-interaction-buffer.jsonl'
+      `.mcp-sync/tool-interaction-buffer-${this.userHash}.jsonl`
     ].map(f => join(process.cwd(), f));
     
     hookFiles.forEach(file => {
