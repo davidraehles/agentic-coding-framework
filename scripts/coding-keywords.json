@@ -16,7 +16,11 @@
       "qdrant", "embedding-classifier", "vector similarity", "cosine similarity",
       "constraint monitor", "Groq engine", "sentence-transformers",
       "Promise serialization", "object Promise", "LSL files", "transcript parsing",
-      "session logs", "coding session", "live logging", "transcript classification"
+      "session logs", "coding session", "live logging", "transcript classification",
+      "batch mode", "foreign mode", "from-nano-degree", "re-directed", "redirected",
+      "transcript processing", "generate-lsl", "batch facility", "LSL system",
+      "session file", "half-hour nomenclature", "foreign files", "local files",
+      "transcripts", "re-create", "recreate", "clean baseline", "generate everything"
     ],
     "secondary": [
       "DeduplicationAgent", "DocumentationAgent", "CoordinatorAgent",

@@ -1,26 +1,26 @@
 {
   "sessions": {
-    "/Users/q284340/Agentic/coding_89717": {
-      "sessionId": "/Users/q284340/Agentic/coding_89717",
-      "projectDir": "/Users/q284340/Agentic/coding",
-      "pid": 89717,
+    "/Users/q284340/Agentic/nano-degree_36975": {
+      "sessionId": "/Users/q284340/Agentic/nano-degree_36975",
+      "projectDir": "/Users/q284340/Agentic/nano-degree",
+      "pid": 36975,
       "claudeProcess": "unknown",
-      "startTime": 1757758828168,
-      "lastHealthCheck": 1757758828168,
-      "transcriptMonitorPid": 89752,
+      "startTime": 1758000733055,
+      "lastHealthCheck": 1758008489225,
+      "transcriptMonitorPid": 37124,
       "status": "active"
     },
-    "/Users/q284340/Agentic/nano-degree_44406": {
-      "sessionId": "/Users/q284340/Agentic/nano-degree_44406",
+    "/Users/q284340/Agentic/nano-degree_53167": {
+      "sessionId": "/Users/q284340/Agentic/nano-degree_53167",
       "projectDir": "/Users/q284340/Agentic/nano-degree",
-      "pid": 44406,
+      "pid": 53167,
       "claudeProcess": "unknown",
-      "startTime": 1757871924439,
-      "lastHealthCheck": 1757871924439,
-      "transcriptMonitorPid": 44564,
+      "startTime": 1758023300267,
+      "lastHealthCheck": 1758023300267,
+      "transcriptMonitorPid": 53355,
       "status": "active"
     }
   },
-  "lastCleanup": 1757758828165,
+  "lastCleanup": 1758008489225,
   "version": "1.0.0"
 }

@@ -132,7 +132,7 @@ Real-time conversation monitoring with integrated file management:
 ```
 
 ### 6. LSL Generation Scripts
-**Location**: `scripts/generate-proper-lsl-from-transcripts.js`
+**Location**: `scripts/generate-lsl-from-transcripts.js`
 
 Enhanced batch processing system for historical transcript analysis:
 

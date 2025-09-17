@@ -15,7 +15,7 @@ class AdaptiveExchangeExtractor {
     this.config = {
       debug: options.debug || false,
       formatCacheTTL: options.formatCacheTTL || 300000, // 5 minutes
-      minSampleSize: options.minSampleSize || 50
+      minSampleSize: options.minSampleSize || 1   // FIXED: Reduced to 1 for memory-constrained streaming batches
     };
     
     this.detector = new AdaptiveTranscriptFormatDetector({
@@ -50,14 +50,20 @@ class AdaptiveExchangeExtractor {
    * Main extraction method - detects format and applies appropriate strategy
    */
   extractExchanges(messages) {
+    console.log(`🚨 DEBUG: AdaptiveExchangeExtractor.extractExchanges called with ${messages ? messages.length : 'null'} messages`);
     if (!messages || messages.length === 0) {
+      console.log(`🚨 DEBUG: No messages provided, returning empty array`);
       return [];
     }
 
+    console.log(`🚨 DEBUG: minSampleSize=${this.config.minSampleSize}, messages.length=${messages.length}`);
     // Check if we have enough data for format detection
     if (messages.length < this.config.minSampleSize) {
+      console.log(`🚨 DEBUG: Insufficient sample size (${messages.length}), using fallback extraction`);
       this.debug(`Insufficient sample size (${messages.length}), using fallback extraction`);
-      return this.extractWithFallback(messages);
+      const result = this.extractWithFallback(messages);
+      console.log(`🚨 DEBUG: Fallback extraction returned ${result.length} exchanges`);
+      return result;
     }
 
     // Try to get cached format or detect new one
@@ -70,8 +76,10 @@ class AdaptiveExchangeExtractor {
 
     // Apply extraction strategy based on detected format
     const strategy = this.detector.getExtractionStrategy(formatResult);
+    console.log(`🚨 DEBUG: Using strategy for format ${formatResult.formatId}`);
     const exchanges = this.extractWithStrategy(messages, strategy);
     
+    console.log(`🚨 DEBUG: Strategy extraction returned ${exchanges.length} exchanges`);
     this.debug(`Extracted ${exchanges.length} exchanges using format: ${formatResult.formatId}`);
     this.stats.exchangesExtracted += exchanges.length;
     
@@ -141,6 +149,7 @@ class AdaptiveExchangeExtractor {
           uuid: msg.uuid || this.generateUUID(),
           timestamp: msg.timestamp,
           humanMessage: this.extractContent(msg, strategy.messageExtraction.userContentPath),
+          userMessage: this.extractContent(msg, strategy.messageExtraction.userContentPath), // Normalized for modern pipeline
           assistantMessage: null,
           toolCalls: [],
           toolResults: []
@@ -149,12 +158,14 @@ class AdaptiveExchangeExtractor {
         // For legacy format, user message is complete immediately
         if (strategy.formatId === 'claude-legacy-v1' && msg.message) {
           currentExchange.humanMessage = this.extractMessageContent(msg.message);
+          currentExchange.userMessage = this.extractMessageContent(msg.message); // Normalized for modern pipeline
         }
       }
       
       // Check for user turn end (new format)
       else if (msg.type?.includes('turn_end') && msg.type?.includes('human') && currentExchange) {
         currentExchange.humanMessage = this.extractContent(msg, strategy.messageExtraction.userContentPath);
+        currentExchange.userMessage = this.extractContent(msg, strategy.messageExtraction.userContentPath); // Normalized for modern pipeline
       }
       
       // Check for assistant turn start (new format)
@@ -250,8 +261,12 @@ class AdaptiveExchangeExtractor {
     
     if (Array.isArray(messageObj.content)) {
       return messageObj.content
-        .filter(item => item.type === 'text')
-        .map(item => item.text)
+        .filter(item => item.type === 'text' || item.type === 'tool_result')
+        .map(item => {
+          if (item.type === 'text') return item.text;
+          if (item.type === 'tool_result') return item.content;
+          return '';
+        })
         .join('\n');
     }
     
@@ -307,13 +322,16 @@ class AdaptiveExchangeExtractor {
     for (const msg of messages) {
       if (!msg || !msg.type) continue;
       
-      // Handle user messages (both formats)
-      if ((msg.type === 'user' && msg.message?.role === 'user') || 
-          msg.type === 'human_turn_start') {
+      // Handle user messages (both formats) - exclude tool results
+      if (((msg.type === 'user' && msg.message?.role === 'user') || 
+          msg.type === 'human_turn_start') &&
+          !this.isToolResultMessage(msg)) {
         
-        // Complete previous exchange
+        // Complete previous exchange (only if meaningful)
         if (currentExchange) {
-          exchanges.push(currentExchange);
+          if (this.isMeaningfulExchange(currentExchange)) {
+            exchanges.push(currentExchange);
+          }
         }
         
         // Start new exchange
@@ -321,9 +339,11 @@ class AdaptiveExchangeExtractor {
           uuid: msg.uuid || this.generateUUID(),
           timestamp: msg.timestamp,
           humanMessage: this.extractFallbackUserMessage(msg),
+          userMessage: this.extractFallbackUserMessage(msg), // Normalized for modern pipeline
           assistantMessage: null,
           toolCalls: [],
-          toolResults: []
+          toolResults: [],
+          isUserPrompt: true
         };
       }
       
@@ -331,6 +351,7 @@ class AdaptiveExchangeExtractor {
       else if (msg.type === 'human_turn_end' && currentExchange) {
         if (msg.content) {
           currentExchange.humanMessage = msg.content;
+          currentExchange.userMessage = msg.content; // Normalized for modern pipeline
         }
       }
       
@@ -347,7 +368,9 @@ class AdaptiveExchangeExtractor {
             currentExchange.toolCalls.push(...toolCalls);
           }
           
-          exchanges.push(currentExchange);
+          if (this.isMeaningfulExchange(currentExchange)) {
+            exchanges.push(currentExchange);
+          }
           currentExchange = null;
         }
       }
@@ -369,12 +392,73 @@ class AdaptiveExchangeExtractor {
       }
     }
     
-    // Add final exchange
+    // Add final exchange (only if meaningful)
     if (currentExchange) {
-      exchanges.push(currentExchange);
+      if (this.isMeaningfulExchange(currentExchange)) {
+        exchanges.push(currentExchange);
+      }
     }
     
     return exchanges;
+  }
+
+  /**
+   * Check if an exchange has meaningful content
+   */
+  isMeaningfulExchange(exchange) {
+    if (!exchange) return false;
+    
+    // Check for meaningful user message
+    const hasUserMessage = this.hasMeaningfulContent(exchange.humanMessage || exchange.userMessage);
+    
+    // Check for meaningful assistant response
+    const hasAssistantResponse = this.hasMeaningfulContent(exchange.assistantMessage);
+    
+    // Check for tool calls
+    const hasToolCalls = exchange.toolCalls && exchange.toolCalls.length > 0;
+    
+    // Exchange is meaningful if it has at least one of: user message, assistant response, or tool calls
+    return hasUserMessage || hasAssistantResponse || hasToolCalls;
+  }
+
+  /**
+   * Check if content is meaningful (not empty, not placeholder, not empty JSON)
+   */
+  hasMeaningfulContent(content) {
+    if (!content) return false;
+    
+    // Handle string content
+    if (typeof content === 'string') {
+      const trimmed = content.trim();
+      if (!trimmed) return false;
+      if (trimmed === '(No user message)' || trimmed === '(No response)') return false;
+      if (trimmed === '{}' || trimmed === '[]' || trimmed === '""' || trimmed === "''") return false; // Empty JSON objects/arrays/strings
+      return true;
+    }
+    
+    // Handle object content
+    if (typeof content === 'object') {
+      // Check if it's an empty object or array
+      if (Array.isArray(content)) return content.length > 0;
+      if (Object.keys(content).length === 0) return false;
+      
+      // Convert to string and check - avoid JSON.stringify issues
+      const stringified = JSON.stringify(content);
+      return stringified !== '{}' && stringified !== '[]' && stringified !== '""' && stringified.trim() !== '';
+    }
+    
+    return false;
+  }
+
+  /**
+   * Check if a message is a tool result
+   */
+  isToolResultMessage(msg) {
+    // Check if message content is a tool result
+    if (Array.isArray(msg.message?.content)) {
+      return msg.message.content.some(item => item.type === 'tool_result');
+    }
+    return false;
   }
 
   /**

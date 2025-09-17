@@ -123,7 +123,6 @@ class KeywordMatcher {
         this.stats.keywordHits++;
       }
     }
-    
     return categoryScore;
   }
 

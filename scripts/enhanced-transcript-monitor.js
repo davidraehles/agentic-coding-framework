@@ -55,6 +55,7 @@ class EnhancedTranscriptMonitor {
       sessionDuration: config.sessionDuration || 7200000, // 2 hours (generous for debugging)
       timezone: config.timezone || getTimezone(), // Use central timezone config
       healthFile: path.join(process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || path.join(__dirname, '..'), '.transcript-monitor-health'),
+      mode: config.mode || 'all', // Processing mode: 'all' or 'foreign'
       ...config
     };
     
@@ -289,7 +290,7 @@ class EnhancedTranscriptMonitor {
       
       // Original non-streaming processing for smaller files
       const messages = this.readTranscriptMessages(transcriptFile.path);
-      const exchanges = this.extractExchanges(messages);
+      const exchanges = await this.extractExchanges(messages);
       
       transcriptFile.exchanges = exchanges.length;
       
@@ -375,7 +376,7 @@ class EnhancedTranscriptMonitor {
       // Process the file with streaming - accumulate exchanges only
       const stats = await reader.processFile(transcriptFile.path, async (messageBatch) => {
         // Extract exchanges from this batch
-        const exchanges = StreamingTranscriptReader.extractExchangesFromBatch(messageBatch);
+        const exchanges = StreamingTranscriptReader.extractExchangesFromBatch(messageBatch, { useAdaptiveExtraction: false });
         
         if (exchanges.length > 0) {
           // FIXED: Just accumulate exchanges, don't process them yet
@@ -386,6 +387,7 @@ class EnhancedTranscriptMonitor {
       
       // CRITICAL FIX: Process all accumulated exchanges using proper historical processing
       if (allExchanges.length > 0) {
+        console.log(`🚨 DEBUG: CRITICAL FIX TRIGGERED - Processing ${allExchanges.length} accumulated exchanges from streaming in time order`);
         console.log(`🔄 Processing ${allExchanges.length} accumulated exchanges from streaming in time order`);
         
         // Sort exchanges by timestamp for proper chronological processing
@@ -405,7 +407,9 @@ class EnhancedTranscriptMonitor {
               // Complete previous user prompt set if exists
               if (this.currentUserPromptSet.length > 0) {
                 const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
-                await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
+                if (targetProject !== null) {
+                  await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
+                }
                 this.currentUserPromptSet = [];
               }
               this.lastTranche = currentTranche;
@@ -424,7 +428,9 @@ class EnhancedTranscriptMonitor {
           const currentTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
           const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
           console.log(`🎯 Final target project for streaming: ${targetProject}`);
-          await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+          if (targetProject !== null) {
+            await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+          }
           this.currentUserPromptSet = [];
         }
       }
@@ -595,7 +601,7 @@ class EnhancedTranscriptMonitor {
   /**
    * Extract conversation exchanges with user prompt detection
    */
-  extractExchanges(messages) {
+  async extractExchanges(messages) {
     const exchanges = [];
     let currentExchange = null;
     let userMessageCount = 0;
@@ -614,7 +620,7 @@ class EnhancedTranscriptMonitor {
         currentExchange = {
           id: message.uuid,
           timestamp: message.timestamp || Date.now(),
-          userMessage: this.extractUserMessage(message) || '',
+          userMessage: await this.extractUserMessage(message) || '',
           claudeResponse: '',
           toolCalls: [],
           toolResults: [],
@@ -666,8 +672,12 @@ class EnhancedTranscriptMonitor {
     if (typeof content === 'string') return content;
     if (Array.isArray(content)) {
       return content
-        .filter(item => item.type === 'text')
-        .map(item => item.text)
+        .filter(item => item.type === 'text' || item.type === 'tool_result')
+        .map(item => {
+          if (item.type === 'text') return item.text;
+          if (item.type === 'tool_result') return item.content;
+          return '';
+        })
         .join('\n');
     }
     return '';
@@ -707,6 +717,14 @@ class EnhancedTranscriptMonitor {
       }
       return await redactSecrets(this.extractTextContent(entry.message.content));
     }
+    // Handle legacy humanMessage format (Sept 13-14 transcripts)
+    if (entry.humanMessage) {
+      return await redactSecrets(this.extractTextContent(entry.humanMessage));
+    }
+    // Handle direct userMessage field (modern format)
+    if (entry.userMessage) {
+      return await redactSecrets(this.extractTextContent(entry.userMessage));
+    }
     if (entry.content) {
       return await redactSecrets(this.extractTextContent(entry.content));
     }
@@ -716,13 +734,13 @@ class EnhancedTranscriptMonitor {
   /**
    * Get unprocessed exchanges
    */
-  getUnprocessedExchanges() {
+  async getUnprocessedExchanges() {
     if (!this.transcriptPath) return [];
 
     const messages = this.readTranscriptMessages(this.transcriptPath);
     if (messages.length === 0) return [];
 
-    const exchanges = this.extractExchanges(messages);
+    const exchanges = await this.extractExchanges(messages);
     
     if (!this.lastProcessedUuid) {
       return exchanges.slice(-10);
@@ -744,6 +762,17 @@ class EnhancedTranscriptMonitor {
    */
   async determineTargetProject(exchange) {
     const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
+    
+    // Handle foreign mode: Only process coding-related exchanges and route them to coding project
+    if (this.config.mode === 'foreign') {
+      const isCoding = await this.isCodingRelated(exchange);
+      if (!isCoding) {
+        return null; // Skip non-coding exchanges in foreign mode
+      }
+      return codingPath; // Route coding exchanges to coding project
+    }
+    
+    // Regular 'all' mode logic:
     
     // Check if we're running from coding directory
     if (this.config.projectPath.includes('/coding')) {
@@ -772,54 +801,15 @@ class EnhancedTranscriptMonitor {
    * Check if content involves coding project using semantic analysis
    */
   async isCodingRelated(exchange) {
-    // SKIP SEMANTIC ANALYSIS FOR BULK PROCESSING
-    if (this.options?.skipSemanticAnalysis) {
-      // Use only fast path/keyword detection for bulk transcript processing
-      const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
-      
-      const exchangeText = JSON.stringify(exchange).toLowerCase();
-      
-      // EXPLICIT PATH INDICATORS - absolute positive indicators
-      if (exchangeText.includes(codingPath.toLowerCase()) || 
-          exchangeText.includes('/coding/') ||
-          exchangeText.includes('coding infrastructure') ||
-          exchangeText.includes('coding project')) {
-        return true;
+    // ALWAYS USE RELIABLE CODING CLASSIFIER - no separate logic
+    if (this.reliableCodingClassifier && this.reliableCodingClassifierReady) {
+      try {
+        const result = await this.reliableCodingClassifier.classify(exchange);
+        return result.isCoding;
+      } catch (error) {
+        console.error('Error in reliable coding classifier:', error.message);
+        // Fall through to backup logic
       }
-      
-      // CODING-SPECIFIC INDICATORS - ONLY infrastructure terms unique to coding project
-      // Removed all general terms that could appear in course content
-      const codingSpecificKeywords = [
-        // Exact system component names (cannot appear in course content)
-        'synchronizationagent', 'ukb-cli', 'vkb-cli', 'lslfilemanager',
-        'pathanalyzer', 'keywordmatcher', 'semanticanalyzer',
-        'enhanced-transcript-monitor', 'global-lsl-coordinator',
-        
-        // Exact script filenames (unique to coding infrastructure)
-        'generate-lsl-from-transcripts', 'generate-proper-lsl-from-transcripts',
-        'enhanced-transcript-monitor.js', 'trajectory-generation',
-        'comprehensive-trajectory', 'timezone-utils.js',
-        
-        // Technical infrastructure paths (cannot appear in course content)
-        'ukb/', 'vkb/', '/coding/scripts/', '/coding/src/',
-        'shared-memory.json', 'graphology', 'mcp memory',
-        '.specstory/history/', 'live-logging-config.json',
-        
-        // Exact function/API names (unique to coding infrastructure)  
-        'determine_insights', 'update_knowledge_base', 'lessons_learned',
-        'processTranscriptsInParallel', 'generateLSLFilename',
-        'getCurrentTimetranche', 'isCodingRelated',
-        
-        // Specific technical implementation terms (infrastructure only)
-        'mcp-server-constraint-monitor', 'mcp-server-semantic-analysis',
-        'constraint compliance', 'agent-agnostic design', 'multi-database sync'
-      ];
-      
-      const hasCodingKeywords = codingSpecificKeywords.some(keyword => 
-        exchangeText.includes(keyword.toLowerCase())
-      );
-      
-      return hasCodingKeywords;
     }
     
     // Original detailed analysis for live monitoring
@@ -1093,18 +1083,54 @@ class EnhancedTranscriptMonitor {
 
 
   /**
+   * Check if content is meaningful (not empty, not placeholder, not empty JSON)
+   */
+  hasMeaningfulContent(content) {
+    if (!content) return false;
+    
+    // Handle string content
+    if (typeof content === 'string') {
+      const trimmed = content.trim();
+      if (!trimmed) return false;
+      if (trimmed === '(No user message)' || trimmed === '(No response)') return false;
+      if (trimmed === '{}' || trimmed === '[]' || trimmed === '""' || trimmed === "''") return false; // Empty JSON objects/arrays/strings
+      return true;
+    }
+    
+    // Handle object content
+    if (typeof content === 'object') {
+      // Check if it's an empty object or array
+      if (Array.isArray(content)) return content.length > 0;
+      if (Object.keys(content).length === 0) return false;
+      
+      // Convert to string and check - avoid JSON.stringify issues
+      const stringified = JSON.stringify(content);
+      return stringified !== '{}' && stringified !== '[]' && stringified !== '""' && stringified.trim() !== '';
+    }
+    
+    return false;
+  }
+
+  /**
    * Process user prompt set completion
    */
   async processUserPromptSetCompletion(completedSet, targetProject, tranche) {
     if (completedSet.length === 0) return;
 
-    // All exchanges are meaningful - capture everything except /sl commands
+    // Filter out exchanges with no meaningful content
     const meaningfulExchanges = completedSet.filter(exchange => {
       // Skip slash commands (like /sl)
       if (exchange.userMessage && typeof exchange.userMessage === 'string' && exchange.userMessage.trim().startsWith('/sl')) {
         return false;
       }
-      return true;
+      
+      // Skip exchanges with no user message and no response (empty entries)
+      const hasUserMessage = this.hasMeaningfulContent(exchange.userMessage);
+      const hasAssistantResponse = this.hasMeaningfulContent(exchange.claudeResponse) || this.hasMeaningfulContent(exchange.assistantResponse);
+      const hasToolCalls = exchange.toolCalls && exchange.toolCalls.length > 0;
+      
+      // Keep exchange if it has at least one of: meaningful user message, assistant response, or tool calls
+      return hasUserMessage || hasAssistantResponse || hasToolCalls;
     });
     
     // Only skip if literally no exchanges (should be rare)
@@ -1183,12 +1209,20 @@ class EnhancedTranscriptMonitor {
     
     let content = `### ${toolName} - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
     
-    const userMessage = exchange.userMessage || '(Initiated automatically)';
-    // Handle Promise objects that might be from redactSecrets calls
-    const userMessageStr = userMessage && typeof userMessage === 'object' && userMessage.then ? 
-      await userMessage : 
-      (typeof userMessage === 'string' ? userMessage : JSON.stringify(userMessage));
-    content += `**User Request:** ${userMessageStr}\n\n`;
+    // Handle both undefined and empty string cases
+    const userMessage = (exchange.userMessage && exchange.userMessage.trim()) || 
+                       (exchange.humanMessage && exchange.humanMessage.trim());
+    
+    if (userMessage) {
+      // Handle Promise objects that might be from redactSecrets calls
+      const userMessageStr = userMessage && typeof userMessage === 'object' && userMessage.then ? 
+        await userMessage : 
+        (typeof userMessage === 'string' ? userMessage : JSON.stringify(userMessage));
+      content += `**User Request:** ${userMessageStr}\n\n`;
+    } else {
+      // This is an automatic execution (hook, system-initiated, etc.)
+      content += `**System Action:** (Initiated automatically)\n\n`;
+    }
     
     content += `**Tool:** ${toolName}\n`;
     content += `**Input:** \`\`\`json\n${JSON.stringify(toolArgs, null, 2)}\n\`\`\`\n\n`;
@@ -1213,15 +1247,22 @@ class EnhancedTranscriptMonitor {
   formatTextOnlyContent(exchange, exchangeTime, isRedirected) {
     let content = `### Text Exchange - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
     
-    const userMsg = exchange.userMessage || '(No user message)';
-    const assistantResp = exchange.assistantResponse || '(No response)';
+    const userMsg = exchange.userMessage || '';
+    const assistantResp = exchange.assistantResponse || exchange.claudeResponse || '';
     
     // Ensure userMsg and assistantResp are strings
     const userMsgStr = typeof userMsg === 'string' ? userMsg : JSON.stringify(userMsg);
     const assistantRespStr = typeof assistantResp === 'string' ? assistantResp : JSON.stringify(assistantResp);
     
-    content += `**User Message:** ${userMsgStr.slice(0, 500)}${userMsgStr.length > 500 ? '...' : ''}\n\n`;
-    content += `**Assistant Response:** ${assistantRespStr.slice(0, 500)}${assistantRespStr.length > 500 ? '...' : ''}\n\n`;
+    // Only show sections that have content
+    if (userMsgStr && userMsgStr.trim()) {
+      content += `**User Message:** ${userMsgStr.slice(0, 500)}${userMsgStr.length > 500 ? '...' : ''}\n\n`;
+    }
+    
+    if (assistantRespStr && assistantRespStr.trim()) {
+      content += `**Assistant Response:** ${assistantRespStr.slice(0, 500)}${assistantRespStr.length > 500 ? '...' : ''}\n\n`;
+    }
+    
     content += `**Type:** Text-only exchange (no tool calls)\n\n---\n\n`;
     
     return content;
@@ -1246,6 +1287,7 @@ class EnhancedTranscriptMonitor {
       this.debug(`Skipping /sl command: ${exchange.userMessage.substring(0, 50)}...`);
       return;
     }
+    
     
     this.debug(`Processing exchange: tools=${exchange.toolCalls ? exchange.toolCalls.length : 0}`);
     
@@ -1332,13 +1374,20 @@ class EnhancedTranscriptMonitor {
     
     let content = `### ${toolCall.name} - ${exchangeTime}${isRedirected ? ' (Redirected)' : ''}\n\n`;
     
-    const userMsg = exchange.userMessage || '(Initiated automatically)';
-    // Handle Promise objects that might be from redactSecrets calls
-    const resolvedUserMsg = userMsg && typeof userMsg === 'object' && userMsg.then ? 
-      await userMsg : userMsg;
-    // Ensure userMsg is a string before using slice
-    const userMsgStr = typeof resolvedUserMsg === 'string' ? resolvedUserMsg : JSON.stringify(resolvedUserMsg);
-    content += `**User Request:** ${await redactSecrets(userMsgStr.slice(0, 200))}${userMsgStr.length > 200 ? '...' : ''}\n\n`;
+    const userMsg = (exchange.userMessage && exchange.userMessage.trim()) || 
+                    (exchange.humanMessage && exchange.humanMessage.trim());
+    
+    if (userMsg) {
+      // Handle Promise objects that might be from redactSecrets calls
+      const resolvedUserMsg = userMsg && typeof userMsg === 'object' && userMsg.then ? 
+        await userMsg : userMsg;
+      // Ensure userMsg is a string before using slice
+      const userMsgStr = typeof resolvedUserMsg === 'string' ? resolvedUserMsg : JSON.stringify(resolvedUserMsg);
+      content += `**User Request:** ${await redactSecrets(userMsgStr.slice(0, 200))}${userMsgStr.length > 200 ? '...' : ''}\n\n`;
+    } else {
+      // This is an automatic execution (hook, system-initiated, etc.)
+      content += `**System Action:** (Initiated automatically)\n\n`;
+    }
     content += `**Tool:** ${toolCall.name}\n`;
     content += `**Input:** \`\`\`json\n${await redactSecrets(JSON.stringify(toolCall.input, null, 2))}\n\`\`\`\n\n`;
     content += `**Result:** ${toolSuccess ? '✅ Success' : '❌ Error'}\n`;
@@ -1373,7 +1422,10 @@ class EnhancedTranscriptMonitor {
   analyzeForRouting(exchange, toolCall, result) {
     const toolInput = JSON.stringify(toolCall.input || {});
     const resultContent = JSON.stringify(result?.content || '');
-    const userMessage = exchange.userMessage || '';
+    // Handle both undefined and empty string cases
+    const userMessage = (exchange.userMessage && exchange.userMessage.trim()) || 
+                       (exchange.humanMessage && exchange.humanMessage.trim()) || 
+                       '(Initiated automatically)';
     
     // Check for coding-related file paths and operations
     const codingPaths = [
@@ -1430,7 +1482,9 @@ class EnhancedTranscriptMonitor {
           // Complete previous user prompt set if exists
           if (this.currentUserPromptSet.length > 0) {
             const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
-            await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
+            if (targetProject !== null) {
+              await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
+            }
             this.currentUserPromptSet = [];
           }
           
@@ -1443,7 +1497,9 @@ class EnhancedTranscriptMonitor {
           // Same session - complete current user prompt set  
           if (this.currentUserPromptSet.length > 0) {
             const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
-            await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+            if (targetProject !== null) {
+              await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+            }
             
             // Note: Redirect detection now handled by conversation-based analysis in status line
           }
@@ -1473,7 +1529,9 @@ class EnhancedTranscriptMonitor {
       const currentTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
       const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
       console.log(`🎯 Final target project: ${targetProject}`);
-      await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+      if (targetProject !== null) {
+        await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+      }
       this.currentUserPromptSet = [];
     }
   }
@@ -1526,7 +1584,7 @@ class EnhancedTranscriptMonitor {
 
       this.isProcessing = true;
       try {
-        const exchanges = this.getUnprocessedExchanges();
+        const exchanges = await this.getUnprocessedExchanges();
         if (exchanges.length > 0) {
           await this.processExchanges(exchanges);
         }
@@ -1546,7 +1604,9 @@ class EnhancedTranscriptMonitor {
         const currentTranche = this.getCurrentTimetranche();
         const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
         
-        await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+        if (targetProject !== null) {
+          await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+        }
       }
       
       // Note: No longer need to clear redirect files

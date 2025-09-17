@@ -25,6 +25,8 @@ async function main() {
   const parallelMode = args.includes('--parallel') || args.includes('--fast');
   const modeArg = args.find(arg => arg.startsWith('--mode='));
   const mode = modeArg ? modeArg.split('=')[1] : 'all';
+  const fileArg = args.find(arg => arg.startsWith('--file='));
+  const specificFile = fileArg ? fileArg.split('=')[1] : null;
   
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
@@ -74,11 +76,27 @@ Set these variables and try again.`);
   console.log(`🔧 Coding tools: ${codingPath}`);
   console.log(`📋 Mode: ${mode.toUpperCase()} | Clean: ${cleanMode ? 'YES' : 'NO'} | Parallel: ${parallelMode ? 'YES' : 'NO'}`);
 
-  // Step 1: Determine requested range - find all transcript files
+  // Step 1: Determine requested range - find transcript files or use specific file
   console.log('\n📋 Step 1: Finding transcript files...');
   
-  const transcriptFiles = findTranscriptFiles(sourceProject);
-  console.log(`Found ${transcriptFiles.length} transcript files`);
+  let transcriptFiles;
+  if (specificFile) {
+    if (fs.existsSync(specificFile)) {
+      const stats = fs.statSync(specificFile);
+      transcriptFiles = [{
+        path: specificFile,
+        filename: path.basename(specificFile),
+        size: stats.size
+      }];
+      console.log(`Using specific file: ${specificFile}`);
+    } else {
+      console.error(`❌ Specified file not found: ${specificFile}`);
+      process.exit(1);
+    }
+  } else {
+    transcriptFiles = findTranscriptFiles(sourceProject);
+    console.log(`Found ${transcriptFiles.length} transcript files`);
+  }
   
   if (transcriptFiles.length === 0) {
     console.log('No transcript files found. Exiting.');
@@ -90,7 +108,8 @@ Set these variables and try again.`);
   
   const monitor = new EnhancedTranscriptMonitor({ 
     projectPath: sourceProject,  // Use source project for proper filename generation
-    skipSemanticAnalysis: parallelMode  // Skip semantic analysis in fast mode
+    skipSemanticAnalysis: parallelMode,  // Skip semantic analysis in fast mode
+    mode: mode  // Pass the mode (all/foreign) to the monitor
   });
 
   // Wait for classifier to be ready
@@ -147,6 +166,7 @@ Set these variables and try again.`);
     let errorCount = 0;
     
     for (const transcriptFile of transcriptFiles) {
+      console.log(`Processing: ${transcriptFile}`);
       const result = await monitor.processSingleTranscript(transcriptFile, true); // Force streaming
       totalExchanges += result.exchanges || 0;
       

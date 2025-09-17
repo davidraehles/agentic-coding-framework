@@ -429,7 +429,9 @@ class OperationalLogger {
   generateExchangeId(exchange) {
     const content = JSON.stringify({
       timestamp: exchange.timestamp || Date.now(),
-      userMessage: exchange.userMessage?.substring(0, 100) || '',
+      userMessage: exchange.userMessage ? 
+        (typeof exchange.userMessage === 'string' ? exchange.userMessage.substring(0, 100) : 
+         JSON.stringify(exchange.userMessage).substring(0, 100)) : '',
       tools: exchange.toolCalls?.map(t => t.name).join(',') || ''
     });
     

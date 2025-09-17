@@ -1,0 +1,110 @@
+@startuml LSL Migration Interfaces for Other Coding Agents
+!include _standard-style.puml
+
+title LSL System - Migration Interfaces for Coding Agents
+
+package "LSL Core System" {
+  interface "TranscriptReader" <<api>>
+  interface "FormatDetector" <<api>>
+  interface "Classifier" <<api>>
+  interface "FileWriter" <<api>>
+}
+
+package "Claude Code Implementation" {
+  [ClaudeTranscriptReader] <<core>>
+  [ClaudeFormatDetector] <<core>>
+  [ClaudeClassifier] <<core>>
+  [ClaudeFileWriter] <<core>>
+}
+
+package "Agent X Implementation" {
+  [AgentXTranscriptReader] <<external>>
+  [AgentXFormatDetector] <<external>>
+  [AgentXClassifier] <<external>>
+  [AgentXFileWriter] <<external>>
+}
+
+package "Agent Y Implementation" {
+  [AgentYTranscriptReader] <<external>>
+  [AgentYFormatDetector] <<external>>
+  [AgentYClassifier] <<external>>
+  [AgentYFileWriter] <<external>>
+}
+
+package "Shared Configuration" {
+  database "transcript-formats.json" <<storage>>
+  database "coding-keywords.json" <<storage>>
+  database "agent-config.json" <<storage>>
+}
+
+' Interface implementations
+"TranscriptReader" <|.. [ClaudeTranscriptReader]
+"FormatDetector" <|.. [ClaudeFormatDetector]
+"Classifier" <|.. [ClaudeClassifier]
+"FileWriter" <|.. [ClaudeFileWriter]
+
+"TranscriptReader" <|.. [AgentXTranscriptReader]
+"FormatDetector" <|.. [AgentXFormatDetector]
+"Classifier" <|.. [AgentXClassifier]
+"FileWriter" <|.. [AgentXFileWriter]
+
+"TranscriptReader" <|.. [AgentYTranscriptReader]
+"FormatDetector" <|.. [AgentYFormatDetector]
+"Classifier" <|.. [AgentYClassifier]
+"FileWriter" <|.. [AgentYFileWriter]
+
+' Configuration access
+[ClaudeFormatDetector] DATA_LINE "transcript-formats.json"
+[AgentXFormatDetector] DATA_LINE "transcript-formats.json"
+[AgentYFormatDetector] DATA_LINE "transcript-formats.json"
+
+[ClaudeClassifier] DATA_LINE "coding-keywords.json"
+[AgentXClassifier] DATA_LINE "coding-keywords.json"
+[AgentYClassifier] DATA_LINE "coding-keywords.json"
+
+[ClaudeTranscriptReader] DATA_LINE "agent-config.json"
+[AgentXTranscriptReader] DATA_LINE "agent-config.json"
+[AgentYTranscriptReader] DATA_LINE "agent-config.json"
+
+note right of "TranscriptReader"
+  Required Methods:
+  - processFile(path, processor)
+  - extractExchanges(messages)
+  - getTranscriptPaths()
+  - isValidFormat(content)
+end note
+
+note right of "FormatDetector"
+  Required Methods:
+  - detectFormat(messages)
+  - saveFormatsConfig(format)
+  - getExtractionStrategy(format)
+  - calculateConfidence(analysis)
+end note
+
+note right of "Classifier"
+  Required Methods:
+  - classify(exchange)
+  - getConfidence()
+  - updateKeywords(keywords)
+  - getClassificationPath()
+end note
+
+note bottom of "FileWriter"
+  Required Methods:
+  - writeSessionFile(path, content)
+  - appendToFile(path, content)
+  - rotateFile(path)
+  - getOutputDirectory()
+end note
+
+note bottom of "agent-config.json"
+  Agent-specific configuration:
+  - transcript_location
+  - output_directory
+  - session_window_minutes
+  - file_naming_pattern
+  - supported_formats
+end note
+
+@enduml

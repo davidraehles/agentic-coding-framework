@@ -578,6 +578,11 @@ class ReliableCodingClassifier {
     try {
       this.stats.totalClassifications++;
       
+      // Ensure initialization is complete
+      if (!this.pathAnalyzer || !this.keywordMatcher) {
+        await this.initialize();
+      }
+      
       // Layer 1: Path Analysis (highest priority, fastest)
       const pathAnalysisStart = Date.now();
       const pathResult = await this.pathAnalyzer.analyzePaths(exchange);
@@ -619,10 +624,14 @@ class ReliableCodingClassifier {
           confidence: keywordResult.confidence
         });
         
+        // DEBUG: Log keyword analysis result
+        this.log(`🔍 KEYWORD ANALYSIS RESULT: isCoding=${keywordResult.isCoding}, confidence=${keywordResult.confidence}, reason="${keywordResult.reason}"`);
+        
         if (keywordResult.isCoding) {
           layer = 'keyword';
           this.stats.keywordAnalysisHits++;
           result = this.formatResult('CODING_INFRASTRUCTURE', keywordResult.confidence, keywordResult.reason, keywordAnalysisTime);
+          this.log(`✅ KEYWORD LAYER TRIGGERED: Classification set to CODING_INFRASTRUCTURE`);
         } else {
           // Layer 3: Semantic Analysis (expensive, only if needed and not skipped)
           // Enhanced with user prompt set optimization
@@ -992,7 +1001,9 @@ class ReliableCodingClassifier {
    */
   sanitizeForLogging(exchange) {
     return {
-      userMessage: exchange.userMessage ? exchange.userMessage.substring(0, 200) : null,
+      userMessage: exchange.userMessage ? 
+        (typeof exchange.userMessage === 'string' ? exchange.userMessage.substring(0, 200) : 
+         JSON.stringify(exchange.userMessage).substring(0, 200)) : null,
       hasClaudeResponse: !!exchange.claudeResponse,
       toolCallCount: exchange.toolCalls ? exchange.toolCalls.length : 0,
       hasFileOperations: !!exchange.fileOperations

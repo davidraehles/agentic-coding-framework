@@ -1,0 +1,87 @@
+@startuml LSL Adaptive Architecture
+!include _standard-style.puml
+
+title Live Session Logging System - Adaptive Architecture
+
+package "Transcript Processing" {
+  [Enhanced Transcript Monitor] <<core>>
+  [StreamingTranscriptReader] <<core>>
+  [AdaptiveExchangeExtractor] <<core>>
+  [AdaptiveTranscriptFormatDetector] <<core>>
+}
+
+package "Classification Engine" {
+  [ReliableCodingClassifier] <<core>>
+  [PathAnalyzer] <<util>>
+  [KeywordMatcher] <<util>>
+  [SemanticAnalyzer] <<util>>
+}
+
+package "Configuration & Learning" {
+  database "transcript-formats.json" <<storage>>
+  database "coding-keywords.json" <<storage>>
+}
+
+package "File Management" {
+  [LSLFileManager] <<core>>
+  [OperationalLogger] <<util>>
+}
+
+package "Output Generation" {
+  [Prompt Set Generator] <<core>>
+  [Session File Writer] <<core>>
+}
+
+cloud "Claude Code Transcripts" <<external>>
+
+' Main flow
+[Enhanced Transcript Monitor] SYNC_LINE [StreamingTranscriptReader]
+[StreamingTranscriptReader] SYNC_LINE [AdaptiveExchangeExtractor]
+[AdaptiveExchangeExtractor] SYNC_LINE [AdaptiveTranscriptFormatDetector]
+
+' Format detection and learning
+[AdaptiveTranscriptFormatDetector] DATA_LINE "transcript-formats.json"
+[AdaptiveExchangeExtractor] CONTROL_LINE [AdaptiveTranscriptFormatDetector] : "detect format"
+
+' Classification flow
+[Enhanced Transcript Monitor] SYNC_LINE [ReliableCodingClassifier]
+[ReliableCodingClassifier] SYNC_LINE [PathAnalyzer]
+[ReliableCodingClassifier] SYNC_LINE [KeywordMatcher]
+[ReliableCodingClassifier] OPTIONAL_LINE [SemanticAnalyzer]
+
+' Configuration
+[KeywordMatcher] DATA_LINE "coding-keywords.json"
+
+' Output
+[Enhanced Transcript Monitor] SYNC_LINE [Prompt Set Generator]
+[Prompt Set Generator] SYNC_LINE [Session File Writer]
+[Session File Writer] SYNC_LINE [LSLFileManager]
+[LSLFileManager] DATA_LINE [OperationalLogger]
+
+' External input
+"Claude Code Transcripts" ASYNC_LINE [Enhanced Transcript Monitor]
+
+note right of [AdaptiveTranscriptFormatDetector]
+  Learns new transcript formats automatically
+  - Pattern recognition
+  - Schema generation  
+  - Confidence scoring
+  - Persistent storage
+end note
+
+note right of [AdaptiveExchangeExtractor]
+  Applies format-specific extraction
+  - Strategy selection
+  - Caching for performance
+  - Graceful fallback
+  - Statistics tracking
+end note
+
+note bottom of [ReliableCodingClassifier]
+  Three-layer classification:
+  1. Path Analysis (100% accuracy)
+  2. Keyword Matching (fast)  
+  3. Semantic Analysis (selective)
+end note
+
+@enduml

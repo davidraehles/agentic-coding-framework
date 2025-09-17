@@ -315,29 +315,33 @@ KEY_FOCUS: [Primary focus in 5-8 words]`;
       
       const prompt = `Analyze this conversation exchange to determine if it's about coding infrastructure:
 
-**User Message:** ${userMessage.slice(0, 500)}
-**Assistant Response:** ${claudeResponse.slice(0, 500)}  
+**User Message:** ${typeof userMessage === 'string' ? userMessage.slice(0, 500) : JSON.stringify(userMessage).slice(0, 500)}
+**Assistant Response:** ${typeof claudeResponse === 'string' ? claudeResponse.slice(0, 500) : JSON.stringify(claudeResponse).slice(0, 500)}  
 **Tools Used:** ${toolCalls}
 
 **Classification Task:**
 Determine if this conversation is primarily about CODING INFRASTRUCTURE or NOT.
 
-**CODING_INFRASTRUCTURE indicators:**
-- Development tools, environments, build systems
-- LSL systems, transcript monitoring, trajectory generation  
-- Semantic analysis tools, logging systems
-- Script debugging, tool development, infrastructure maintenance
-- Development workflows, CI/CD, deployment systems
+**STRONG CODING_INFRASTRUCTURE indicators (high confidence):**
+- LSL systems, live session logging, transcript monitoring, trajectory generation
+- Batch mode, foreign mode, from-nano-degree files, redirected files
+- Enhanced-transcript-monitor, generate-lsl scripts, session logs
+- MCP servers, semantic analysis tools, reliable coding classifier
+- Half-hour nomenclature, time windows, session files
+- Development tools, build systems, script debugging
+- Repository management, CI/CD, deployment systems
+
+**MODERATE CODING_INFRASTRUCTURE indicators (medium confidence):**
 - Code analysis, refactoring tools, testing frameworks
-- Repository management, version control systems
+- Development workflows, tool development, infrastructure maintenance
+- Knowledge management systems for coding projects
 
-**NOT CODING_INFRASTRUCTURE:**
-- Any other topic (business logic, domain-specific content, user features, documentation, tutorials, etc.)
-- Domain-specific discussions unrelated to development tooling
-- Content creation, design, planning discussions
-- General software usage (not tool development)
+**NOT CODING_INFRASTRUCTURE (low confidence for coding):**
+- Business logic, domain-specific content unrelated to development tooling
+- User features, product documentation, tutorials, content creation
+- General software usage discussions (not tool development)
 
-Focus on the PRIMARY semantic content, not incidental tool usage.
+**IMPORTANT:** Pay special attention to LSL-related keywords like "session logs", "batch mode", "foreign files", "redirected", "from-nano-degree" - these are ALWAYS coding infrastructure discussions.
 
 Format: CLASSIFICATION: [CODING_INFRASTRUCTURE|NOT_CODING_INFRASTRUCTURE] | CONFIDENCE: [high|medium|low] | REASON: [brief explanation]`;
 
@@ -345,7 +349,7 @@ Format: CLASSIFICATION: [CODING_INFRASTRUCTURE|NOT_CODING_INFRASTRUCTURE] | CONF
         messages: [
           {
             role: 'system',
-            content: 'You are a content classifier that determines whether conversations are about coding/development infrastructure or any other topic. Focus on semantic meaning, not just keywords. Be domain-agnostic - only detect coding infrastructure vs everything else.'
+            content: 'You are a content classifier that determines whether conversations are about coding/development infrastructure or any other topic. Consider both semantic meaning AND specific technical keywords. LSL systems, session logs, batch mode, foreign files, and redirected files are ALWAYS coding infrastructure topics. Be precise - only classify as CODING_INFRASTRUCTURE if the conversation is actually about development tools, systems, or infrastructure.'
           },
           {
             role: 'user',

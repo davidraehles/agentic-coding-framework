@@ -20,7 +20,7 @@ class StreamingTranscriptReader extends EventEmitter {
     
     this.config = {
       batchSize: options.batchSize || 10,  // Small batch for memory efficiency
-      maxMemoryMB: options.maxMemoryMB || 100,  // Max memory usage in MB
+      maxMemoryMB: options.maxMemoryMB || 200,  // Max memory usage in MB - increased for large files
       progressInterval: options.progressInterval || 100,  // Report progress every N lines
       errorRecovery: options.errorRecovery !== false,  // Continue on parse errors
       debug: options.debug || false,
@@ -204,8 +204,10 @@ class StreamingTranscriptReader extends EventEmitter {
    * Automatically handles any transcript format through learning
    */
   static extractExchangesFromBatch(messages, options = {}) {
+    console.log(`🚨 DEBUG: StreamingTranscriptReader.extractExchangesFromBatch called with ${messages.length} messages`);
     // Use adaptive extraction by default
     if (options.useAdaptiveExtraction !== false) {
+      console.log(`🚨 DEBUG: Using AdaptiveExchangeExtractor for batch processing`);
       return AdaptiveExchangeExtractor.extractExchangesFromBatch(messages, {
         debug: options.debug || false,
         configPath: options.formatConfigPath
@@ -285,7 +287,8 @@ class StreamingTranscriptReader extends EventEmitter {
           humanMessage: userContent,
           assistantMessage: null,
           toolCalls: [],
-          toolResults: []
+          toolResults: [],
+          isUserPrompt: true
         };
       } else if (msg.type === 'assistant' && msg.message?.role === 'assistant' && currentExchange) {
         // Extract assistant message content
