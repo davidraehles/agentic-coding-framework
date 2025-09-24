@@ -30,11 +30,11 @@
         "OPENAI_API_KEY": "{{OPENAI_API_KEY}}"
       }
     },
-    "archon": {
+    "serena Docs": {
       "command": "npx",
       "args": [
         "mcp-remote",
-        "http://localhost:8051/mcp"
+        "https://gitmcp.io/oraios/serena?tab=readme-ov-file"
       ]
     },
     "mcp-git-ingest": {

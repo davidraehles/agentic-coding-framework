@@ -1,0 +1,19 @@
+{
+  "timestamp": 1758703174540,
+  "projectPath": "/Users/q284340/Agentic/coding",
+  "transcriptPath": "/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/368b2e35-1e63-460b-a5da-de09195b5750.jsonl",
+  "status": "running",
+  "userHash": "g9b30a",
+  "metrics": {
+    "memoryMB": 6,
+    "memoryTotalMB": 8,
+    "cpuUser": 104021,
+    "cpuSystem": 99257,
+    "uptimeSeconds": 525,
+    "processId": 53438
+  },
+  "lastExchange": null,
+  "exchangeCount": 0,
+  "streamingActive": true,
+  "errors": []
+}

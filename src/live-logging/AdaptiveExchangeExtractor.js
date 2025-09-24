@@ -70,13 +70,15 @@ class AdaptiveExchangeExtractor {
     const formatResult = this.getOrDetectFormat(messages);
     
     if (!formatResult) {
+      console.log(`🚨 DEBUG: Format detection failed, using fallback extraction`);
       this.debug('Format detection failed, using fallback extraction');
       return this.extractWithFallback(messages);
     }
 
     // Apply extraction strategy based on detected format
     const strategy = this.detector.getExtractionStrategy(formatResult);
-    console.log(`🚨 DEBUG: Using strategy for format ${formatResult.formatId}`);
+    console.log(`🚨 DEBUG: Using strategy extraction for format ${formatResult.formatId}`);
+    console.log(`🚨 DEBUG: Strategy config: ${JSON.stringify(strategy)}`);
     const exchanges = this.extractWithStrategy(messages, strategy);
     
     console.log(`🚨 DEBUG: Strategy extraction returned ${exchanges.length} exchanges`);
@@ -137,11 +139,30 @@ class AdaptiveExchangeExtractor {
     for (const msg of messages) {
       if (!msg || !msg.type) continue;
       
+      // DEBUG: Track our target Sept 14 exchange
+      const isTargetMsg = msg.timestamp && msg.timestamp.includes('2025-09-14T11:15');
+      if (isTargetMsg) {
+        console.log(`🎯 DEBUG: Found target Sept 14 11:15 message in extraction!`);
+        console.log(`   Message type: ${msg.type}`);
+        console.log(`   Timestamp: ${msg.timestamp}`);
+        console.log(`   Has message field: ${!!msg.message}`);
+        console.log(`   User turn indicators: ${JSON.stringify(strategy.exchangeDetection.userTurnIndicators)}`);
+        console.log(`   Assistant turn indicators: ${JSON.stringify(strategy.exchangeDetection.assistantTurnIndicators)}`);
+        console.log(`   Message includes userTurnIndicator: ${strategy.exchangeDetection.userTurnIndicators.includes(msg.type)}`);
+      }
+      
       // Check for user turn start
       if (strategy.exchangeDetection.userTurnIndicators.includes(msg.type)) {
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Target message matches user turn indicator!`);
+        }
+        
         // Complete previous exchange if exists
         if (currentExchange) {
           exchanges.push(currentExchange);
+          if (isTargetMsg) {
+            console.log(`🎯 DEBUG: Completed previous exchange, starting new one for target`);
+          }
         }
         
         // Start new exchange
@@ -155,26 +176,49 @@ class AdaptiveExchangeExtractor {
           toolResults: []
         };
         
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Created new exchange for target:`);
+          console.log(`   UUID: ${currentExchange.uuid}`);
+          console.log(`   Timestamp: ${currentExchange.timestamp}`);
+          console.log(`   User content path: ${strategy.messageExtraction.userContentPath}`);
+          console.log(`   Extracted humanMessage length: ${currentExchange.humanMessage ? currentExchange.humanMessage.length : 'null'}`);
+          console.log(`   Extracted userMessage length: ${currentExchange.userMessage ? currentExchange.userMessage.length : 'null'}`);
+        }
+        
         // For legacy format, user message is complete immediately
         if (strategy.formatId === 'claude-legacy-v1' && msg.message) {
           currentExchange.humanMessage = this.extractMessageContent(msg.message);
           currentExchange.userMessage = this.extractMessageContent(msg.message); // Normalized for modern pipeline
+          
+          if (isTargetMsg) {
+            console.log(`🎯 DEBUG: Using legacy format extraction for target`);
+            console.log(`   Legacy extracted humanMessage length: ${currentExchange.humanMessage ? currentExchange.humanMessage.length : 'null'}`);
+          }
         }
       }
       
       // Check for user turn end (new format)
       else if (msg.type?.includes('turn_end') && msg.type?.includes('human') && currentExchange) {
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Target message is user turn end!`);
+        }
         currentExchange.humanMessage = this.extractContent(msg, strategy.messageExtraction.userContentPath);
         currentExchange.userMessage = this.extractContent(msg, strategy.messageExtraction.userContentPath); // Normalized for modern pipeline
       }
       
       // Check for assistant turn start (new format)
       else if (strategy.exchangeDetection.assistantTurnIndicators.includes(msg.type)) {
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Target message is assistant turn start!`);
+        }
         // Assistant response will be completed at turn end
       }
       
       // Check for assistant turn end or assistant message (legacy)
       else if (this.isAssistantMessage(msg, strategy) && currentExchange) {
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Target message is assistant message!`);
+        }
         currentExchange.assistantMessage = this.extractContent(msg, strategy.messageExtraction.assistantContentPath);
         
         // For legacy format, extract tool calls from message content
@@ -187,11 +231,17 @@ class AdaptiveExchangeExtractor {
         
         // Complete exchange
         exchanges.push(currentExchange);
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Completed exchange for target (assistant message)!`);
+        }
         currentExchange = null;
       }
       
       // Check for tool use (new format)
       else if (strategy.toolHandling.toolUseType && msg.type === strategy.toolHandling.toolUseType && currentExchange) {
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Target message is tool use!`);
+        }
         const toolCall = this.extractToolCall(msg, strategy.toolHandling);
         if (toolCall) {
           currentExchange.toolCalls.push(toolCall);
@@ -200,16 +250,39 @@ class AdaptiveExchangeExtractor {
       
       // Check for tool result (new format)
       else if (strategy.toolHandling.toolResultType && msg.type === strategy.toolHandling.toolResultType && currentExchange) {
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Target message is tool result!`);
+        }
         const toolResult = this.extractToolResult(msg, strategy.toolHandling);
         if (toolResult) {
           currentExchange.toolResults.push(toolResult);
         }
+      } else if (isTargetMsg) {
+        console.log(`🎯 DEBUG: Target message doesn't match any extraction patterns!`);
+        console.log(`   Current exchange exists: ${!!currentExchange}`);
+        console.log(`   Strategy format ID: ${strategy.formatId}`);
       }
     }
     
     // Add final exchange if exists
     if (currentExchange) {
+      const hasTarget = currentExchange.timestamp && currentExchange.timestamp.includes('2025-09-14T11:15');
+      if (hasTarget) {
+        console.log(`🎯 DEBUG: Adding target exchange to final results!`);
+        console.log(`   Final humanMessage length: ${currentExchange.humanMessage ? currentExchange.humanMessage.length : 'null'}`);
+        console.log(`   Final userMessage length: ${currentExchange.userMessage ? currentExchange.userMessage.length : 'null'}`);
+      }
       exchanges.push(currentExchange);
+    }
+    
+    // DEBUG: Check if target was found in final exchanges
+    const targetInResults = exchanges.find(ex => ex.timestamp && ex.timestamp.includes('2025-09-14T11:15'));
+    if (targetInResults) {
+      console.log(`🎯 DEBUG: Target exchange found in final results!`);
+      console.log(`   Final exchange userMessage preview: ${targetInResults.userMessage ? targetInResults.userMessage.substring(0, 200) : 'null'}...`);
+    } else {
+      console.log(`❌ DEBUG: Target exchange NOT found in final results!`);
+      console.log(`   Total exchanges extracted: ${exchanges.length}`);
     }
     
     return exchanges;
@@ -236,16 +309,72 @@ class AdaptiveExchangeExtractor {
    * Extract content from message using specified path
    */
   extractContent(msg, contentPath) {
-    if (!contentPath || !msg) return '';
+    if (!msg) return '';
+    
+    // DEBUG: Track our target exchange through content extraction
+    const isTargetMsg = msg.timestamp && msg.timestamp.includes('2025-09-14T11:15');
+    if (isTargetMsg) {
+      console.log(`🎯 DEBUG: extractContent for target exchange!`);
+      console.log(`   Content path: ${contentPath}`);
+      console.log(`   Message structure: ${Object.keys(msg)}`);
+      console.log(`   Has content: ${!!msg.content}`);
+      console.log(`   Has message: ${!!msg.message}`);
+      console.log(`   Message.content exists: ${!!(msg.message && msg.message.content)}`);
+    }
+    
+    if (!contentPath) {
+      // Fallback: try to extract content from any available field
+      if (msg.content) {
+        if (isTargetMsg) console.log(`🎯 DEBUG: Using direct content field`);
+        return msg.content;
+      }
+      if (msg.message && msg.message.content) {
+        if (isTargetMsg) console.log(`🎯 DEBUG: Using message.content field as fallback`);
+        return msg.message.content;
+      }
+      return '';
+    }
     
     if (contentPath === 'content') {
-      return msg.content || '';
+      const result = msg.content || '';
+      if (isTargetMsg) {
+        console.log(`🎯 DEBUG: Content path 'content' returned ${result.length} chars`);
+      }
+      return result;
     }
     
     if (contentPath === 'message.content') {
-      return this.extractMessageContent(msg.message);
+      const result = this.extractMessageContent(msg.message);
+      if (isTargetMsg) {
+        console.log(`🎯 DEBUG: Content path 'message.content' returned ${result.length} chars`);
+        console.log(`🎯 DEBUG: Content preview: ${result.substring(0, 200)}...`);
+      }
+      return result;
     }
     
+    // ENHANCED: Try more flexible path resolution
+    if (contentPath.includes('.')) {
+      const parts = contentPath.split('.');
+      let current = msg;
+      for (const part of parts) {
+        if (current && current[part] !== undefined) {
+          current = current[part];
+        } else {
+          current = null;
+          break;
+        }
+      }
+      if (current && typeof current === 'string') {
+        if (isTargetMsg) {
+          console.log(`🎯 DEBUG: Flexible path '${contentPath}' returned ${current.length} chars`);
+        }
+        return current;
+      }
+    }
+    
+    if (isTargetMsg) {
+      console.log(`🎯 DEBUG: No content extracted, returning empty string`);
+    }
     return '';
   }
 
@@ -253,13 +382,32 @@ class AdaptiveExchangeExtractor {
    * Extract content from message.content field (handles string or array)
    */
   extractMessageContent(messageObj) {
-    if (!messageObj?.content) return '';
+    // DEBUG: Track our target exchange
+    const isTargetMsg = messageObj && messageObj.content && typeof messageObj.content === 'string' && messageObj.content.includes('Live Session Logging');
+    if (isTargetMsg) {
+      console.log(`🎯 DEBUG: extractMessageContent for target!`);
+      console.log(`   messageObj exists: ${!!messageObj}`);
+      console.log(`   messageObj.content exists: ${!!messageObj?.content}`);
+      console.log(`   Content type: ${typeof messageObj?.content}`);
+      console.log(`   Content preview: ${messageObj?.content?.substring(0, 200)}...`);
+    }
+    
+    if (!messageObj?.content) {
+      if (isTargetMsg) console.log(`🎯 DEBUG: No messageObj.content, returning empty`);
+      return '';
+    }
     
     if (typeof messageObj.content === 'string') {
+      if (isTargetMsg) {
+        console.log(`🎯 DEBUG: Returning string content (${messageObj.content.length} chars)`);
+      }
       return messageObj.content;
     }
     
     if (Array.isArray(messageObj.content)) {
+      if (isTargetMsg) {
+        console.log(`🎯 DEBUG: Processing array content with ${messageObj.content.length} items`);
+      }
       return messageObj.content
         .filter(item => item.type === 'text' || item.type === 'tool_result')
         .map(item => {
@@ -270,6 +418,7 @@ class AdaptiveExchangeExtractor {
         .join('\n');
     }
     
+    if (isTargetMsg) console.log(`🎯 DEBUG: Unknown content format, returning empty`);
     return '';
   }
 
@@ -322,10 +471,24 @@ class AdaptiveExchangeExtractor {
     for (const msg of messages) {
       if (!msg || !msg.type) continue;
       
+      // DEBUG: Track the specific Sept 14 07:12:32 exchange
+      const isTarget = msg.timestamp === '2025-09-14T07:12:32.092Z';
+      if (isTarget) {
+        console.log(`🎯 DEBUG TARGET EXCHANGE 07:12:32 in extractWithFallback:`);
+        console.log(`   msg.type: ${msg.type}`);
+        console.log(`   msg.message?.role: ${msg.message?.role}`);
+        console.log(`   msg.message?.content: ${msg.message?.content ? msg.message.content.substring(0, 100) : 'null'}`);
+        console.log(`   isToolResultMessage: ${this.isToolResultMessage(msg)}`);
+      }
+      
       // Handle user messages (both formats) - exclude tool results
       if (((msg.type === 'user' && msg.message?.role === 'user') || 
           msg.type === 'human_turn_start') &&
           !this.isToolResultMessage(msg)) {
+        
+        if (isTarget) {
+          console.log(`   ✅ TARGET EXCHANGE MATCHED user message condition`);
+        }
         
         // Complete previous exchange (only if meaningful)
         if (currentExchange) {
@@ -335,16 +498,25 @@ class AdaptiveExchangeExtractor {
         }
         
         // Start new exchange
+        const userMessage = this.extractFallbackUserMessage(msg);
+        if (isTarget) {
+          console.log(`   extractFallbackUserMessage returned: ${userMessage ? userMessage.substring(0, 100) : 'null'}`);
+        }
+        
         currentExchange = {
           uuid: msg.uuid || this.generateUUID(),
           timestamp: msg.timestamp,
-          humanMessage: this.extractFallbackUserMessage(msg),
-          userMessage: this.extractFallbackUserMessage(msg), // Normalized for modern pipeline
+          humanMessage: userMessage,
+          userMessage: userMessage, // Normalized for modern pipeline
           assistantMessage: null,
           toolCalls: [],
           toolResults: [],
           isUserPrompt: true
         };
+        
+        if (isTarget) {
+          console.log(`   Created currentExchange with userMessage: ${currentExchange.userMessage ? currentExchange.userMessage.substring(0, 100) : 'null'}`);
+        }
       }
       
       // Handle user turn end (new format)
@@ -465,8 +637,32 @@ class AdaptiveExchangeExtractor {
    * Extract user message for fallback mode
    */
   extractFallbackUserMessage(msg) {
-    if (msg.content) return msg.content;
-    if (msg.message) return this.extractMessageContent(msg.message);
+    // DEBUG: Check for Sept 14 exchanges
+    const isSept14Debug = msg?.timestamp?.includes('2025-09-14T07:');
+    
+    if (isSept14Debug) {
+      console.log(`🎯 DEBUG extractFallbackUserMessage for Sept 14:`);
+      console.log(`   Timestamp: ${msg.timestamp}`);
+      console.log(`   msg.content exists: ${!!msg.content}`);
+      console.log(`   msg.message exists: ${!!msg.message}`);
+      if (msg.message) {
+        console.log(`   msg.message.content exists: ${!!msg.message.content}`);
+        console.log(`   msg.message.content preview: ${msg.message.content ? msg.message.content.substring(0, 100) : 'null'}`);
+      }
+    }
+    
+    if (msg.content) {
+      if (isSept14Debug) console.log(`   Returning msg.content: ${msg.content.substring(0, 100)}`);
+      return msg.content;
+    }
+    
+    if (msg.message) {
+      const result = this.extractMessageContent(msg.message);
+      if (isSept14Debug) console.log(`   Returning extractMessageContent result: ${result ? result.substring(0, 100) : 'null'}`);
+      return result;
+    }
+    
+    if (isSept14Debug) console.log(`   Returning empty string - no content found`);
     return '';
   }
 

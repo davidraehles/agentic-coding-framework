@@ -8,7 +8,9 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import readline from 'readline';
 import { parseTimestamp, formatTimestamp, getTimeWindow, getTimezone, utcToLocalTime, generateLSLFilename } from './timezone-utils.js';
+import AdaptiveExchangeExtractor from '../src/live-logging/AdaptiveExchangeExtractor.js';
 import { SemanticAnalyzer } from '../src/live-logging/SemanticAnalyzer.js';
 import ReliableCodingClassifier from '../src/live-logging/ReliableCodingClassifier.js';
 import StreamingTranscriptReader from '../src/live-logging/StreamingTranscriptReader.js';
@@ -66,6 +68,9 @@ class EnhancedTranscriptMonitor {
     this.lastProcessedUuid = null;
     this.exchangeCount = 0;
     this.lastFileSize = 0;
+    
+    // Initialize adaptive exchange extractor for streaming processing
+    this.adaptiveExtractor = new AdaptiveExchangeExtractor();
     
     // Initialize LSL File Manager for size monitoring and rotation
     this.fileManager = new LSLFileManager({
@@ -376,14 +381,33 @@ class EnhancedTranscriptMonitor {
       // Process the file with streaming - accumulate exchanges only
       const stats = await reader.processFile(transcriptFile.path, async (messageBatch) => {
         // Extract exchanges from this batch
-        const exchanges = StreamingTranscriptReader.extractExchangesFromBatch(messageBatch, { useAdaptiveExtraction: false });
+        const exchanges = StreamingTranscriptReader.extractExchangesFromBatch(messageBatch, { useAdaptiveExtraction: true });
         
         if (exchanges.length > 0) {
+          // DEBUG: Check for Sept 14 exchanges during accumulation
+          for (const exchange of exchanges) {
+            if (exchange.timestamp && exchange.timestamp.includes('2025-09-14T07:')) {
+              console.log(`🎯 DEBUG ACCUMULATION: Found Sept 14 07:xx exchange during streaming!`);
+              console.log(`   Timestamp: ${exchange.timestamp}`);
+              console.log(`   IsUserPrompt: ${exchange.isUserPrompt}`);
+              console.log(`   Content preview: ${exchange.userMessage ? exchange.userMessage.substring(0, 100) : 'No userMessage'}`);
+            }
+          }
+          
           // FIXED: Just accumulate exchanges, don't process them yet
           allExchanges.push(...exchanges);
           processedExchanges += exchanges.length;
         }
       });
+      
+      // DEBUG: Check what Sept 14 exchanges we accumulated
+      const sept14Exchanges = allExchanges.filter(ex => ex.timestamp && ex.timestamp.includes('2025-09-14T07:'));
+      if (sept14Exchanges.length > 0) {
+        console.log(`🎯 DEBUG: Accumulated ${sept14Exchanges.length} Sept 14 07:xx exchanges:`);
+        for (const ex of sept14Exchanges) {
+          console.log(`   ${ex.timestamp}: isUserPrompt=${ex.isUserPrompt}, hasContent=${!!ex.userMessage}`);
+        }
+      }
       
       // CRITICAL FIX: Process all accumulated exchanges using proper historical processing
       if (allExchanges.length > 0) {
@@ -406,7 +430,7 @@ class EnhancedTranscriptMonitor {
             if (this.isNewSessionBoundary(currentTranche, this.lastTranche)) {
               // Complete previous user prompt set if exists
               if (this.currentUserPromptSet.length > 0) {
-                const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
+                const targetProject = await this.determineTargetProject(this.currentUserPromptSet);
                 if (targetProject !== null) {
                   await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
                 }
@@ -426,7 +450,7 @@ class EnhancedTranscriptMonitor {
         if (this.currentUserPromptSet.length > 0) {
           console.log(`🔄 Completing final user prompt set with ${this.currentUserPromptSet.length} exchanges after streaming`);
           const currentTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
-          const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
+          const targetProject = await this.determineTargetProject(this.currentUserPromptSet);
           console.log(`🎯 Final target project for streaming: ${targetProject}`);
           if (targetProject !== null) {
             await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
@@ -760,30 +784,76 @@ class EnhancedTranscriptMonitor {
    * (2a) If running in coding -> write to coding LSL
    * (2b) If running outside coding -> check redirect status
    */
-  async determineTargetProject(exchange) {
+  async determineTargetProject(exchangeOrPromptSet) {
     const codingPath = process.env.CODING_TOOLS_PATH || '/Users/q284340/Agentic/coding';
+    
+    // Handle both single exchange and prompt set array  
+    const exchanges = Array.isArray(exchangeOrPromptSet) ? exchangeOrPromptSet : [exchangeOrPromptSet];
+    const firstExchange = exchanges[0];
+    
+    // DEBUG: Check for ALL Sept 14 07:xx timeframe (not just 07:12)
+    const isSept14Debug = firstExchange.timestamp && firstExchange.timestamp.includes('2025-09-14T07:');
+    if (isSept14Debug) {
+      console.log(`🎯 DEBUG Sept 14 (${firstExchange.timestamp}): Classifying prompt set with ${exchanges.length} exchanges`);
+      console.log(`   First exchange timestamp: ${firstExchange.timestamp}`);
+      console.log(`   Mode: ${this.config.mode}`);
+      console.log(`   Project path: ${this.config.projectPath}`);
+      
+      // Log ALL exchanges in the prompt set
+      for (let i = 0; i < exchanges.length; i++) {
+        console.log(`   Exchange ${i+1}: ${exchanges[i].timestamp}`);
+        if (exchanges[i].userMessage) {
+          console.log(`      Content: ${exchanges[i].userMessage.substring(0, 100)}...`);
+        }
+      }
+    }
     
     // Handle foreign mode: Only process coding-related exchanges and route them to coding project
     if (this.config.mode === 'foreign') {
-      const isCoding = await this.isCodingRelated(exchange);
-      if (!isCoding) {
-        return null; // Skip non-coding exchanges in foreign mode
+      // Check ALL exchanges in the prompt set for coding content
+      for (let i = 0; i < exchanges.length; i++) {
+        const exchange = exchanges[i];
+        const isCoding = await this.isCodingRelated(exchange);
+        if (isSept14Debug) {
+          console.log(`   🔍 Exchange ${i+1} (${exchange.timestamp}): isCoding=${isCoding}`);
+        }
+        if (isCoding) {
+          if (isSept14Debug) {
+            console.log(`   ✅ ROUTING TO CODING PROJECT due to coding content found in exchange ${i+1}`);
+          }
+          return codingPath; // Route to coding project if ANY exchange is coding-related
+        }
       }
-      return codingPath; // Route coding exchanges to coding project
+      if (isSept14Debug) {
+        console.log(`   ❌ SKIPPING - no coding content found in foreign mode`);
+      }
+      return null; // Skip if no coding exchanges found in foreign mode
     }
     
     // Regular 'all' mode logic:
     
     // Check if we're running from coding directory
     if (this.config.projectPath.includes('/coding')) {
+      if (isSept14Debug) {
+        console.log(`   ✅ ROUTING TO CODING PROJECT - running from coding directory`);
+      }
       return codingPath;
     }
     
     // Running from outside coding - check redirect status
-    if (await this.isCodingRelated(exchange)) {
-      return codingPath; // Redirect to coding
+    // Check ALL exchanges for coding content (not just first one)
+    for (const exchange of exchanges) {
+      if (await this.isCodingRelated(exchange)) {
+        if (isSept14Debug) {
+          console.log(`   ✅ ROUTING TO CODING PROJECT - coding content detected in exchange`);
+        }
+        return codingPath; // Redirect to coding
+      }
     }
     
+    if (isSept14Debug) {
+      console.log(`   ✅ STAYING IN LOCAL PROJECT - no coding content detected`);
+    }
     return this.config.projectPath; // Stay in local project
   }
 
@@ -801,129 +871,40 @@ class EnhancedTranscriptMonitor {
    * Check if content involves coding project using semantic analysis
    */
   async isCodingRelated(exchange) {
-    // ALWAYS USE RELIABLE CODING CLASSIFIER - no separate logic
-    if (this.reliableCodingClassifier && this.reliableCodingClassifierReady) {
-      try {
-        const result = await this.reliableCodingClassifier.classify(exchange);
-        return result.isCoding;
-      } catch (error) {
-        console.error('Error in reliable coding classifier:', error.message);
-        // Fall through to backup logic
-      }
+    if (!exchange || (!exchange.userMessage && !exchange.humanMessage && !exchange.message)) {
+      return false;
     }
     
-    // Original detailed analysis for live monitoring
-    const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
-    
-    console.log(`\n🔍 ENHANCED CODING DETECTION:`);
-    console.log(`  Coding path: ${codingPath}`);
-    console.log(`  Tools: ${exchange.toolCalls?.map(t => t.name).join(', ') || 'none'}`);
-    
-    // Skip broken "tool touches coding directory" logic - tool usage ≠ coding content
-    
-    // 2. SECOND: Use reliable coding classifier for local classification (priority)
-    if (this.reliableCodingClassifier && this.reliableCodingClassifierReady) {
-      try {
-        console.log(`⚡ RELIABLE CLASSIFIER: Analyzing with three-layer architecture...`);
-        const startTime = Date.now();
-        
-        // Build exchange object with file operations
-        const fileOps = [];
-        if (exchange.toolCalls) {
-          for (const tool of exchange.toolCalls) {
-            if (['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(tool.name) && tool.input?.file_path) {
-              fileOps.push(tool.input.file_path);
-            }
-          }
-        }
-        
-        const embeddingExchange = {
-          ...exchange,
-          fileOperations: fileOps
-        };
-        
-        const result = await this.reliableCodingClassifier.classify(embeddingExchange);
-        
-        console.log(`⚡ RELIABLE RESULT: ${result.classification} (confidence: ${result.confidence}, time: ${result.processingTimeMs}ms)`);
-        console.log(`⚡ LAYER: ${result.layer || 'unknown'} | REASONING: ${result.reason}`);
-        
-        const isCoding = result.classification === 'CODING_INFRASTRUCTURE';
-        if (isCoding) {
-          console.log(`✅ CODING DETECTED (${result.layer?.toUpperCase()}): ${result.reason}`);
-          this.debug(`Coding detected via ${result.layer} layer in ${result.processingTimeMs}ms`);
-        } else {
-          console.log(`📄 NON-CODING CONTENT (${result.layer?.toUpperCase()}): ${result.reason}`);
-          this.debug(`Non-coding content via ${result.layer} layer in ${result.processingTimeMs}ms`);
-        }
-        
-        // Show performance stats occasionally
-        if (Math.random() < 0.1) { // 10% of the time
-          const stats = this.reliableCodingClassifier.getStats();
-          console.log(`⚡ STATS: Avg classification time: ${stats.avgClassificationTime?.toFixed(1)}ms, Classifications: ${stats.totalClassifications}`);
-        }
-        
-        return isCoding;
-      } catch (error) {
-        console.error('Reliable coding classification failed:', error.message);
-        // Fall through to semantic analyzer
-      }
+    // DEBUG: Check for Sept 14 exchanges
+    const isSept14 = exchange.timestamp && exchange.timestamp.includes('2025-09-14T07:');
+    if (isSept14) {
+      console.log(`🎯 DEBUG Sept 14 isCodingRelated check:`);
+      console.log(`   Timestamp: ${exchange.timestamp}`);
+      console.log(`   UserMessage exists: ${!!exchange.userMessage}`);
+      console.log(`   UserMessage preview: ${exchange.userMessage ? exchange.userMessage.substring(0, 200) : 'null'}`);
     }
     
-    // 3. THIRD: Fall back to semantic analysis if reliable coding classifier unavailable
-    if (this.semanticAnalyzer) {
-      try {
-        console.log(`🧠 SEMANTIC ANALYSIS (FALLBACK): Analyzing conversation content...`);
-        const classification = await this.semanticAnalyzer.classifyConversationContent(exchange);
-        
-        console.log(`🧠 SEMANTIC RESULT: ${classification.classification} (${classification.confidence} confidence)`);
-        console.log(`🧠 REASON: ${classification.reason}`);
-        
-        const isCoding = classification.classification === 'CODING_INFRASTRUCTURE';
-        if (isCoding) {
-          console.log(`✅ CODING DETECTED (SEMANTIC): ${classification.reason}`);
-          this.debug(`Coding detected via semantic analysis: ${classification.reason}`);
-        } else {
-          console.log(`📄 NON-CODING CONTENT (SEMANTIC): ${classification.reason}`);
-          this.debug(`Non-coding content detected via semantic analysis: ${classification.reason}`);
-        }
-        
-        return isCoding;
-        
-      } catch (error) {
-        console.log(`⚠️ SEMANTIC ANALYSIS FAILED: ${error.message}`);
-        this.debug(`Semantic analysis failed: ${error.message}`);
-        // Fall through to keyword fallback
-      }
+    if (!this.reliableCodingClassifier) {
+      console.warn('ReliableCodingClassifier not available, defaulting to false');
+      return false;
     }
     
-    // 4. FINAL FALLBACK: Simple keyword detection (only if all classifiers unavailable)
-    console.log(`🔤 FALLBACK: Using keyword detection...`);
-    const combinedContent = (exchange.userMessage + ' ' + exchange.claudeResponse).toLowerCase();
-    
-    const codingIndicators = [
-      'enhanced-transcript-monitor',
-      'transcript-monitor', 
-      'lsl system',
-      'live session logging',
-      'trajectory',
-      'semantic analysis',
-      'coding tools',
-      'generate-proper-lsl',
-      'redaction',
-      'script debugging'
-    ];
-    
-    for (const indicator of codingIndicators) {
-      if (combinedContent.includes(indicator)) {
-        console.log(`✅ CODING DETECTED (FALLBACK): Found "${indicator}" in exchange`);
-        this.debug(`Coding detected via fallback: Content contains "${indicator}"`);
-        return true;
+    try {
+      // Use the correct method - 'classify' not 'classifyExchange'
+      const result = await this.reliableCodingClassifier.classify(exchange);
+      
+      if (isSept14) {
+        console.log(`   🔍 Classification result: ${result.isCoding}`);
+        console.log(`   Score: ${result.score}`);
+        console.log(`   Reason: ${result.reason}`);
+        console.log(`   Components: ${JSON.stringify(result.components)}`);
       }
+      
+      return result.isCoding;
+    } catch (error) {
+      console.error(`Error in isCodingRelated: ${error.message}`);
+      return false;
     }
-    
-    console.log(`📄 NON-CODING: Classified as non-coding content`);
-    this.debug('Non-coding: Classified as non-coding content');
-    return false;
   }
   
 

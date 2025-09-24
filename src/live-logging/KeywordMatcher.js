@@ -52,10 +52,26 @@ class KeywordMatcher {
     const startTime = performance.now();
     this.stats.totalMatches++;
     
+    // DEBUG: Check for our target exchange
+    const isTargetExchange = exchange.timestamp && exchange.timestamp.includes('2025-09-14T11:15');
+    if (isTargetExchange) {
+      console.log(`🎯 DEBUG: KeywordMatcher.matchKeywords for target exchange!`);
+      console.log(`   Exchange structure:`, Object.keys(exchange));
+      console.log(`   Timestamp: ${exchange.timestamp}`);
+    }
+    
     try {
       // Build context for matching
       const context = this.buildContext(exchange);
       const contextLower = context.toLowerCase();
+      
+      if (isTargetExchange) {
+        console.log(`🎯 DEBUG: Context built for target (${context.length} chars)`);
+        console.log(`   Context preview: ${context.substring(0, 500)}...`);
+        console.log(`   Contains LSL: ${contextLower.includes('lsl')}`);
+        console.log(`   Contains live session logging: ${contextLower.includes('live session logging')}`);
+        console.log(`   Contains batch mode: ${contextLower.includes('batch mode')}`);
+      }
       
       // Initialize scoring
       let totalScore = 0;
@@ -79,6 +95,14 @@ class KeywordMatcher {
       totalScore += this.matchKeywordCategory('system_concepts', contextLower, matchResults);
       totalScore += this.matchKeywordCategory('technical_terms', contextLower, matchResults);
       
+      if (isTargetExchange) {
+        console.log(`🎯 DEBUG: Keyword matching results for target:`);
+        console.log(`   Primary matches: ${matchResults.primary.length}`);
+        console.log(`   Secondary matches: ${matchResults.secondary.length}`);
+        console.log(`   Total score: ${totalScore}`);
+        console.log(`   Minimum score required: ${this.rules.minimum_score}`);
+      }
+      
       // Apply exclusion penalties
       const exclusionPenalty = this.checkExclusions(contextLower, matchResults);
       totalScore += exclusionPenalty;
@@ -86,6 +110,13 @@ class KeywordMatcher {
       // Determine classification
       const isCoding = totalScore >= this.rules.minimum_score;
       const confidence = this.calculateConfidence(totalScore, isCoding);
+      
+      if (isTargetExchange) {
+        console.log(`🎯 DEBUG: Final classification for target:`);
+        console.log(`   isCoding: ${isCoding}`);
+        console.log(`   confidence: ${confidence}`);
+        console.log(`   totalScore: ${totalScore} (after exclusions: ${exclusionPenalty})`);
+      }
       
       // Update statistics
       this.updateStats(performance.now() - startTime, matchResults);
@@ -159,9 +190,46 @@ class KeywordMatcher {
   buildContext(exchange) {
     const parts = [];
     
+    // DEBUG: Check for our target exchange
+    const isTargetExchange = exchange.timestamp && exchange.timestamp.includes('2025-09-14T11:15');
+    if (isTargetExchange) {
+      console.log(`🎯 DEBUG: KeywordMatcher.buildContext for target exchange!`);
+      console.log(`   Exchange keys: ${Object.keys(exchange)}`);
+      console.log(`   userMessage: ${exchange.userMessage ? 'EXISTS' : 'MISSING'}`);
+      console.log(`   humanMessage: ${exchange.humanMessage ? 'EXISTS' : 'MISSING'}`);
+      console.log(`   message: ${exchange.message ? 'EXISTS' : 'MISSING'}`);
+      console.log(`   content: ${exchange.content ? 'EXISTS' : 'MISSING'}`);
+      if (exchange.userMessage) {
+        console.log(`   userMessage preview: ${exchange.userMessage.substring(0, 200)}...`);
+      }
+      if (exchange.humanMessage) {
+        console.log(`   humanMessage preview: ${exchange.humanMessage.substring(0, 200)}...`);
+      }
+    }
+    
     // User message content
     if (exchange.userMessage) {
       parts.push(exchange.userMessage);
+    }
+    
+    // FALLBACK: Try humanMessage if userMessage doesn't exist
+    if (!exchange.userMessage && exchange.humanMessage) {
+      if (isTargetExchange) {
+        console.log(`🎯 DEBUG: Using humanMessage as fallback for target exchange`);
+      }
+      parts.push(exchange.humanMessage);
+    }
+    
+    // FALLBACK: Try message field if neither userMessage nor humanMessage exist
+    if (!exchange.userMessage && !exchange.humanMessage && exchange.message) {
+      if (isTargetExchange) {
+        console.log(`🎯 DEBUG: Using message field as fallback for target exchange`);
+      }
+      if (typeof exchange.message === 'string') {
+        parts.push(exchange.message);
+      } else if (exchange.message.content) {
+        parts.push(exchange.message.content);
+      }
     }
     
     // Assistant response content (limited to avoid too much noise)
@@ -194,7 +262,16 @@ class KeywordMatcher {
       parts.push(...exchange.fileOperations);
     }
     
-    return parts.join(' ');
+    const context = parts.join(' ');
+    if (isTargetExchange) {
+      console.log(`🎯 DEBUG: Built context for target exchange (${context.length} chars)`);
+      console.log(`   Context preview: ${context.substring(0, 300)}...`);
+      console.log(`   Contains "LSL": ${context.includes('LSL')}`);
+      console.log(`   Contains "Live Session Logging": ${context.includes('Live Session Logging')}`);
+      console.log(`   Contains "batch mode": ${context.includes('batch mode')}`);
+    }
+    
+    return context;
   }
 
   /**
