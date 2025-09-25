@@ -1,0 +1,53 @@
+@startuml LSL Classification Flow
+!include _standard-style.puml
+
+title ReliableCodingClassifier - Three-Layer Classification System
+
+start
+
+:New Exchange Received;
+
+partition "**Layer 0: Session Filter**" {
+  :Check for Session\nContinuation Patterns;
+  
+  if (Session Continuation\nDetected?) then (yes)
+    :Return LOCAL\n(session-filter layer);
+    stop
+  else (no)
+    :Continue to\nKeyword Analysis;
+  endif
+}
+
+partition "**Layer 1: Keyword Analysis**" {
+  :Load Coding Keywords\nDictionary;
+  
+  :Analyze Content for\nCoding Terms;
+  
+  :Calculate Keyword\nScore & Confidence;
+  
+  if (High Confidence\nCoding Match?) then (yes)
+    :Return CODING_INFRASTRUCTURE\n(keyword layer);
+    stop
+  elseif (Clear Non-Coding?) then (yes)
+    :Return NOT_CODING\n(keyword layer);
+    stop
+  else (inconclusive)
+    :Continue to\nSemantic Analysis;
+  endif
+}
+
+partition "**Layer 2: Semantic Analysis**" {
+  :Send to LLM for\nSemantic Understanding;
+  
+  :Receive LLM\nClassification;
+  
+  :Return Final\nClassification\n(semantic layer);
+}
+
+:Performance Monitoring\n& Statistics Update;
+
+:Route Content to\nAppropriate Project;
+
+stop
+
+@enduml

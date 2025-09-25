@@ -17,7 +17,7 @@ The Live Session Logging system monitors Claude Code conversations in real-time 
 
 ## System Architecture
 
-![Enhanced LSL System Architecture](images/enhanced-lsl-architecture.png)
+![Enhanced LSL System Architecture](images/lsl-architecture.png)
 
 The enhanced LSL system consists of nine main components:
 
@@ -244,7 +244,7 @@ const sessionManager = new MultiUserSessionManager({
 
 ## Enhanced Security Features
 
-![Enhanced LSL Security Architecture](images/enhanced-lsl-security.png)
+![Enhanced LSL Security Architecture](images/lsl-security.png)
 
 The Enhanced LSL system provides enterprise-grade security capabilities:
 
@@ -913,7 +913,7 @@ grep '"type":"alert"' .specstory/logs/operational.log | tail -10 | jq .
 ## Architecture Diagrams
 
 ### Enhanced System Overview
-![Enhanced LSL System Overview](images/lsl-enhanced-system-overview.png)
+![Enhanced LSL System Overview](images/lsl-system-overview.png)
 
 ### Global Coordinator Architecture
 ![Global LSL Coordinator Architecture](images/lsl-global-coordinator-architecture.png)

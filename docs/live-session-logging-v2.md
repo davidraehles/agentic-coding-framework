@@ -43,7 +43,7 @@ if (formatResult) {
 }
 ```
 
-![Adaptive Format Detection Sequence](images/lsl-adaptive-format-sequence.png)
+![Adaptive Format Detection Sequence](images/lsl-adaptive-format-detection-sequence.png)
 
 ### 🔧 Adaptive Exchange Extractor
 
@@ -106,7 +106,7 @@ Persistent storage of learned transcript format schemas:
 
 ### Enhanced Pipeline with Adaptive Components
 
-![Concurrent Processing Data Flow](images/lsl-concurrent-processing.png)
+![Concurrent Processing Data Flow](images/lsl-concurrent-processing-data-flow.png)
 
 The LSL v2.0 system consists of ten main components:
 
@@ -223,7 +223,7 @@ The LSL v2.0 system introduces **Prompt Set Processing** for logical conversatio
 
 ## Migration to Other Coding Agents
 
-![Migration Interfaces](images/lsl-migration-interfaces.png)
+![Migration Interfaces](images/lsl-migration-interfaces-for-other-coding-agents.png)
 
 ### Required Interfaces
 
