@@ -1,19 +1,29 @@
 {
-  "timestamp": 1758814823782,
+  "timestamp": 1758817345944,
   "projectPath": "/Users/q284340/Agentic/coding",
-  "transcriptPath": "/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/368b2e35-1e63-460b-a5da-de09195b5750.jsonl",
+  "transcriptPath": "/Users/q284340/.claude/projects/-Users-q284340-Agentic-coding/5ab64faa-bbe9-4d94-b134-f000e92c77fd.jsonl",
   "status": "running",
   "userHash": "g9b30a",
   "metrics": {
-    "memoryMB": 7,
-    "memoryTotalMB": 8,
-    "cpuUser": 6642393,
-    "cpuSystem": 13819510,
-    "uptimeSeconds": 108968,
-    "processId": 18083
+    "memoryMB": 5,
+    "memoryTotalMB": 71,
+    "cpuUser": 987724,
+    "cpuSystem": 188981,
+    "uptimeSeconds": 160,
+    "processId": 10977
   },
-  "lastExchange": null,
-  "exchangeCount": 0,
+  "transcriptInfo": {
+    "status": "active",
+    "sizeBytes": 12284395,
+    "ageMs": 31626,
+    "lastFileSize": 12284395
+  },
+  "activity": {
+    "lastExchange": "e7fd9ae3-88d7-4de2-bfe9-38737f9f6766",
+    "exchangeCount": 10,
+    "isSuspicious": false,
+    "suspicionReason": null
+  },
   "streamingActive": true,
   "errors": []
 }

@@ -209,7 +209,8 @@
       "Read(//Users/q284340/Agentic/nano-degree/**)",
       "Bash(do if head -10 \"$file\")",
       "Bash(then echo \"$file\")",
-      "mcp__serena__insert_before_symbol"
+      "mcp__serena__insert_before_symbol",
+      "mcp__serena__think_about_task_adherence"
     ],
     "deny": []
   },

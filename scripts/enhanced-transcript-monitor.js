@@ -1559,8 +1559,35 @@ class EnhancedTranscriptMonitor {
       this.updateHealthFile();
     }, 5000);
 
+    // Add transcript refresh counter for periodic updates
+    let transcriptRefreshCounter = 0;
+    const TRANSCRIPT_REFRESH_INTERVAL = 30; // Refresh transcript path every 30 cycles (60 seconds at 2s intervals)
+
     this.intervalId = setInterval(async () => {
       if (this.isProcessing) return;
+
+      // CRITICAL FIX: Periodically refresh transcript path to detect new Claude sessions
+      transcriptRefreshCounter++;
+      if (transcriptRefreshCounter >= TRANSCRIPT_REFRESH_INTERVAL) {
+        transcriptRefreshCounter = 0;
+        const newTranscriptPath = this.findCurrentTranscript();
+        
+        if (newTranscriptPath && newTranscriptPath !== this.transcriptPath) {
+          console.log(`🔄 Transcript file changed: ${path.basename(newTranscriptPath)}`);
+          console.log(`   Previous: ${path.basename(this.transcriptPath)} (${this.lastFileSize} bytes)`);
+          
+          // Reset file tracking for new transcript
+          this.transcriptPath = newTranscriptPath;
+          this.lastFileSize = 0;
+          this.lastProcessedUuid = null;
+          
+          // Log transcript switch to health file
+          this.logHealthError(`Transcript switched to: ${path.basename(newTranscriptPath)}`);
+          
+          console.log(`   ✅ Now monitoring: ${path.basename(this.transcriptPath)}`);
+        }
+      }
+
       if (!this.hasNewContent()) return;
 
       this.isProcessing = true;
@@ -1571,6 +1598,7 @@ class EnhancedTranscriptMonitor {
         }
       } catch (error) {
         this.debug(`Error in monitoring loop: ${error.message}`);
+        this.logHealthError(`Monitoring loop error: ${error.message}`);
       } finally {
         this.isProcessing = false;
       }
@@ -1645,11 +1673,33 @@ class EnhancedTranscriptMonitor {
       const cpuUsage = process.cpuUsage();
       const uptime = process.uptime();
       
+      // CRITICAL FIX: Add suspicious activity detection
+      const uptimeHours = uptime / 3600;
+      const isSuspiciousActivity = this.exchangeCount === 0 && uptimeHours > 0.5; // No exchanges after 30+ minutes
+      
+      // Check if transcript file exists and get its info
+      let transcriptStatus = 'unknown';
+      let transcriptSize = 0;
+      let transcriptAge = 0;
+      
+      if (this.transcriptPath) {
+        try {
+          const stats = fs.statSync(this.transcriptPath);
+          transcriptSize = stats.size;
+          transcriptAge = Date.now() - stats.mtime.getTime();
+          transcriptStatus = transcriptAge > (this.config.sessionDuration * 2) ? 'stale' : 'active';
+        } catch (error) {
+          transcriptStatus = 'missing';
+        }
+      } else {
+        transcriptStatus = 'not_found';
+      }
+      
       const healthData = {
         timestamp: Date.now(),
         projectPath: this.config.projectPath,
         transcriptPath: this.transcriptPath,
-        status: 'running',
+        status: isSuspiciousActivity ? 'suspicious' : 'running',
         userHash: userHash,
         metrics: {
           memoryMB: Math.round(memUsage.heapUsed / 1024 / 1024),
@@ -1659,11 +1709,29 @@ class EnhancedTranscriptMonitor {
           uptimeSeconds: Math.round(uptime),
           processId: process.pid
         },
-        lastExchange: this.lastProcessedUuid || null,
-        exchangeCount: this.exchangeCount || 0,
+        transcriptInfo: {
+          status: transcriptStatus,
+          sizeBytes: transcriptSize,
+          ageMs: transcriptAge,
+          lastFileSize: this.lastFileSize
+        },
+        activity: {
+          lastExchange: this.lastProcessedUuid || null,
+          exchangeCount: this.exchangeCount || 0,
+          isSuspicious: isSuspiciousActivity,
+          suspicionReason: isSuspiciousActivity ? `No exchanges processed in ${uptimeHours.toFixed(1)} hours` : null
+        },
         streamingActive: this.streamingReader !== null,
         errors: this.healthErrors || []
       };
+      
+      // Add warning if suspicious activity detected
+      if (isSuspiciousActivity) {
+        console.warn(`⚠️ HEALTH WARNING: Monitor has processed 0 exchanges in ${uptimeHours.toFixed(1)} hours`);
+        console.warn(`   Current transcript: ${this.transcriptPath ? path.basename(this.transcriptPath) : 'none'}`);
+        console.warn(`   Transcript status: ${transcriptStatus} (${transcriptSize} bytes, age: ${Math.round(transcriptAge/1000)}s)`);
+      }
+      
       fs.writeFileSync(this.config.healthFile, JSON.stringify(healthData, null, 2));
     } catch (error) {
       this.debug(`Failed to update health file: ${error.message}`);
