@@ -7,24 +7,25 @@ start
 
 :New Exchange\nReceived;
 
-partition "**Layer 0: Session Filter**" {
-  :Check for Session\nContinuation Patterns;
+partition "**Layer 1: Path Analyzer**" {
+  :Path-based Analysis\n& Session Detection;
   
   note right
-    - "This session is being continued..."
-    - Summary structure indicators
-    - Conversation boundary detection
+    - Session continuation patterns
+    - File operation detection
+    - Path-based classification
+    - Fast pre-filtering
   end note
   
-  if (Session Continuation\nDetected?) then (yes)
-    :Return LOCAL\n(session-filter layer);
+  if (High Confidence\nPath Match?) then (yes)
+    :Return Classification\n(path layer, <10ms);
     stop
   else (no)
     :Continue to\nKeyword Analysis;
   endif
 }
 
-partition "**Layer 1: Keyword Analysis**" {
+partition "**Layer 2: Keyword Analysis**" {
   :Load Coding Keywords\nDictionary;
   
   note left
@@ -49,7 +50,7 @@ partition "**Layer 1: Keyword Analysis**" {
   endif
 }
 
-partition "**Layer 2: Semantic Analysis**" {
+partition "**Layer 3: Semantic Analysis**" {
   :Performance Check\n(LLM Available?);
   
   if (Performance\nCritical?) then (yes)
@@ -74,17 +75,5 @@ partition "**Layer 2: Semantic Analysis**" {
 :Route Content to\nAppropriate Project;
 
 stop
-
-note bottom
-  **Performance Optimization:**
-  - Session Filter: <1ms (prevents false positives)
-  - Keyword Layer: <1ms (200x faster than semantic)
-  - Semantic Layer: 1000-1500ms (only when needed)
-  
-  **Accuracy:**
-  - Session Filter: 100% for continuation messages
-  - Keyword Layer: 95% for clear cases
-  - Semantic Layer: 98% for edge cases
-end note
 
 @enduml

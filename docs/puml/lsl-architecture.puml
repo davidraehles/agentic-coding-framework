@@ -29,7 +29,7 @@ package "Live Session Logging (LSL)" <<core>> {
   
   package "Session Management" {
     [Session Router] as Router <<core>>
-    [SimplifiedSessionLogger] as SimpleLogger <<core>>
+    [PostSessionLogger] as PostLogger <<core>>
     [Live Logging Coordinator] as Coordinator <<infra>>
   }
   
@@ -40,8 +40,8 @@ package "Live Session Logging (LSL)" <<core>> {
   }
 }
 
-package "MCP Integration" <<infra>> {
-  [Semantic Analysis Server] as SemanticMCP <<api>>
+package "External APIs" <<infra>> {
+  [Grok API (X.AI)] as GrokAPI <<api>>
   [Constraint Monitor] as ConstraintMCP <<api>>
 }
 
@@ -62,16 +62,16 @@ Orchestrator --> KeywordMatcher : "2. Keyword analysis\n(<5ms)"
 KeywordMatcher --> OpLogger : logs decision
 
 Orchestrator --> SemanticAnalyzer : "3. Semantic analysis\n(if needed)"
-SemanticAnalyzer --> SemanticMCP : API call
+SemanticAnalyzer --> GrokAPI : direct HTTP call
 SemanticAnalyzer --> OpLogger : logs decision
 
 ' Routing decision
 Orchestrator --> Router : classification result
-Router --> SimpleLogger : route session
+Router --> PostLogger : route session
 
 ' Storage routing
-SimpleLogger ..> ProjectHistory : "NOT_CODING_\nINFRASTRUCTURE"
-SimpleLogger ..> CodingHistory : "CODING_\nINFRASTRUCTURE"
+PostLogger ..> ProjectHistory : "NOT_CODING_\nINFRASTRUCTURE"
+PostLogger ..> CodingHistory : "CODING_\nINFRASTRUCTURE"
 
 ' Live updates
 Router --> Coordinator : live updates
@@ -91,12 +91,12 @@ note right of DecisionEngine
   Operational logging for debugging
 end note
 
-note bottom of SemanticMCP
-  **Fast Semantic Analysis**
-  • Cached embeddings
-  • Batched API calls
-  • <2s response time
-  • Fallback on timeout
+note bottom of GrokAPI
+  **Direct Grok API Integration**
+  • HTTP calls to https://api.x.ai/v1
+  • Model: grok-2-1212
+  • 2s timeout for fast response
+  • No MCP overhead
 end note
 
 note left of Router
