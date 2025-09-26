@@ -1,947 +1,344 @@
-# Live Session Logging (LSL) System
+# Live Session Logging (LSL) System - Current Architecture
 
-A bulletproof conversation classification and routing system with Global Coordinator architecture that automatically organizes Claude Code transcripts into appropriate project session logs. The enhanced LSL system ensures all conversations are properly classified and routed to the correct `.specstory/history/` directories with zero data loss and automatic recovery from failures.
+A robust real-time conversation monitoring and classification system that ensures all Claude Code conversations are properly captured and routed to the correct `.specstory/history/` directories with zero data loss and automatic recovery capabilities.
 
 ## Overview
 
-The Live Session Logging system monitors Claude Code conversations in real-time with a robust Global Coordinator that ensures continuous operation across all sessions. The system performs intelligent classification to determine whether content belongs to **coding infrastructure** work or **project-specific** work, while maintaining bulletproof reliability through health monitoring and automatic recovery.
+The LSL system provides **real-time transcript monitoring** with intelligent classification to determine whether content belongs to **coding infrastructure** work or **project-specific** work. The system features global coordination across multiple projects, health monitoring, and bulletproof reliability through automatic recovery.
+
+![LSL Architecture](images/lsl-architecture.png)
 
 ### Core Principles
 
-- **Bulletproof Reliability**: Global Coordinator ensures LSL never fails across any session
-- **No Data Loss**: Every conversation exchange is preserved and routed appropriately
-- **Real-time Classification**: Decisions made during active conversations for immediate routing
-- **Health Monitoring**: Automatic detection and recovery from failed processes
-- **Batch Processing**: Efficient bulk processing of historical transcripts with parallel workers
-- **Three-Layer Analysis**: PathAnalyzer → KeywordMatcher → SemanticAnalyzer for accurate classification
+- **🔄 Real-time Monitoring**: Captures conversations as they happen during active Claude sessions
+- **🛡️ Bulletproof Reliability**: Global Coordinator ensures LSL never fails across any session
+- **📦 Zero Data Loss**: Every conversation exchange is preserved and routed appropriately
+- **🎯 Smart Classification**: Three-layer analysis prevents false positives and ensures accurate routing
+- **🏥 Health Monitoring**: Automatic detection and recovery from failed processes
+- **🌍 Multi-Project Support**: Simultaneous monitoring across multiple concurrent projects
+- **⚡ Session Continuation Detection**: Prevents inappropriate redirection of session continuation messages
 
 ## System Architecture
 
-![Enhanced LSL System Architecture](images/lsl-architecture.png)
+![LSL Components](images/lsl-components.png)
 
-The enhanced LSL system consists of nine main components:
+The LSL system consists of four main components working together:
 
-### 1. Global LSL Coordinator
-
-**Location**: `scripts/global-lsl-coordinator.cjs`
-
-The bulletproof coordination layer that ensures LSL reliability:
-
-- **Session Registry**: Tracks all active Claude sessions across projects
-- **Health Monitor**: 30-second health checks with automatic recovery
-- **Process Manager**: Spawns and restarts transcript monitors as needed
-- **Cleanup Service**: Removes stale sessions and orphaned processes
-
-![Global LSL Coordinator Architecture](images/lsl-global-coordinator-architecture.png)
-
-### 2. LSL File Manager
-
-**Location**: `src/live-logging/LSLFileManager.js`
-
-Advanced file size monitoring, rotation, and compression management:
-
-- **Real-time Monitoring**: Continuous file size tracking with configurable intervals
-- **Automatic Rotation**: Triggers at 40MB with 50MB maximum file size limits
-- **Gzip Compression**: Compresses rotated files reducing storage by up to 96%
-- **Archive Management**: Maintains up to 50 archived files with intelligent cleanup
-- **Performance Optimization**: 64KB buffer size for efficient file operations
-- **Event-driven Architecture**: Emits rotation and compression events for monitoring
-
-**Key Features**:
-```javascript
-// Configure LSL File Manager
-const fileManager = new LSLFileManager({
-  maxFileSize: 50 * 1024 * 1024,        // 50MB maximum
-  rotationThreshold: 40 * 1024 * 1024,   // 40MB rotation trigger
-  enableCompression: true,                // Gzip compression enabled
-  compressionLevel: 6,                    // Balanced compression
-  maxArchivedFiles: 50,                   // Retain 50 archived files
-  monitoringInterval: 5 * 60 * 1000,     // Monitor every 5 minutes
-  enableRealTimeMonitoring: true         // Real-time file watching
-});
-```
-
-### 3. Operational Logger
-
-**Location**: `src/live-logging/OperationalLogger.js`
-
-Comprehensive operational logging with advanced observability features:
-
-- **Structured Metrics**: JSONL format with automatic categorization and correlation
-- **System Health Monitoring**: Memory, uptime, and performance tracking
-- **Alert Generation**: Configurable threshold-based alerts for operational issues
-- **Log Rotation**: Automatic 10MB file rotation with 5-file retention
-- **Performance Analytics**: Detailed metrics aggregation and analysis
-- **Event Classification**: Lifecycle, maintenance, error, configuration, and performance events
-
-**Enhanced Capabilities**:
-```javascript
-// Log structured metrics
-logger.logStructuredMetrics('LSLFileManager', {
-  rotationsCompleted: 3,
-  compressionRatio: 96.8,
-  avgProcessingTime: 1250
-});
-
-// Monitor system health
-logger.logSystemHealth({
-  memoryUsage: process.memoryUsage(),
-  uptime: process.uptime(),
-  cpuUsage: process.cpuUsage()
-});
-
-// Generate operational alerts
-logger.generateAlert('performance', 'high_memory_usage', {
-  threshold: 500,
-  current: 750,
-  severity: 'warning'
-});
-```
-
-### 4. ReliableCodingClassifier
-
-**Location**: `src/live-logging/ReliableCodingClassifier.js`
-
-The core classification engine implementing a three-layer decision architecture:
-
-- **Layer 1: PathAnalyzer** - Analyzes file operations and paths (100% accuracy for file-based detection)
-- **Layer 2: KeywordMatcher** - Fast keyword-based classification using coding-specific dictionary
-- **Layer 3: SemanticAnalyzer** - LLM-powered semantic understanding (used selectively for performance)
-
-### 5. Enhanced Transcript Monitor
+### 1. Enhanced Transcript Monitor
 
 **Location**: `scripts/enhanced-transcript-monitor.js`
 
-Real-time conversation monitoring with integrated file management:
+The core monitoring system that runs as a background process for each project.
 
-- Live classification during active sessions
-- Automatic routing to appropriate session files
-- **LSL File Manager Integration**: Automatic file size monitoring and rotation
-- **Enhanced Operational Logging**: Comprehensive metrics and health monitoring
-- Status line integration with coding activity indicators
-- Fast-path processing for bulk operations
-- Integration with Global Coordinator for health monitoring
+**Key Features**:
+- **Real-time Processing**: Monitors Claude transcript files (`.jsonl`) for new exchanges
+- **Periodic Transcript Refresh**: Automatically detects and switches to newer transcript files every 60 seconds
+- **Health File Generation**: Creates `.transcript-monitor-health` with process metrics and activity tracking
+- **Session Boundary Detection**: Organizes content into time-based windows (e.g., 1800-1900)
+- **Suspicious Activity Detection**: Identifies stale monitors and processing issues
+- **Exchange Classification**: Uses ReliableCodingClassifier for intelligent content routing
 
-**New File Management Features**:
-```javascript
-// Integrated file manager automatically handles:
-// - File size monitoring before each append
-// - Automatic rotation when files exceed 40MB threshold
-// - Gzip compression of rotated files
-// - Archive cleanup maintaining maximum file limits
+**Health Monitoring**:
+```json
+{
+  "timestamp": 1758820202726,
+  "projectPath": "/Users/q284340/Agentic/curriculum-alignment",
+  "transcriptPath": "/Users/q284340/.claude/projects/-Users-q284340-Agentic-curriculum-alignment/ca137daf-b706-4d7b-9d49-16bd4ba84c1f.jsonl",
+  "status": "running",
+  "userHash": "g9b30a",
+  "metrics": {
+    "memoryMB": 9,
+    "cpuUser": 7481974,
+    "uptimeSeconds": 925,
+    "processId": 78406
+  },
+  "activity": {
+    "lastExchange": "82da8b2a-6a30-45eb-b0c7-5e1e2b2d54ee",
+    "exchangeCount": 10,
+    "isSuspicious": false
+  },
+  "streamingActive": true
+}
 ```
 
-### 6. LSL Generation Scripts
-**Location**: `scripts/generate-lsl-from-transcripts.js`
+### 2. Global LSL Coordinator
 
-Enhanced batch processing system for historical transcript analysis:
+**Location**: `scripts/global-lsl-coordinator.js`
 
-- **Parallel Processing**: 5 concurrent workers for maximum efficiency
-- **Mode Support**: Local mode (all content) and Foreign mode (coding infrastructure only)
-- **Fast-Path Classification**: Skip semantic analysis for 200x speed improvement
-- **Smart Routing**: Processes all transcript files from `~/.claude/projects/`
-- **Session Generation**: Creates session files in appropriate `.specstory/history/` directories
+Multi-project coordination system that ensures healthy monitoring across all projects started via `coding/bin/coding`.
 
-### 7. Enhanced Redaction System
+**Key Responsibilities**:
+- **Project Registry Management**: Tracks all active projects and their monitoring status
+- **Monitor Lifecycle**: Starts, stops, and restarts Enhanced Transcript Monitor processes
+- **Health Checking**: Regular health assessments with automatic recovery for failed monitors
+- **Process Management**: Proper cleanup of stale processes and resource management
+- **Environment Configuration**: Sets project-specific environment variables for monitors
 
-**Location**: `scripts/enhanced-redaction-system.js`
-
-Advanced multi-layered security redaction system with bypass protection:
-
-- **98.3% Effectiveness**: Improved from original 25% effectiveness with sophisticated bypass detection
-- **Multi-layered Protection**: Pattern matching, context analysis, and Unicode normalization
-- **Bypass Detection**: Detects lookalike characters, base64 encoding, and obfuscation attempts  
-- **Context-aware Processing**: Understands data context for intelligent redaction decisions
-- **Real-time Scanning**: Processes content in real-time with sub-millisecond performance
-- **Attack Vector Prevention**: Protects against known social engineering bypass techniques
-
-**Security Features**:
-```javascript
-// Enhanced redaction with bypass protection
-const redactionSystem = new EnhancedRedactionSystem({
-  strictMode: true,           // Maximum security enforcement
-  bypassDetection: true,      // Enable bypass attempt detection
-  contextAware: true,         // Context-sensitive redaction
-  unicodeNormalization: true  // Lookalike character detection
-});
-
-// Automatic threat detection
-redactionSystem.scanForThreats(content, {
-  detectBase64: true,
-  detectObfuscation: true,
-  detectSocialEngineering: true
-});
+**Registry Structure**:
+```json
+{
+  "version": "1.0.0",
+  "lastUpdated": 1758820202726,
+  "projects": {
+    "curriculum-alignment": {
+      "projectPath": "/Users/q284340/Agentic/curriculum-alignment",
+      "monitorPid": 78406,
+      "status": "active",
+      "lastHealthCheck": 1758820202726
+    }
+  }
+}
 ```
 
-### 8. Enhanced Operational Logger
+### 3. ReliableCodingClassifier
 
-**Location**: `scripts/enhanced-operational-logger.js`
+**Location**: `scripts/reliable-classifier.js`
 
-Comprehensive operational logging with structured metrics and health monitoring:
+Three-layer classification system that accurately determines content routing with session continuation detection.
 
-- **Structured Metrics**: JSONL format with automatic categorization and correlation
-- **Performance Monitoring**: Real-time performance tracking with millisecond precision
-- **Health Dashboard**: System health metrics with automatic anomaly detection
-- **Alert Generation**: Configurable threshold-based alerts for operational issues
-- **Resource Tracking**: Memory, CPU, and disk usage monitoring
-- **Event Classification**: Lifecycle, maintenance, error, and performance events
+![Classification Flow](images/lsl-classification-flow.png)
 
-**Advanced Capabilities**:
-```javascript
-// Initialize enhanced operational logger
-const operationalLogger = new EnhancedOperationalLogger({
-  structuredMetrics: true,
-  healthMonitoring: true,
-  performanceTracking: true,
-  alertGeneration: true
-});
+**Classification Layers**:
 
-// Log performance metrics
-operationalLogger.recordPerformance('redactionProcess', {
-  processTime: 1.2,
-  threatsDetected: 3,
-  bypassAttempts: 1,
-  effectiveness: 98.3
-});
+1. **Session Filter Layer**: Pre-filter that detects session continuation messages
+   - Prevents inappropriate redirection of conversation summaries
+   - Pattern matching for "This session is being continued..." messages
+   - Summary structure detection (Primary request, Key concepts, etc.)
 
-// Monitor system health
-operationalLogger.logSystemHealth({
-  memoryUsage: process.memoryUsage(),
-  cpuLoad: os.loadavg()[0],
-  diskSpace: await getDiskSpace()
-});
+2. **Keyword Analysis Layer**: Fast keyword-based classification
+   - Uses `scripts/coding-keywords.json` for coding-related term detection
+   - Immediate classification for clear coding infrastructure content
+   - 200x faster than semantic analysis for obvious cases
+
+3. **Semantic Analysis Layer**: LLM-powered deep understanding
+   - Used when keyword analysis is inconclusive
+   - Provides nuanced classification for edge cases
+   - Includes performance monitoring and caching
+
+**Performance Features**:
+- **Performance Monitoring**: Tracks classification times and identifies bottlenecks
+- **Layer Optimization**: Skips expensive semantic analysis when possible
+- **Confidence Scoring**: Layer-specific confidence metrics
+
+### 4. LSL File Manager
+
+**Location**: `scripts/lsl-file-manager.js`
+
+Handles the creation and management of LSL session files with intelligent routing.
+
+**File Organization**:
+```
+.specstory/history/
+├── 2025-09-25_1800-1900_g9b30a.md                    # Local project content
+├── coding/.specstory/history/
+│   └── 2025-09-25_1800-1900_g9b30a_from-curriculum-alignment.md  # Redirected coding content
 ```
 
-### 9. User Hash Generator
+**Key Features**:
+- **Smart File Creation**: Time-based session boundaries with user hash collision prevention
+- **Content Routing**: Automatic redirection of coding infrastructure content to coding project
+- **Session Continuity**: Maintains conversation flow across time boundaries
+- **File Watching**: Monitors active session files for proper closure
+
+## Multi-Project Architecture
+
+![Multi-Project Flow](images/lsl-multi-project-architecture.png)
+
+### Project-Specific Monitoring
+
+Each project started via `coding/bin/coding` gets its own Enhanced Transcript Monitor:
+
+**Environment Variables**:
+```javascript
+env: {
+  PROJECT_PATH: "/Users/q284340/Agentic/curriculum-alignment",
+  TRANSCRIPT_SOURCE_PROJECT: "/Users/q284340/Agentic/curriculum-alignment",
+  CODING_TOOLS_PATH: "/Users/q284340/Agentic/coding"
+}
+```
+
+**Process Isolation**:
+- Each monitor watches its project's specific Claude transcript directory
+- Independent health monitoring and recovery
+- Project-specific content routing and classification
+- Isolated error handling prevents cascade failures
+
+### Global Health Monitoring
+
+The Global Coordinator performs regular health checks:
+
+1. **Process Verification**: Confirms monitor processes are running
+2. **Health File Analysis**: Checks activity levels and suspicious behavior detection
+3. **Automatic Recovery**: Restarts failed monitors with proper cleanup
+4. **Performance Tracking**: Monitors system resource usage across all projects
+
+## Session Continuation Detection
+
+A critical feature that prevents false positive classification of conversation summaries.
+
+**Problem Solved**:
+Session continuation messages like "This session is being continued from a previous conversation..." were incorrectly classified as coding content due to keywords like "session" and "conversation".
+
+**Solution**:
+```javascript
+isSessionContinuation(content) {
+  const sessionPatterns = [
+    /^this session is being continued from a previous conversation/,
+    /^this conversation is being continued from/,
+    /session.*continued.*previous.*conversation/,
+    /previous conversation.*ran out of context/,
+    /conversation.*summarized below/
+  ];
+  
+  // Pattern matching + summary structure detection
+  const summaryIndicators = [
+    'primary request and intent:',
+    'key technical concepts:',
+    'files and code sections:'
+  ];
+  
+  return patterns.match || summaryIndicators.count >= 3;
+}
+```
+
+**Benefits**:
+- Prevents inappropriate redirection of conversation summaries
+- Maintains session continuity in originating projects
+- Reduces classification noise and false positives
+
+## File Naming and Organization
+
+### Session File Format
+```
+YYYY-MM-DD_HHMM-HHMM_<user-hash>.md
+```
+
+**Examples**:
+- `2025-09-25_1800-1900_g9b30a.md` - Regular project content
+- `2025-09-25_1800-1900_g9b30a_from-nano-degree.md` - Redirected coding content
+
+### User Hash Generation
 
 **Location**: `scripts/user-hash-generator.js`
 
-Secure multi-user support with collision-resistant user identification:
-
-- **Collision-free Hashing**: Uses SHA-256 with entropy salt for unique user identification
-- **Privacy Protection**: No personally identifiable information stored
-- **Multi-user Isolation**: Ensures session data separation across different users
-- **Consistent Identity**: Maintains stable user identity across sessions
-- **Security Isolation**: Prevents cross-user data leakage or contamination
-- **Performance Optimized**: Sub-millisecond hash generation
-
-**Security Implementation**:
+Generates consistent 6-character hashes to prevent filename collisions:
 ```javascript
-// Generate secure user hash
-const userHash = generateUserHash({
-  systemInfo: os.userInfo(),
-  entropy: crypto.randomBytes(32),
-  algorithm: 'sha256'
-});
-
-// Multi-user session isolation
-const sessionManager = new MultiUserSessionManager({
-  userHash: userHash,
-  isolationMode: 'strict',
-  encryptionEnabled: true
-});
-```
-
-## Enhanced Security Features
-
-![Enhanced LSL Security Architecture](images/lsl-security.png)
-
-The Enhanced LSL system provides enterprise-grade security capabilities:
-
-### Security Architecture
-- **Zero Trust Model**: All content is treated as potentially sensitive
-- **Defense in Depth**: Multiple security layers prevent data exposure
-- **Threat Intelligence**: Real-time analysis of emerging bypass techniques
-- **Compliance Ready**: Meets GDPR, HIPAA, and enterprise security requirements
-
-### Performance & Monitoring  
-- **Real-time Dashboards**: Live system health and performance metrics
-- **Automated Alerting**: Proactive notification of security events
-- **Comprehensive Logging**: Full audit trail of all security operations
-- **Performance Optimization**: Sub-millisecond response times for core operations
-
-## Classification Logic
-
-### Content Routing Rules
-
-The system applies these rules for all content classification:
-
-```
-For PROJECT "nano-degree":
-  - Include ALL content (main project)
-  - Route to: /Users/q284340/Agentic/nano-degree/.specstory/history/
-
-For PROJECT "coding":
-  - Include ONLY coding infrastructure content
-  - Route to: /Users/q284340/Agentic/coding/.specstory/history/
-
-For ALL OTHER PROJECTS:
-  - Coding infrastructure content → coding project
-  - Non-coding content → local project
-```
-
-### Classification Keywords
-
-The system uses a comprehensive keyword dictionary defined in `scripts/coding-keywords.json`:
-
-**Primary Keywords** (High confidence):
-- `ukb`, `vkb`, `ckb`, `semantic analysis`, `MCP`, `post-session-logger`
-- `conversation-analyzer`, `classification`, `coding infrastructure`
-
-**Secondary Keywords** (Supporting evidence):
-- `multi-agent`, `JSON-RPC`, `MQTT`, `insight orchestrator`
-- `knowledge flow`, `agent system`, `workflow status`
-
-**File Patterns**:
-- `ukb`, `vkb`, `post-session-logger`, `semantic-analysis`
-- `mcp-server-`, `coding-keywords.json`
-
-### Command Filtering
-
-The system filters out `/sl` commands and their variants:
-- `/sl` - Session log command
-- `/sl n` - Session log with number parameter
-
-These commands are administrative and not part of the actual conversation content.
-
-## Performance Optimizations
-
-### Fast-Path Processing
-
-For bulk transcript processing, the system uses optimized pathways:
-
-```javascript
-// Skip semantic analysis for bulk processing
-const options = { skipSemanticAnalysis: true };
-
-// Use only path and keyword detection
-const result = await classifier.classify(exchange, options);
-```
-
-**Performance Results**:
-- **Before optimization**: 12+ minutes for 120 files
-- **After optimization**: ~5 seconds for 120 files
-- **Speed improvement**: 200x faster
-
-### Batch Processing Architecture
-
-The system processes transcripts in parallel batches:
-
-1. **File Discovery**: Scan `~/.claude/projects/` for `.jsonl` files
-2. **Batch Processing**: Process 5 files in parallel
-3. **Exchange Extraction**: Parse JSON lines, filter commands
-4. **Classification**: Apply three-layer analysis
-5. **Session Generation**: Group by time windows, write LSL files
-
-## Session File Organization
-
-### Filename Conventions
-
-Session files follow these naming patterns:
-
-```
-YYYY-MM-DD_HHMM-HHMM_<6-digit-hash>.md              # Local session files
-YYYY-MM-DD_HHMM-HHMM_<6-digit-hash>_from-PROJECT.md  # Redirected cross-project content
-```
-
-**Hash Generation:**
-- 6-character deterministic hash generated from USER environment variable
-- Uses SHA-256 with salt prefix for security
-- Prevents multi-user filename collisions
-- Example: `g9b30a` for user identification
-
-### Time Window System
-
-Sessions are organized into 1-hour time windows:
-- `0000-0100`, `0100-0200`, `0200-0300`, etc.
-- Times displayed in local timezone (automatically converted from UTC)  
-- Time windows help organize conversations chronologically
-
-### Directory Structure
-
-```
-project-root/
-├── .specstory/
-│   └── history/
-│       ├── 2025-09-12_1500-1600_g9b30a.md
-│       ├── 2025-09-12_1600-1700_g9b30a.md
-│       └── 2025-09-12_1700-1800_g9b30a_from-nano-degree.md
-```
-
-## Status Line Integration
-
-The LSL system provides real-time feedback through Claude Code's status line:
-
-### Coding Activity Indicator
-
-```
-📋🟠2100-2200(3min) →coding
-```
-
-- **📋**: Session logging active
-- **🟠**: Window closing soon (orange indicator)
-- **2100-2200**: Current time window
-- **(3min)**: Time remaining in window
-- **→coding**: Coding infrastructure activity detected
-
-### Indicator States
-
-- **→coding**: Recent coding infrastructure activity (3-minute timeout)
-- **📋**: Standard session logging
-- **🟠**: Time window closing (final 10 minutes)
-- **🔴**: Time window expired
-
-## Usage Examples
-
-### Real-time Monitoring
-
-The LSL system runs automatically with Global Coordinator integration:
-
-```bash
-# Start Claude Code with automatic LSL
-coding --claude
-# or
-claude-mcp
-
-# Global Coordinator automatically:
-# - Registers the session
-# - Starts transcript monitoring
-# - Provides health monitoring
-# - Enables automatic recovery
-```
-
-![LSL Coordinator Sequence](images/lsl-coordinator-sequence.png)
-
-### Batch Mode Processing
-
-The system supports multiple batch processing modes for different use cases:
-
-![LSL Batch Mode Workflows](images/lsl-batch-mode-workflows.png)
-
-#### Local Mode (Main Project)
-For processing a project's own transcripts with all content included:
-
-```bash
-# Process all content for nano-degree project
-node scripts/generate-proper-lsl-from-transcripts.js --mode=local --parallel
-
-# Legacy environment variable method (still supported)
-TRANSCRIPT_SOURCE_PROJECT="/Users/q284340/Agentic/nano-degree" \
-  node scripts/generate-proper-lsl-from-transcripts.js
-```
-
-**Use Case**: Generate complete session files for the main project being worked on.
-**Content**: All conversations, both coding and project-specific content.
-**Output**: Native session files in project's `.specstory/history/`.
-
-#### Foreign Mode (Cross-Project Content)
-For extracting coding infrastructure content from other projects:
-
-```bash
-# Extract coding content from all other projects
-node scripts/generate-proper-lsl-from-transcripts.js --mode=foreign --parallel
-
-# Legacy coding project method (still supported)
-TRANSCRIPT_SOURCE_PROJECT="/Users/q284340/Agentic/coding" \
-  node scripts/generate-proper-lsl-from-transcripts.js
-```
-
-**Use Case**: Collect coding infrastructure conversations scattered across multiple project transcripts.
-**Content**: Only coding-related conversations (ukb, vkb, MCP, semantic analysis, etc.).
-**Output**: Cross-project session files in coding project's `.specstory/history/`.
-
-#### Fast Processing with Timeout
-For quick processing of large transcript archives:
-
-```bash
-# Fast local processing with 30-second timeout
-timeout 30s node scripts/generate-proper-lsl-from-transcripts.js --mode=local --parallel
-
-# Fast foreign processing with timeout
-timeout 30s node scripts/generate-proper-lsl-from-transcripts.js --mode=foreign --parallel
-```
-
-**Use Case**: Emergency session recovery or quick updates when time is limited.
-**Performance**: Uses fast-path classification (skip semantic analysis) for 200x speed improvement.
-
-#### Parallel Processing Architecture
-Both local and foreign modes use parallel processing:
-
-- **5 Concurrent Workers**: Process multiple transcript files simultaneously
-- **Batch Classification**: Efficient exchange processing with shared classifier instances
-- **Smart Queuing**: Optimal file distribution across worker processes
-- **Result Aggregation**: Consolidated session file generation
-
-#### Batch Mode Comparison
-
-| Mode | Content | Target Project | Output Files | Use Case |
-|------|---------|----------------|--------------|----------|
-| **Local** | All content | Current project | Native sessions | Main project work |
-| **Foreign** | Coding only | Coding project | Cross-project sessions | Infrastructure collection |
-| **Legacy** | Based on target | Any project | Mixed | Backward compatibility |
-
-### Global Coordinator Management
-
-The Global LSL Coordinator provides additional management commands:
-
-```bash
-# Check coordinator status
-node scripts/global-lsl-coordinator.cjs status
-
-# Manually ensure LSL for a session
-node scripts/global-lsl-coordinator.cjs ensure "/path/to/project" <claude_pid>
-
-# Run manual cleanup
-node scripts/global-lsl-coordinator.cjs cleanup
-```
-
-## File Management and Storage Optimization
-
-### Automatic File Size Management
-
-The LSL system now includes comprehensive file size monitoring and rotation to ensure efficient storage usage as projects scale:
-
-#### File Size Thresholds
-```javascript
-// Default thresholds
-const thresholds = {
-  rotationTrigger: 40 * 1024 * 1024,  // 40MB - Start rotation process
-  maxFileSize: 50 * 1024 * 1024,      // 50MB - Hard limit before forced rotation
-  compressionLevel: 6,                 // Balanced compression (1-9)
-  maxArchivedFiles: 50                 // Keep up to 50 archived files
-};
-```
-
-#### Rotation Process
-When session files exceed the 40MB rotation threshold:
-
-1. **Pre-rotation Check**: Verify file exists and is accessible
-2. **Archive Creation**: Create timestamped archive in `.specstory/archive/`
-3. **File Movement**: Move current file to archive with timestamp suffix
-4. **Compression**: Apply gzip compression (typically 95%+ reduction)
-5. **Cleanup**: Remove original file if compression successful
-6. **Monitoring**: Continue monitoring new session file
-
-#### Storage Efficiency
-```javascript
-// Example compression results
-const compressionStats = {
-  originalSize: '45.2 MB',
-  compressedSize: '1.8 MB',
-  compressionRatio: '96.8%',
-  storageReduction: 'Typical 95%+ space savings'
-};
-```
-
-#### Archive Management
-The system automatically maintains archive hygiene:
-
-- **Retention Policy**: Keeps up to 50 archived files per project
-- **Age-based Cleanup**: Removes oldest files when limit exceeded
-- **Directory Organization**: Archives stored in `.specstory/archive/`
-- **Filename Format**: `{original-name}-{timestamp}.md.gz`
-
-### Enhanced Operational Logging
-
-#### Structured Metrics Collection
-The enhanced operational logger provides comprehensive system observability:
-
-```javascript
-// Structured metrics with automatic categorization
-logger.logStructuredMetrics('LSLFileManager', {
-  // Performance metrics
-  rotationsCompleted: 3,
-  compressionRatio: 96.8,
-  avgCompressionTime: 1250,
-  avgRotationTime: 850,
-  
-  // Storage metrics  
-  totalBytesCompressed: 150000000,
-  archiveFilesCreated: 12,
-  storageSpaceSaved: 144000000,
-  
-  // System health metrics
-  memoryUsage: process.memoryUsage().heapUsed,
-  uptime: process.uptime(),
-  activeSessions: 3
-}, {
-  sessionId: 'session-12345',
-  projectPath: '/Users/project',
-  correlationId: 'file-mgmt-001'
-});
-```
-
-#### Alert Generation
-Automatic alerts for operational issues:
-
-```javascript
-// Memory usage alerts
-logger.generateAlert('performance', 'high_memory_usage', {
-  current: 750,
-  threshold: 500,
-  severity: 'warning',
-  subsystem: 'LSLFileManager',
-  recommendation: 'Consider increasing rotation frequency'
-});
-
-// Storage space alerts
-logger.generateAlert('storage', 'low_disk_space', {
-  availableGB: 2.1,
-  threshold: 5.0,
-  severity: 'critical',
-  subsystem: 'ArchiveManager'
-});
-```
-
-#### System Health Dashboard Data
-The operational logger generates comprehensive metrics for system health monitoring:
-
-```javascript
-// Health metrics aggregated for dashboard consumption
-const healthMetrics = {
-  // File management health
-  fileManager: {
-    activeFiles: 8,
-    filesNeedingRotation: 2,
-    compressionQueue: 0,
-    avgFileSize: '28.3 MB',
-    totalArchivedFiles: 47,
-    compressionEfficiency: '96.2%'
-  },
-  
-  // Performance health  
-  performance: {
-    avgClassificationTime: 1.2,
-    avgRotationTime: 850,
-    avgCompressionTime: 1250,
-    memoryUsage: 245,
-    cpuUtilization: 12.5
-  },
-  
-  // System health
-  system: {
-    uptime: 86400,
-    sessionsActive: 3,
-    lastHealthCheck: '2025-09-14T16:30:00Z',
-    alerts: {
-      critical: 0,
-      warning: 1,
-      info: 3
-    }
-  }
-};
-```
-
-## Configuration
-
-### LSL File Manager Configuration
-
-```javascript
-// Configure file management behavior
-const fileManagerConfig = {
-  // Size management
-  maxFileSize: 50 * 1024 * 1024,        // 50MB maximum before forced rotation
-  rotationThreshold: 40 * 1024 * 1024,   // 40MB triggers rotation process
-  
-  // Compression settings  
-  enableCompression: true,                // Enable gzip compression
-  compressionLevel: 6,                    // 1-9, higher = better compression
-  keepOriginalAfterCompression: false,    // Remove original after compression
-  
-  // Archive management
-  maxArchivedFiles: 50,                   // Maximum archived files to retain
-  archiveDirectory: '.specstory/archive', // Archive storage location
-  
-  // Monitoring settings
-  monitoringInterval: 5 * 60 * 1000,     // Check every 5 minutes
-  enableRealTimeMonitoring: true,        // Real-time file watching
-  
-  // Performance tuning
-  bufferSize: 64 * 1024,                 // 64KB buffer for file operations
-  debug: false                           // Enable debug logging
-};
-```
-
-### Enhanced Operational Logger Configuration
-
-```javascript
-// Configure comprehensive operational logging
-const operationalLoggerConfig = {
-  // Log management
-  maxLogSizeMB: 10,                      // 10MB before rotation
-  maxLogFiles: 5,                        // Keep 5 rotated log files
-  
-  // Performance settings
-  batchSize: 100,                        // Batch log entries
-  flushIntervalMs: 5000,                 // Flush every 5 seconds
-  
-  // Alert thresholds
-  alerts: {
-    memoryThreshold: 500,                // MB - memory usage warning
-    diskThreshold: 5,                    // GB - free disk space warning  
-    performanceThreshold: 5000,          // ms - operation time warning
-    compressionRatioThreshold: 50        // % - minimum compression ratio
-  },
-  
-  // Structured logging
-  enableStructuredMetrics: true,         // Enable metrics collection
-  enableSystemHealth: true,              // Monitor system health
-  enableAlertGeneration: true,           // Generate operational alerts
-  correlationTracking: true              // Track operation correlations
-};
-```
-
-### Environment Variables
-
-```bash
-# Target project for LSL generation
-TRANSCRIPT_SOURCE_PROJECT="/path/to/project"
-
-# Coding tools path (for keyword detection)
-CODING_TOOLS_PATH="/Users/q284340/Agentic/coding"
-
-# Enable debug logging
-DEBUG_STATUS=1
-```
-
-### Classifier Configuration
-
-The ReliableCodingClassifier can be configured with:
-
-```javascript
-const classifier = new ReliableCodingClassifier({
-  projectPath: '/path/to/project',
-  codingRepo: '/path/to/coding',
-  enableLogging: true,
-  debug: false
-});
-```
-
-## Monitoring and Debugging
-
-### Enhanced Operational Logging
-
-The system provides comprehensive logging and metrics for debugging and monitoring:
-
-```bash
-# View classification decisions and system metrics
-tail -f .specstory/logs/operational.log
-
-# Monitor real-time activity and file management
-tail -f .specstory/logs/lsl-monitor.log
-
-# View structured metrics and performance data
-tail -f .specstory/logs/performance.log
-
-# Monitor file rotation and compression activity
-tail -f .specstory/logs/storage.log
-
-# View system health and alerts
-tail -f .specstory/logs/health.log
-```
-
-#### Log Analysis with jq
-
-```bash
-# View file management metrics
-cat .specstory/logs/operational.log | grep "structured_metrics" | jq .
-
-# Monitor alert generation
-cat .specstory/logs/operational.log | grep '"type":"alert"' | jq .
-
-# Analyze compression efficiency
-cat .specstory/logs/operational.log | \
-  jq -r 'select(.type == "structured_metrics" and .subsystem == "LSLFileManager") | .metrics.compressionRatio'
-
-# Track system health trends
-cat .specstory/logs/operational.log | \
-  jq -r 'select(.type == "system_health") | "\(.timestamp): \(.metrics.memoryUsage) MB"'
-```
-
-### Statistics Tracking
-
-Performance metrics are tracked and reported:
-
-```javascript
-{
-  totalClassifications: 1247,
-  pathAnalysisHits: 892,
-  keywordAnalysisHits: 301,
-  semanticAnalysisHits: 54,
-  avgClassificationTime: 1.2
+generateUserHash() {
+  // Based on user environment and system characteristics
+  return "g9b30a"; // Example hash
 }
 ```
 
-### Decision Path Tracking
+## Startup and Integration
 
-Each classification includes detailed decision information:
+### Automatic Startup
 
-```javascript
+When running `coding` or `coding --claude`:
+
+1. **Launch Script Execution**: `scripts/launch-claude.sh` invokes global coordinator
+2. **Global Coordinator Start**: Ensures LSL monitoring for target project
+3. **Monitor Process Spawn**: Enhanced Transcript Monitor starts as detached process
+4. **Health Monitoring**: Continuous health checks and recovery
+
+### Integration with Coding Workflow
+
+```bash
+# Start Claude session with automatic LSL
+coding --project curriculum-alignment
+
+# Global coordinator ensures monitoring
+node scripts/global-lsl-coordinator.js ensure /path/to/curriculum-alignment
+
+# Monitor starts automatically and begins real-time capture
+```
+
+## Performance and Reliability
+
+### Performance Metrics
+
+**Classification Performance**:
+- Keyword Layer: < 1ms (typical)
+- Semantic Layer: 1000-1500ms (when needed)
+- Session Filter: < 1ms (pre-filter)
+
+**Memory Usage**:
+- Enhanced Transcript Monitor: 9-69MB per project
+- Global Coordinator: Minimal overhead
+- Efficient streaming for large transcript files
+
+### Reliability Features
+
+1. **Automatic Recovery**: Failed monitors are automatically restarted
+2. **Process Cleanup**: Stale processes are properly terminated and cleaned up
+3. **Health Monitoring**: Continuous monitoring detects issues before they cause failures
+4. **Graceful Degradation**: System continues operating even with partial failures
+5. **Data Integrity**: Zero data loss through robust file handling and atomic operations
+
+## Configuration Files
+
+### Coding Keywords Dictionary
+
+**Location**: `scripts/coding-keywords.json`
+
+Contains coding-related terms for fast classification:
+```json
 {
-  layer: 'keyword',
-  decisionPath: [
-    {
-      layer: 'path',
-      input: { fileOperations: [] },
-      output: { isCoding: false },
-      duration: 0.5
-    },
-    {
-      layer: 'keyword',
-      input: { content: '...' },
-      output: { isCoding: true, confidence: 0.85 },
-      duration: 1.1
-    }
-  ]
+  "general": ["code", "function", "class", "debug"],
+  "tools": ["git", "npm", "build", "test"],
+  "infrastructure": ["deploy", "server", "api", "database"]
 }
 ```
 
-## System Status
+### Global Registry
 
-### Current State: ✅ Bulletproof Operation
+**Location**: `.global-lsl-registry.json`
 
-The enhanced LSL system is production-ready with bulletproof reliability:
-
-- **Global Coordinator**: Ensures LSL never fails across any session
-- **Health Monitoring**: 30-second intervals with automatic recovery
-- **Real-time classification** during active sessions with continuous monitoring
-- **Enhanced batch processing** with parallel workers and multiple modes
-- **Performance optimization** achieving 200x speed improvement
-- **Zero data loss** with comprehensive content routing and failover
-- **Status line integration** providing real-time feedback and activity indicators
-
-### Recent Major Improvements
-
-- **Global LSL Coordinator**: Bulletproof session management and health monitoring
-- **Enhanced batch modes**: Local and foreign processing with parallel workers
-- **Session registry**: Complete tracking of active sessions across projects  
-- **Automatic recovery**: Failed transcript monitors are automatically restarted
-- **Three-layer classification** architecture for improved accuracy
-- **Fast-path processing** for bulk operations with 200x speed improvement
-- **Process lifecycle management**: Clean startup, monitoring, and shutdown procedures
-- **LSL File Manager**: Advanced file size monitoring, rotation, and compression (Task 18)
-- **Enhanced Operational Logger**: Comprehensive metrics, health monitoring, and alerting (Task 19)
-- **Storage optimization**: 95%+ compression reducing disk usage significantly
-- **Real-time monitoring**: Continuous file size tracking with configurable thresholds
-- **Alert generation**: Automatic operational alerts for performance and system health issues
-- **Structured metrics**: JSONL logging with correlation tracking and categorization
+Tracks all active projects and their monitoring status for coordination.
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Classification accuracy concerns**:
-- Check keyword dictionary coverage in `scripts/coding-keywords.json`
-- Review decision paths in operational logs
-- Verify coding repository path detection
+1. **Monitor Not Starting**:
+   - Check project path is correct
+   - Verify `.specstory/history/` directory exists
+   - Confirm no port conflicts
 
-**Performance issues**:
-- Use fast-path processing for bulk operations
-- Check for semantic analysis bottlenecks
-- Monitor batch processing parallelization
-- Review file manager compression settings
-- Check for excessive file rotation frequency
+2. **Content Not Being Classified**:
+   - Verify ReliableCodingClassifier is properly initialized
+   - Check keyword dictionary is accessible
+   - Review performance monitoring logs
 
-**Storage and file management issues**:
-- **Large archive directories**: Check archive cleanup settings and maxArchivedFiles limit
-- **Compression failures**: Verify gzip availability and check compression error logs
-- **Rotation not triggering**: Confirm rotationThreshold and maxFileSize settings
-- **Archive cleanup not working**: Check file permissions in .specstory/archive directory
-- **High storage usage**: Review compression efficiency and retention policies
+3. **Health File Stale**:
+   - Monitor may be stuck or crashed
+   - Global coordinator will automatically restart
+   - Check process ID validity
 
-**Missing session files**:
-- Verify target project path configuration
-- Check transcript file accessibility
-- Review classification logic for edge cases
-- Check for file rotation moving active session files
+### Debug Mode
 
-**Operational logging issues**:
-- **Missing structured metrics**: Verify operational logger is enabled and configured
-- **Alert fatigue**: Adjust alert thresholds in operational logger configuration
-- **Log rotation problems**: Check log directory permissions and disk space
-- **Performance degradation**: Review log batching and flush interval settings
-
-### Debug Commands
-
+Enable detailed logging across the system:
 ```bash
-# Check Global Coordinator status
-node scripts/global-lsl-coordinator.cjs status
-
-# Test classification system
-DEBUG_STATUS=1 node scripts/enhanced-transcript-monitor.js --test
-
-# Check session registry
-cat .mcp-sync/session-registry.json | jq .
-
-# Monitor coordinator logs
-tail -f logs/global-lsl-coordinator.log
-
-# Test batch processing with debug output
-DEBUG_STATUS=1 node scripts/generate-proper-lsl-from-transcripts.js --mode=local --parallel
-
-# Test file management functionality
-node -e "
-const LSLFileManager = require('./src/live-logging/LSLFileManager.js').default;
-const fm = new LSLFileManager({ debug: true });
-console.log(fm.getStats());
-"
-
-# Test operational logger functionality  
-node -e "
-const OperationalLogger = require('./src/live-logging/OperationalLogger.js').default;
-const logger = new OperationalLogger({ debug: true });
-logger.logSystemHealth();
-console.log(logger.getStats());
-"
-
-# Check file manager integration in transcript monitor
-DEBUG_STATUS=1 node scripts/enhanced-transcript-monitor.js --test-file-manager
-
-# Monitor archive directory status
-ls -la .specstory/archive/ | head -20
-
-# Check compression efficiency
-find .specstory/archive -name "*.gz" -exec sh -c 'echo "File: $1"; stat -c "%s bytes" "$1"' _ {} \;
-
-# View recent file management operations
-grep -A 5 -B 5 "file_rotation\|compression\|archive_cleanup" .specstory/logs/operational.log | tail -50
-
-# Check alert generation
-grep '"type":"alert"' .specstory/logs/operational.log | tail -10 | jq .
+TRANSCRIPT_DEBUG=true node scripts/enhanced-transcript-monitor.js
 ```
 
-## Architecture Diagrams
+## Integration Points
 
-### Enhanced System Overview
-![Enhanced LSL System Overview](images/lsl-system-overview.png)
+The LSL system integrates with:
 
-### Global Coordinator Architecture
-![Global LSL Coordinator Architecture](images/lsl-global-coordinator-architecture.png)
-
-### Coordinator Session Lifecycle
-![LSL Coordinator Sequence](images/lsl-coordinator-sequence.png)
-
-### Batch Processing Workflows
-![LSL Batch Mode Workflows](images/lsl-batch-mode-workflows.png)
-
-### Classification Flow
-![Classification Decision Tree](images/lsl-classification-flow.png)
-
-### System Integration
-![LSL System Integration](images/lsl-system-integration.png)
-
-### Performance Architecture  
-![LSL Performance Architecture](images/lsl-performance-architecture.png)
+- **Coding Startup Script**: Automatic initialization
+- **Claude Transcript System**: Real-time monitoring of `.jsonl` files
+- **MCP Session Management**: Coordination with Claude Code session lifecycle
+- **Project Directory Structure**: Proper `.specstory/history/` organization
 
 ---
 
-The Enhanced Live Session Logging system with Global Coordinator, Advanced File Management, and Comprehensive Operational Logging represents the pinnacle of bulletproof conversation classification and routing for Claude Code. With automatic file size management, storage optimization through compression, enhanced observability through structured metrics, alert generation, and health monitoring, the system ensures all conversations are intelligently organized while maintaining ultra-high performance, zero data loss, minimal storage footprint, and absolute reliability across all usage scenarios.
+## See Also
 
-**Key Capabilities Summary:**
-- **Bulletproof reliability** with automatic recovery and health monitoring
-- **Intelligent classification** using three-layer analysis architecture  
-- **Advanced file management** with automatic rotation and 95%+ compression
-- **Comprehensive observability** through structured metrics and alerting
-- **Storage optimization** maintaining minimal disk usage with efficient archiving
-- **Real-time monitoring** of system performance and operational health
-- **Zero data loss** with complete conversation preservation and routing
+- [Global LSL Coordinator Documentation](architecture/global-lsl-coordinator.md)
+- [Enhanced Transcript Monitor API](reference/enhanced-transcript-monitor.md)
+- [Classification System Guide](components/reliable-coding-classifier.md)
+- [Troubleshooting LSL Issues](troubleshooting.md)
+
+---
+
+*The LSL system ensures comprehensive conversation capture with intelligent routing, providing a robust foundation for cross-session knowledge management and project documentation.*

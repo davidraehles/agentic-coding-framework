@@ -94,7 +94,7 @@ graph TB
 ## 📚 Documentation
 
 ### Core Documentation
-- **[Enhanced Architecture](enhanced-architecture.md)** - Complete enhanced system architecture
+- **[Architecture](architecture.md)** - Complete system architecture
 - **[Architecture](architecture.md)** - Original system architecture  
 - **[Installation Guide](installation.md)** - Complete setup and configuration
 - **[Use Cases](use-cases.md)** - Comprehensive usage examples
@@ -198,7 +198,7 @@ For detailed examples, see the [use cases guide](use-cases.md).
 ---
 
 **Next Steps**: 
-- Review the [enhanced architecture](enhanced-architecture.md) for detailed technical specifications
+- Review the [architecture](architecture.md) for detailed technical specifications
 - Follow the [installation guide](installation.md) for step-by-step setup
 - Explore [use cases](use-cases.md) for practical implementation examples
 
@@ -241,7 +241,7 @@ The semantic analysis system **complements** rather than **replaces** the tradit
 - **[API Reference](../../../integrations/mcp-server-semantic-analysis/docs/api/README.md)** - Complete tool and agent API documentation
 
 ### Legacy Semantic Analysis System
-- [Enhanced Architecture](./enhanced-architecture.md) - Complete enhanced system architecture
+- [Architecture](./architecture.md) - Complete system architecture
 - [Architecture Details](./architecture.md) - Original technical architecture
 - [API Reference](./api-reference.md) - Complete API documentation
 - [Workflow Guide](./workflows.md) - Workflow configuration and usage

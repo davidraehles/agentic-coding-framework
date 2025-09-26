@@ -778,10 +778,10 @@ console.log('Report sections:', Object.keys(report));
 
 ## Related Documentation
 
-- **[Live Session Logging System v3.0](live-session-logging-system.md)** - Real-time session documentation and redirect detection
+- **[Live Session Logging System](live-session-logging.md)** - Real-time session documentation and redirect detection
 - **[Main README](../README.md)** - System overview and general usage
 - **[Installation Guide](installation/)** - Setup and configuration instructions
 
 ---
 
-*This documentation describes the trajectory generation system that integrates with LSL v3.0. For session logging details, see [Live Session Logging System v3.0](live-session-logging-system.md).*
+*This documentation describes the trajectory generation system that integrates with LSL. For session logging details, see [Live Session Logging System](live-session-logging.md).*
