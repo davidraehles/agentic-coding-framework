@@ -42,7 +42,10 @@ package "Live Session Logging (LSL)" <<core>> {
 
 package "External APIs" <<infra>> {
   [Grok API (X.AI)] as GrokAPI <<api>>
-  [Constraint Monitor] as ConstraintMCP <<api>>
+}
+
+package "MCP Integration" <<infra>> {
+  [Constraint Monitor MCP] as ConstraintMCP <<api>>
 }
 
 ' Main flow connections
@@ -97,6 +100,14 @@ note bottom of GrokAPI
   • Model: grok-2-1212
   • 2s timeout for fast response
   • No MCP overhead
+end note
+
+note bottom of ConstraintMCP
+  **MCP Server Integration**
+  • Real MCP server with stdio transport
+  • Tools: get_constraint_status, check_constraints
+  • Violation tracking and history
+  • Status line integration hooks
 end note
 
 note left of Router

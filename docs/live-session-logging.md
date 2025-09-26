@@ -42,10 +42,10 @@ The core monitoring system that runs as a background process for each project.
 ```json
 {
   "timestamp": 1758820202726,
-  "projectPath": "/Users/q284340/Agentic/curriculum-alignment",
-  "transcriptPath": "/Users/q284340/.claude/projects/-Users-q284340-Agentic-curriculum-alignment/ca137daf-b706-4d7b-9d49-16bd4ba84c1f.jsonl",
+  "projectPath": "/Users/<username>/Agentic/<project>",
+  "transcriptPath": "/Users/<username>/.claude/projects/-Users-<username>-Agentic-<project>/ca137daf-b706-4d7b-9d49-16bd4ba84c1f.jsonl",
   "status": "running",
-  "userHash": "g9b30a",
+  "userHash": "<user-hash>",
   "metrics": {
     "memoryMB": 9,
     "cpuUser": 7481974,
@@ -80,8 +80,8 @@ Multi-project coordination system that ensures healthy monitoring across all pro
   "version": "1.0.0",
   "lastUpdated": 1758820202726,
   "projects": {
-    "curriculum-alignment": {
-      "projectPath": "/Users/q284340/Agentic/curriculum-alignment",
+    "<project>": {
+      "projectPath": "/Users/<username>/Agentic/<project>",
       "monitorPid": 78406,
       "status": "active",
       "lastHealthCheck": 1758820202726
@@ -129,9 +129,9 @@ Handles the creation and management of LSL session files with intelligent routin
 **File Organization**:
 ```
 .specstory/history/
-├── 2025-09-25_1800-1900_g9b30a.md                    # Local project content
+├── 2025-09-25_1800-1900_<user-hash>.md                    # Local project content
 ├── coding/.specstory/history/
-│   └── 2025-09-25_1800-1900_g9b30a_from-curriculum-alignment.md  # Redirected coding content
+│   └── 2025-09-25_1800-1900_<user-hash>_from-<project>.md  # Redirected coding content
 ```
 
 **Key Features**:
@@ -151,9 +151,9 @@ Each project started via `coding/bin/coding` gets its own Enhanced Transcript Mo
 **Environment Variables**:
 ```javascript
 env: {
-  PROJECT_PATH: "/Users/q284340/Agentic/curriculum-alignment",
-  TRANSCRIPT_SOURCE_PROJECT: "/Users/q284340/Agentic/curriculum-alignment",
-  CODING_TOOLS_PATH: "/Users/q284340/Agentic/coding"
+  PROJECT_PATH: "/Users/<username>/Agentic/<project>",
+  TRANSCRIPT_SOURCE_PROJECT: "/Users/<username>/Agentic/<project>",
+  CODING_TOOLS_PATH: "/Users/<username>/Agentic/coding"
 }
 ```
 
@@ -214,8 +214,8 @@ YYYY-MM-DD_HHMM-HHMM_<user-hash>.md
 ```
 
 **Examples**:
-- `2025-09-25_1800-1900_g9b30a.md` - Regular project content
-- `2025-09-25_1800-1900_g9b30a_from-nano-degree.md` - Redirected coding content
+- `2025-09-25_1800-1900_<user-hash>.md` - Regular project content
+- `2025-09-25_1800-1900_<user-hash>_from-<project-2>.md` - Redirected coding content
 
 ### User Hash Generation
 
@@ -225,7 +225,7 @@ Generates consistent 6-character hashes to prevent filename collisions:
 ```javascript
 generateUserHash() {
   // Based on user environment and system characteristics
-  return "g9b30a"; // Example hash
+  return "<user-hash>"; // Example hash
 }
 ```
 
@@ -244,10 +244,10 @@ When running `coding` or `coding --claude`:
 
 ```bash
 # Start Claude session with automatic LSL
-coding --project curriculum-alignment
+coding --project <project>
 
 # Global coordinator ensures monitoring
-node scripts/global-lsl-coordinator.js ensure /path/to/curriculum-alignment
+node scripts/global-lsl-coordinator.js ensure /path/to/<project>
 
 # Monitor starts automatically and begins real-time capture
 ```

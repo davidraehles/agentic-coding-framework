@@ -17,7 +17,7 @@ participant "Trajectory Files" as output <<OUTPUT_COLOR>>
 
 == Session Completion ==
 session -> monitor : Session ends (60-minute boundary)
-monitor -> detection : Identify project (coding/nano-degree)
+monitor -> detection : Identify project (coding/<project>)
 detection -> generator : Project identifier + session data
 
 == Revolutionary Approach: Capability-Focused Generation ==
@@ -29,7 +29,7 @@ generator -> generator : **NEW APPROACH**\n• Current project state\n• Actual
 alt Project = "coding"
     capabilities -> generator : **Coding Infrastructure Capabilities**\n• Live Session Logging (LSL)\n• Dynamic Status Line\n• Cross-Project Routing\n• Constraint Monitoring\n• Unified Message Processing
     generator -> output : Generate meaningful trajectory
-else Project = "nano-degree"  
+else Project = "<project>"  
     capabilities -> generator : **Nano-Degree Course Capabilities**\n• MCP/ACP/A2A Documentation\n• Course Material Structure\n• PlantUML Diagrams\n• Multi-Path Learning System
     generator -> output : Generate meaningful trajectory
 else Project = "unknown"

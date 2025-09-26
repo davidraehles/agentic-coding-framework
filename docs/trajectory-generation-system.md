@@ -507,8 +507,8 @@ node scripts/repository-trajectory-generator.js --level=deep
 
 ```bash
 # Trajectory generation configuration
-TRANSCRIPT_SOURCE_PROJECT=/Users/q284340/Agentic/nano-degree  # Target project
-CODING_TOOLS_PATH=/Users/q284340/Agentic/coding            # Tools location
+TRANSCRIPT_SOURCE_PROJECT=/Users/<username>/Agentic/nano-degree  # Target project
+CODING_TOOLS_PATH=/Users/<username>/Agentic/coding            # Tools location
 TRAJECTORY_ANALYSIS_LEVEL=light                            # Default analysis depth
 TRAJECTORY_AUTO_UPDATE=true                                # Enable automatic updates
 TRAJECTORY_UPDATE_INTERVAL=86400000                        # Update interval (24h)

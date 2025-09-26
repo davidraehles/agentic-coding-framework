@@ -76,7 +76,7 @@ const stats = extractor.getStats();
 
 ### 3. Configuration System
 
-**Location**: `/Users/q284340/Agentic/coding/config/transcript-formats.json`
+**Location**: `/Users/<username>/Agentic/coding/config/transcript-formats.json`
 
 **Structure**:
 ```json

@@ -381,7 +381,7 @@ $ cd /path/to/raas-project
 # Step 2: First ukb command automatically creates shared-memory-raas.json
 $ ukb --list-entities
 ? Knowledge base file not found. Create a new knowledge base file? Yes
-✅ Created new knowledge base: /Users/q284340/Agentic/coding/shared-memory-raas.json
+✅ Created new knowledge base: /Users/<username>/Agentic/coding/shared-memory-raas.json
 
 # Step 3: Add first domain entity using piped input
 $ echo "StreamProcessingPipeline
@@ -421,7 +421,7 @@ $ ukb --print
 
 **File Structure Result:**
 ```
-/Users/q284340/Agentic/coding/
+/Users/<username>/Agentic/coding/
 ├── shared-memory-coding.json     # Cross-team patterns
 ├── shared-memory-raas.json       # RaaS domain knowledge
 ├── shared-memory-ui.json         # UI team knowledge
@@ -440,7 +440,7 @@ The diagram shows the complete workflow from project detection to knowledge base
 
 ```bash
 # Search across all team knowledge bases
-$ cd /Users/q284340/Agentic/coding
+$ cd /Users/<username>/Agentic/coding
 $ grep -l "MicroserviceArchitecture" shared-memory-*.json
 
 shared-memory-raas.json

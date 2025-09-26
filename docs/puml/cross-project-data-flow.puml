@@ -2,7 +2,7 @@
 !include _standard-style.puml
 title Cross-Project Content Routing Data Flow
 
-rectangle "Nano-Degree Project" as NanoDegree {
+rectangle "<Project> Project" as NanoDegree {
   component "Claude Session" as NanoSession
   folder ".specstory/history" as NanoFiles {
     file "1530-1630-session.md" as NanoLSL
@@ -12,7 +12,7 @@ rectangle "Nano-Degree Project" as NanoDegree {
 
 rectangle "Coding Project" as Coding {
   folder ".specstory/history" as CodingFiles {
-    file "1530-1630_from-nano-degree.md" as CodingLSL
+    file "1530-1630_from-<project>.md" as CodingLSL
   }
   folder ".specstory/trajectory" as TrajectoryFiles {
     file "1530-1630_coding-trajectory.md" as Trajectory
@@ -27,7 +27,7 @@ NanoSession -> Transcripts : Generate transcript files
 Transcripts -> Monitor : Monitor in real-time
 Monitor -> Classifier : Analyze content type
 
-Classifier -> NanoFiles : nano-degree content
+Classifier -> NanoFiles : <project> content
 Classifier -> CodingFiles : coding content
 Classifier -> RedirectStatus : Update routing status
 

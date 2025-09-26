@@ -52,7 +52,7 @@ note right of timing : **Time Calculation**\n• Parse session: "1330-1430"\n•
 
 note right of colors : **Color Logic**\n**Normal (>5 min):** 📋1330-1430-session\n**Warning (≤5 min):** 📋🟠1330-1430-session(3min)\n**Ended (≤0 min):** 📋🔴1330-1430-session(ended)
 
-note right of regex : **Enhanced Regex Detection**\nHandles multiple session file patterns:\n• 2025-09-05_1530-1630-session.md\n• 2025-09-05_1530-1630_coding-session-from-nano-degree.md\n• 2025-09-05_1530-1630-session-from-coding.md
+note right of regex : **Enhanced Regex Detection**\nHandles multiple session file patterns:\n• 2025-09-05_1530-1630-session.md\n• 2025-09-05_1530-1630_coding-session-from-<project>.md\n• 2025-09-05_1530-1630-session-from-coding.md
 
 note right of redirect_timeout : **Dynamic Redirect Flag**\nShows 🔀→coding only when:\n• Redirect status file exists\n• Timestamp < 3 minutes old\n• Automatically hides after timeout
 

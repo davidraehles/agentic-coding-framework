@@ -2,7 +2,7 @@
 
 *Analysis performed by code-refactoring-specialist agent*
 
-Based on analysis of the `/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis` codebase, here are the identified key architectural patterns:
+Based on analysis of the `/Users/<username>/Agentic/coding/integrations/mcp-server-semantic-analysis` codebase, here are the identified key architectural patterns:
 
 ## 1. **Multi-Agent Architecture Pattern** 🤖
 

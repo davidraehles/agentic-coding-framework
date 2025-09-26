@@ -114,14 +114,14 @@ The `/lg` command works alongside the status line display:
 ps aux | grep "dashboard-server"
 
 # Manually start dashboard
-cd /Users/q284340/Agentic/coding
+cd /Users/<username>/Agentic/coding
 ./integrations/mcp-constraint-monitor/bin/dashboard
 ```
 
 ### No Status Data
 ```bash
 # Verify services are running
-cd /Users/q284340/Agentic/coding
+cd /Users/<username>/Agentic/coding
 ./start-services.sh
 ```
 

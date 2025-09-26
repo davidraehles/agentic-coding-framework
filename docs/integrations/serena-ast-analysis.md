@@ -309,7 +309,7 @@ retrieve_semantic_code {"target": "UserService", "include_dependencies": true, "
 **Issue**: "Serena not responding to MCP requests"
 ```bash
 # Check Serena installation
-cd /Users/q284340/Agentic/coding/integrations/serena
+cd /Users/<username>/Agentic/coding/integrations/serena
 .venv/bin/python -c "import serena; print('OK')"
 
 # Restart Claude Code MCP servers

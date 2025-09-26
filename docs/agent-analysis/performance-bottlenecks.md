@@ -29,23 +29,23 @@ The most critical performance bottleneck is the **Insight Generation Agent**, wh
 ## Files Requiring Immediate Attention
 
 ### Priority 1: High Impact Files
-1. `/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/src/agents/insight-generation-agent.ts`
+1. `/Users/<username>/Agentic/coding/integrations/mcp-server-semantic-analysis/src/agents/insight-generation-agent.ts`
    - Contains the main bottleneck code
    - Needs async/await refactoring
    - Requires request batching implementation
 
-2. `/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/src/agents/coordinator.ts`
+2. `/Users/<username>/Agentic/coding/integrations/mcp-server-semantic-analysis/src/agents/coordinator.ts`
    - Orchestrates agent execution
    - Currently uses sequential execution
    - Needs parallel execution capabilities
 
 ### Priority 2: Supporting Infrastructure
-3. `/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/src/agents/semantic-analysis-agent.ts`
+3. `/Users/<username>/Agentic/coding/integrations/mcp-server-semantic-analysis/src/agents/semantic-analysis-agent.ts`
    - Secondary bottleneck in code analysis
    - Inefficient pattern matching algorithms
    - Needs optimization for large codebases
 
-4. `/Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/src/logging.ts`
+4. `/Users/<username>/Agentic/coding/integrations/mcp-server-semantic-analysis/src/logging.ts`
    - Synchronous logging impacts performance
    - Needs async logging implementation
    - Should implement log buffering

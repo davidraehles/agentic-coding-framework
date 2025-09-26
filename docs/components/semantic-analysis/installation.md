@@ -123,8 +123,8 @@ GOOGLE_CSE_ID=your_custom_search_engine_id_here
 # -----------------------------------------------------------------------------
 # System Paths
 # -----------------------------------------------------------------------------
-CODING_TOOLS_PATH=/Users/q284340/Agentic/coding
-CODING_KB_PATH=/Users/q284340/Agentic/coding
+CODING_TOOLS_PATH=/Users/<username>/Agentic/coding
+CODING_KB_PATH=/Users/<username>/Agentic/coding
 
 # -----------------------------------------------------------------------------
 # Infrastructure Configuration
@@ -137,9 +137,9 @@ MCP_SERVER_PORT=3001
 # -----------------------------------------------------------------------------
 # Storage Configuration
 # -----------------------------------------------------------------------------
-SHARED_MEMORY_CODING=/Users/q284340/Agentic/coding/shared-memory-coding.json
-SHARED_MEMORY_UI=/Users/q284340/Agentic/coding/shared-memory-ui.json
-SHARED_MEMORY_RESI=/Users/q284340/Agentic/coding/shared-memory-resi.json
+SHARED_MEMORY_CODING=/Users/<username>/Agentic/coding/shared-memory-coding.json
+SHARED_MEMORY_UI=/Users/<username>/Agentic/coding/shared-memory-ui.json
+SHARED_MEMORY_RESI=/Users/<username>/Agentic/coding/shared-memory-resi.json
 
 # -----------------------------------------------------------------------------
 # Synchronization Configuration
@@ -203,8 +203,8 @@ agents:
       apiUrl: http://localhost:3001
       timeout: 10000
     ukb:
-      ukbPath: /Users/q284340/Agentic/coding/bin/ukb
-      sharedMemoryPath: /Users/q284340/Agentic/coding/shared-memory-coding.json
+      ukbPath: /Users/<username>/Agentic/coding/bin/ukb
+      sharedMemoryPath: /Users/<username>/Agentic/coding/shared-memory-coding.json
       autoSync: true
     validation:
       enableDuplicateCheck: true
@@ -230,15 +230,15 @@ agents:
         timeout: 30000
     files:
       sharedMemoryPaths:
-        - /Users/q284340/Agentic/coding/shared-memory-coding.json
-        - /Users/q284340/Agentic/coding/shared-memory-ui.json
-        - /Users/q284340/Agentic/coding/shared-memory-resi.json
+        - /Users/<username>/Agentic/coding/shared-memory-coding.json
+        - /Users/<username>/Agentic/coding/shared-memory-ui.json
+        - /Users/<username>/Agentic/coding/shared-memory-resi.json
       debounceDelay: 1000
     conflict:
       strategy: latest-wins  # latest-wins, merge, manual
       autoResolveThreshold: 0.95
     versioning:
-      versionsPath: /Users/q284340/Agentic/coding/.versions
+      versionsPath: /Users/<username>/Agentic/coding/.versions
       maxVersions: 50
       compressionEnabled: true
   
@@ -458,13 +458,13 @@ npm run test:llm
 **Solutions**:
 ```bash
 # Check file permissions
-ls -la /Users/q284340/Agentic/coding/shared-memory-*.json
+ls -la /Users/<username>/Agentic/coding/shared-memory-*.json
 
 # Fix permissions
-chmod 644 /Users/q284340/Agentic/coding/shared-memory-*.json
+chmod 644 /Users/<username>/Agentic/coding/shared-memory-*.json
 
 # Check directory permissions
-ls -la /Users/q284340/Agentic/coding/
+ls -la /Users/<username>/Agentic/coding/
 ```
 
 #### 4. Agent Communication Failures
