@@ -1,20 +1,20 @@
 {
-  "timestamp": "2025-09-27T17:34:36.848Z",
+  "timestamp": "2025-09-28T05:30:00.484Z",
   "watchdog": {
     "version": "1.0.0",
     "logPath": "/Users/q284340/Agentic/coding/.logs/system-watchdog.log",
-    "lastCheck": "2025-09-27T17:34:36.848Z"
+    "lastCheck": "2025-09-28T05:30:00.484Z"
   },
   "coordinator": {
-    "alive": false,
-    "reason": "pid_dead",
-    "pid": 43529,
+    "alive": true,
+    "pid": 20157,
+    "registryAge": 4881,
     "registryPath": "/Users/q284340/Agentic/coding/.global-service-registry.json"
   },
   "system": {
     "platform": "darwin",
     "nodeVersion": "v24.5.0",
-    "uptime": 0.023780417,
+    "uptime": 0.021320875,
     "workingDirectory": "/Users/q284340/Agentic/coding"
   }
 }

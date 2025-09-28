@@ -306,8 +306,8 @@ class MonitoringVerifier {
       await new Promise(resolve => setTimeout(resolve, 5000));
       
       const criticalServices = [
-        { name: 'Enhanced Transcript Monitor', healthFile: '.transcript-monitor-health' },
-        { name: 'MCP Constraint Monitor', check: 'port', port: 6333 }
+        { name: 'Enhanced Transcript Monitor', healthFile: '.transcript-monitor-health' }
+        // MCP services are managed by claude-mcp, not by project monitoring
       ];
       
       const serviceResults = [];

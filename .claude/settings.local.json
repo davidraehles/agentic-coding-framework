@@ -7,7 +7,9 @@
       "Bash(TRANSCRIPT_DEBUG=true node scripts/enhanced-transcript-monitor.js --test)",
       "Bash(node:*)",
       "Bash(plantuml:*)",
-      "mcp__serena__check_onboarding_performed"
+      "mcp__serena__check_onboarding_performed",
+      "Bash(bin/coding:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []

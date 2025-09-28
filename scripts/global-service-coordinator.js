@@ -47,7 +47,7 @@ class GlobalServiceCoordinator extends EventEmitter {
     this.registryPath = path.join(this.codingRepoPath, '.global-service-registry.json');
     this.logPath = path.join(this.codingRepoPath, '.logs', 'global-coordinator.log');
     this.isDaemon = options.daemon || false;
-    this.debug = options.debug || false;
+    this.isDebugMode = options.debug || false;
     
     // Health check intervals
     this.healthCheckInterval = 15000; // 15 seconds
@@ -55,34 +55,21 @@ class GlobalServiceCoordinator extends EventEmitter {
     this.maxRestartAttempts = 5;
     this.restartBackoffBase = 1000; // 1 second
     
-    // Service definitions
+    // Service definitions - only project-specific services
+    // MCP services are started by claude-mcp via coding/bin/coding, not by this coordinator
     this.serviceDefinitions = {
-      'mcp-constraint-monitor': {
-        type: 'global',
-        script: 'integrations/mcp-constraint-monitor/src/server.js',
-        healthCheck: 'port:6333', // Check if Qdrant-like port responds
-        priority: 1,
-        restartable: true
-      },
-      'mcp-memory': {
-        type: 'global', 
-        script: 'scripts/mcp-memory-server.js',
-        healthCheck: 'process',
-        priority: 2,
-        restartable: true
-      },
       'enhanced-transcript-monitor': {
         type: 'per-project',
         script: 'scripts/enhanced-transcript-monitor.js',
         healthCheck: 'health-file', // .transcript-monitor-health
-        priority: 3,
+        priority: 1,
         restartable: true
       },
       'trajectory-generator': {
         type: 'per-project',
         script: 'scripts/trajectory-generator.js', 
         healthCheck: 'health-file',
-        priority: 4,
+        priority: 2,
         restartable: true
       }
     };
@@ -115,7 +102,7 @@ class GlobalServiceCoordinator extends EventEmitter {
     const timestamp = new Date().toISOString();
     const logEntry = `[${timestamp}] [${level}] [GlobalCoordinator] ${message}\n`;
     
-    if (this.debug || level === 'ERROR' || level === 'WARN') {
+    if (this.isDebugMode || level === 'ERROR' || level === 'WARN') {
       console.log(logEntry.trim());
     }
     
@@ -135,7 +122,7 @@ class GlobalServiceCoordinator extends EventEmitter {
   }
 
   debug(message) {
-    if (this.debug) {
+    if (this.isDebugMode) {
       this.log(message, 'DEBUG');
     }
   }
@@ -251,13 +238,10 @@ class GlobalServiceCoordinator extends EventEmitter {
    * Ensure global services are running
    */
   async ensureGlobalServices() {
-    const globalServices = Object.entries(this.serviceDefinitions)
-      .filter(([_, def]) => def.type === 'global')
-      .sort((a, b) => a[1].priority - b[1].priority);
-
-    for (const [serviceName, serviceDef] of globalServices) {
-      await this.ensureService(serviceName, serviceDef);
-    }
+    // MCP services are started by claude-mcp via coding/bin/coding
+    // This coordinator only manages project-specific services
+    this.debug('Global services (MCP stack) are managed by claude-mcp process');
+    return true;
   }
 
   /**
