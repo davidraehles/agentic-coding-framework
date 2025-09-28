@@ -15,7 +15,17 @@
       "mcp__serena__activate_project",
       "mcp__serena__get_symbols_overview",
       "Read(//Users/q284340/Agentic/curriculum-alignment/**)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout:*)",
+      "Bash(watch:*)",
+      "Read(//Users/q284340/Agentic/nano-degree/**)",
+      "mcp__serena__list_dir",
+      "Read(//Users/q284340/Agentic/**)",
+      "Read(//Users/q284340/.claude/projects/**)",
+      "mcp__serena__insert_after_symbol",
+      "Bash(find:*)",
+      "Bash(CODING_REPO=/Users/q284340/Agentic/coding node /Users/q284340/Agentic/coding/scripts/combined-status-line.js)",
+      "Bash(kill:*)"
     ],
     "deny": [],
     "ask": []

@@ -49,11 +49,12 @@ class CombinedStatusLine {
       const semanticStatus = await this.getSemanticStatus();
       const liveLogTarget = await this.getCurrentLiveLogTarget();
       const redirectStatus = await this.getRedirectStatus();
+      const globalHealthStatus = await this.getGlobalHealthStatus();
       
       // Robust transcript monitor health check and auto-restart
       await this.ensureTranscriptMonitorRunning();
       
-      const status = await this.buildCombinedStatus(constraintStatus, semanticStatus, liveLogTarget, redirectStatus);
+      const status = await this.buildCombinedStatus(constraintStatus, semanticStatus, liveLogTarget, redirectStatus, globalHealthStatus);
       
       this.statusCache = status;
       this.lastUpdate = now;
@@ -274,6 +275,88 @@ class CombinedStatusLine {
       }
     } catch (error) {
       return { status: 'offline', error: error.message };
+    }
+  }
+
+  async getGlobalHealthStatus() {
+    try {
+      // Read health status from the statusline health monitor
+      const healthStatusFile = join(rootDir, '.logs', 'statusline-health-status.txt');
+      
+      if (!existsSync(healthStatusFile)) {
+        return { 
+          status: 'initializing',
+          gcm: { icon: '🟡', status: 'initializing' },
+          sessions: {},
+          guards: { icon: '🟡', status: 'initializing' }
+        };
+      }
+      
+      // Read the latest health status
+      const healthStatus = readFileSync(healthStatusFile, 'utf8').trim();
+      
+      // Parse the health status format: [GCM:✅] [Sessions: coding:🟢] [Guards:✅]
+      const gcmMatch = healthStatus.match(/\[GCM:([^\]]+)\]/);
+      const sessionsMatch = healthStatus.match(/\[Sessions:\s*([^\]]+)\]/);
+      const guardsMatch = healthStatus.match(/\[Guards:([^\]]+)\]/);
+      
+      const result = {
+        status: 'operational',
+        rawStatus: healthStatus,
+        gcm: { icon: '✅', status: 'healthy' },
+        sessions: {},
+        guards: { icon: '✅', status: 'healthy' }
+      };
+      
+      // Parse GCM status
+      if (gcmMatch) {
+        result.gcm.icon = gcmMatch[1];
+        result.gcm.status = gcmMatch[1] === '✅' ? 'healthy' : 
+                           gcmMatch[1] === '🟡' ? 'warning' : 'unhealthy';
+      }
+      
+      // Parse sessions status
+      if (sessionsMatch) {
+        const sessionsStr = sessionsMatch[1];
+        const sessionPairs = sessionsStr.split(/\s+/);
+        
+        for (const pair of sessionPairs) {
+          const [projectName, icon] = pair.split(':');
+          if (projectName && icon) {
+            result.sessions[projectName] = {
+              icon: icon,
+              status: icon === '🟢' ? 'healthy' : 
+                     icon === '🟡' ? 'warning' : 'unhealthy'
+            };
+          }
+        }
+      }
+      
+      // Parse guards status
+      if (guardsMatch) {
+        result.guards.icon = guardsMatch[1];
+        result.guards.status = guardsMatch[1] === '✅' ? 'healthy' : 
+                              guardsMatch[1] === '🟡' ? 'warning' : 'unhealthy';
+      }
+      
+      // Check if health file is recent (within 30 seconds)
+      const stats = fs.statSync(healthStatusFile);
+      const age = Date.now() - stats.mtime.getTime();
+      
+      if (age > 30000) {
+        result.status = 'stale';
+        result.gcm.status = 'stale';
+      }
+      
+      return result;
+    } catch (error) {
+      return { 
+        status: 'error',
+        error: error.message,
+        gcm: { icon: '❌', status: 'error' },
+        sessions: {},
+        guards: { icon: '❌', status: 'error' }
+      };
     }
   }
 
@@ -740,9 +823,55 @@ class CombinedStatusLine {
     }
   }
 
-  async buildCombinedStatus(constraint, semantic, liveLogTarget, redirectStatus) {
+  async buildCombinedStatus(constraint, semantic, liveLogTarget, redirectStatus, globalHealth) {
     const parts = [];
     let overallColor = 'green';
+
+    // Global Health Status (GCM + Individual Session Statuses) - highest priority monitoring
+    if (globalHealth && globalHealth.status !== 'error') {
+      const gcmIcon = globalHealth.gcm?.icon || '🟡';
+      const sessionEntries = Object.entries(globalHealth.sessions || {});
+      
+      if (sessionEntries.length > 0) {
+        // Extract individual session statuses from rawStatus for proper abbreviations
+        if (globalHealth.rawStatus) {
+          const sessionsMatch = globalHealth.rawStatus.match(/\[Sessions:\s*([^\]]+)\]/);
+          if (sessionsMatch) {
+            const sessionStatuses = sessionsMatch[1].trim();
+            parts.push(`${gcmIcon}${sessionStatuses}`);
+            
+            // Determine overall session health for color coding
+            const hasUnhealthy = sessionStatuses.includes('🔴');
+            const hasWarning = sessionStatuses.includes('🟡');
+            
+            if (hasUnhealthy) overallColor = 'red';
+            else if (hasWarning && overallColor === 'green') overallColor = 'yellow';
+          } else {
+            // Fallback to manual construction if parsing fails
+            const sessionStatuses = sessionEntries
+              .map(([project, health]) => {
+                const abbrev = this.getProjectAbbreviation(project);
+                return `${abbrev}:${health.icon}`;
+              })
+              .join(' ');
+            parts.push(`${gcmIcon}${sessionStatuses}`);
+          }
+        } else {
+          // Manual construction when no rawStatus
+          const sessionStatuses = sessionEntries
+            .map(([project, health]) => {
+              const abbrev = this.getProjectAbbreviation(project);
+              return `${abbrev}:${health.icon}`;
+            })
+            .join(' ');
+          parts.push(`${gcmIcon}${sessionStatuses}`);
+        }
+      } else {
+        parts.push(`${gcmIcon}`);
+        if (gcmIcon === '❌') overallColor = 'red';
+        else if (gcmIcon === '🟡' && overallColor === 'green') overallColor = 'yellow';
+      }
+    }
 
     // Constraint Monitor Status - use original constraint status text to preserve trajectory
     if (constraint.status === 'operational') {
@@ -827,6 +956,56 @@ class CombinedStatusLine {
       color: overallColor,
       helpCommand: './bin/status'
     };
+  }
+
+  /**
+   * Generate smart abbreviations for project names (shared with health monitor)
+   */
+  getProjectAbbreviation(projectName) {
+    // Handle common patterns and generate readable abbreviations
+    const name = projectName.toLowerCase();
+    
+    // Known project mappings
+    const knownMappings = {
+      'coding': 'C',
+      'curriculum-alignment': 'CA', 
+      'nano-degree': 'ND',
+      'curriculum': 'CU',
+      'alignment': 'AL',
+      'nano': 'N'
+    };
+    
+    // Check for exact match first
+    if (knownMappings[name]) {
+      return knownMappings[name];
+    }
+    
+    // Smart abbreviation generation
+    if (name.includes('-')) {
+      // Multi-word projects: take first letter of each word
+      const parts = name.split('-');
+      return parts.map(part => part.charAt(0).toUpperCase()).join('');
+    } else if (name.includes('_')) {
+      // Underscore separated: take first letter of each word  
+      const parts = name.split('_');
+      return parts.map(part => part.charAt(0).toUpperCase()).join('');
+    } else if (name.length <= 3) {
+      // Short names: just uppercase
+      return name.toUpperCase();
+    } else {
+      // Long single words: take first 2-3 characters intelligently
+      if (name.length <= 6) {
+        return name.substring(0, 2).toUpperCase();
+      } else {
+        // For longer words, try to find vowels/consonants pattern
+        const consonants = name.match(/[bcdfghjklmnpqrstvwxyz]/g) || [];
+        if (consonants.length >= 2) {
+          return consonants.slice(0, 2).join('').toUpperCase();
+        } else {
+          return name.substring(0, 3).toUpperCase();
+        }
+      }
+    }
   }
 
   buildCombinedTooltip(constraint, semantic) {

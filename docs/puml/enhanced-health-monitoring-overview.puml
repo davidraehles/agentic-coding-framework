@@ -1,0 +1,97 @@
+@startuml
+!include _standard-style.puml
+
+title Enhanced Health Monitoring System Overview
+
+package "4-Layer Protection Architecture" {
+  component [Global Watchdog] as GW <<layer4>> 
+  component [Global LSL Coordinator] as GLC <<layer3>>
+  component [StatusLine Health Monitor] as SHM <<layer2>>
+  component [Enhanced Transcript Monitors] as ETM <<layer1>>
+}
+
+package "Session Health Displays" {
+  component [Combined Status Line] as CSL <<display>>
+  note right of CSL
+    **Example Output:**
+    ✅C:🟢 CA:🟢 ND:🟢 🛡️ 8.5 🔍EX 🧠 ✅ 📋9-10
+    
+    ✅ = Global Coding Monitor healthy
+    C:🟢 = Coding session healthy  
+    CA:🟢 = Curriculum-Alignment healthy
+    ND:🟢 = Nano-Degree healthy
+    🛡️ 8.5 = Constraint monitor (severity)
+    🔍EX = Semantic analysis active
+    🧠 ✅ = Memory service healthy
+    📋9-10 = Time window monitor
+  end note
+}
+
+package "Health Data Storage" {
+  database [.transcript-monitor-health] as Health_Files <<per_project>>
+  database [.global-lsl-registry.json] as LSL_Registry <<central>>
+  database [.global-service-registry.json] as Service_Registry <<central>>
+}
+
+package "Multi-Session Projects" {
+  component [Coding Session] as Coding_Session <<project>>
+  component [Curriculum-Alignment] as CA_Session <<project>>
+  component [Nano-Degree] as ND_Session <<project>>
+  component [Additional Projects] as Other_Sessions <<project>>
+}
+
+' Health monitoring flow
+GW CONTROL_LINE GLC : monitors & restarts
+GLC CONTROL_LINE ETM : ensures & recovers
+ETM DATA_LINE Health_Files : writes health data
+SHM SYNC_LINE Health_Files : aggregates health
+SHM ASYNC_LINE LSL_Registry : discovers sessions
+SHM ASYNC_LINE Service_Registry : monitors services
+
+' Status line generation
+CSL SYNC_LINE SHM : queries health status
+CSL SYNC_LINE ETM : reads individual health
+
+' Session monitoring
+ETM SYNC_LINE Coding_Session : monitors
+ETM SYNC_LINE CA_Session : monitors  
+ETM SYNC_LINE ND_Session : monitors
+ETM SYNC_LINE Other_Sessions : monitors
+
+' Registry updates
+GLC ASYNC_LINE LSL_Registry : maintains
+GW ASYNC_LINE Service_Registry : updates
+
+note right of GW
+  **Layer 4: Global Watchdog**
+  - Monitors all coordinator processes
+  - 15-second health checks
+  - Auto-restarts failed coordinators
+  - Maintains service registry
+end note
+
+note right of GLC
+  **Layer 3: Global LSL Coordinator**
+  - 30-second health checks on all projects
+  - Auto-recovery of dead monitors
+  - Cross-project session discovery
+  - Maintains LSL registry
+end note
+
+note right of SHM
+  **Layer 2: StatusLine Health Monitor**
+  - Dynamic session discovery via Claude transcripts
+  - Smart project name abbreviations
+  - Individual session status reporting
+  - Health aggregation across projects
+end note
+
+note right of ETM
+  **Layer 1: Enhanced Transcript Monitors**
+  - Real-time transcript monitoring per project
+  - Health file generation (5-second intervals)
+  - Process metrics and activity tracking
+  - Streaming status and error detection
+end note
+
+@enduml

@@ -1,0 +1,106 @@
+@startuml
+!include _standard-style.puml
+
+title StatusLine Architecture & Session Discovery
+
+package "StatusLine Generation Flow" {
+  component [combined-status-line.js] as CSL <<entry>>
+  component [statusline-health-monitor.js] as SHM <<core>>
+  component [Smart Abbreviation Engine] as SAE <<logic>>
+}
+
+package "Session Discovery Methods" {
+  component [Method 1: LSL Registry] as M1 <<discovery>>
+  component [Method 2: Claude Transcript Scan] as M2 <<discovery>>
+  component [Method 3: Health File Scan] as M3 <<discovery>>
+}
+
+package "Claude Code Integration" {
+    component [coding] as C_Session
+    component [curriculum-alignment] as CA_Session  
+    component [nano-degree] as ND_Session
+    component [future-project-n] as FP_Session
+}
+
+package "Health Data Sources" {
+  database [~/.claude/projects/] as Claude_Transcripts <<discovery>>
+  database [project/.transcript-monitor-health] as Health_Files <<status>>
+  database [.global-lsl-registry.json] as LSL_Registry <<coordination>>
+  database [.global-service-registry.json] as Service_Registry <<services>>
+}
+
+package "Status Components" {
+  component [Global Coding Monitor] as GCM_Status <<component>>
+  component [Individual Session Status] as ISS <<component>>
+  component [Constraint Monitor] as CM_Status <<component>>
+  component [Semantic Analysis] as SA_Status <<component>>
+  component [Memory Service] as MEM_Status <<component>>
+  component [Time Window] as TW_Status <<component>>
+}
+
+' Main flow
+CSL CONTROL_LINE SHM : builds combined status
+SHM SYNC_LINE M1 : registered projects
+SHM SYNC_LINE M2 : dynamic discovery
+SHM SYNC_LINE M3 : active monitors
+
+' Discovery methods
+M1 SYNC_LINE LSL_Registry : reads registered projects
+M2 ASYNC_LINE Claude_Transcripts : scans for active sessions
+M3 SYNC_LINE Health_Files : checks monitor health
+
+' Session monitoring
+SHM SYNC_LINE C_Session : monitors via ETM
+SHM SYNC_LINE CA_Session : monitors via ETM
+SHM SYNC_LINE ND_Session : monitors via ETM
+SHM SYNC_LINE FP_Session : monitors via ETM
+
+' Smart abbreviations
+SHM CONTROL_LINE SAE : generates abbreviations
+SAE SYNC_LINE ISS : creates individual status
+
+' Status generation
+SHM CONTROL_LINE GCM_Status : ✅ global health
+SHM CONTROL_LINE ISS : C:🟢 CA:🟢 ND:🟢
+SHM SYNC_LINE CM_Status : 🛡️ severity
+SHM SYNC_LINE SA_Status : 🔍 semantic analysis  
+SHM SYNC_LINE MEM_Status : 🧠 memory service
+SHM SYNC_LINE TW_Status : 📋 time window
+
+note right of M2
+  **Dynamic Discovery Process:**
+  1. Scan ~/.claude/projects/ directory
+  2. Find directories matching pattern:
+     "-Users-q284340-Agentic-{project}"
+  3. Extract project name from directory
+  4. Check for active transcript files
+  5. Discover unregistered sessions
+end note
+
+note right of SAE
+  **Smart Abbreviation Algorithm:**
+  - coding → C
+  - curriculum-alignment → CA  
+  - nano-degree → ND
+  - multi-word projects → First letters
+  - Handles conflicts intelligently
+end note
+
+note bottom of CSL
+  **Example Output Breakdown:**
+  ✅C:🟢 CA:🟢 ND:🟢 🛡️ 8.5 🔍EX 🧠 ✅ 📋9-10
+  
+  **Session Status Section:**
+  ✅ = Global monitor healthy
+  C:🟢 = Coding session healthy (PID 97464)
+  CA:🟢 = Curriculum-Alignment healthy (PID 57051)  
+  ND:🟢 = Nano-Degree healthy (PID 57093)
+  
+  **Service Status Section:**
+  🛡️ 8.5 = Constraint monitor (severity level)
+  🔍EX = Semantic analysis (EX=active state)
+  🧠 ✅ = Memory service healthy
+  📋9-10 = Time window (9-10 range)
+end note
+
+@enduml

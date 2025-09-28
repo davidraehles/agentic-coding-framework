@@ -1,0 +1,104 @@
+@startuml
+!include _standard-style.puml
+
+title Multi-Session Health Monitoring Architecture
+
+package "Global Monitoring Layer" {
+  component [Global LSL Coordinator] as GLC <<infra>>
+  component [StatusLine Health Monitor] as SHM <<infra>>
+  component [Global Service Registry] as GSR <<storage>>
+  component [Global LSL Registry] as GLR <<storage>>
+}
+
+package "Session-Specific Monitoring" {
+  package "Coding Session" {
+    component [Claude (Coding)] as ClaudeC <<agent>>
+    component [Enhanced Transcript Monitor] as ETM_C <<core>>
+    database [.transcript-monitor-health] as Health_C <<storage>>
+    database [.claude/settings.local.json] as Settings_C <<storage>>
+  }
+  
+  package "Curriculum-Alignment Session" {
+    component [Claude (CA)] as ClaudeCA <<agent>>
+    component [Enhanced Transcript Monitor] as ETM_CA <<core>>
+    database [.transcript-monitor-health] as Health_CA <<storage>>
+    database [.claude/settings.local.json] as Settings_CA <<storage>>
+  }
+  
+  package "Nano-Degree Session" {
+    component [Claude (ND)] as ClaudeND <<agent>>
+    component [Enhanced Transcript Monitor] as ETM_ND <<core>>
+    database [.transcript-monitor-health] as Health_ND <<storage>>
+    database [.claude/settings.local.json] as Settings_ND <<storage>>
+  }
+}
+
+package "Additional Health Components" {
+  component [Constraint Monitor] as CM <<core>>
+  component [Semantic Analysis] as SA <<core>>
+  component [Time Window Monitor] as TWM <<util>>
+}
+
+cloud "Claude Transcript Files" as CTF {
+  database [coding/transcript.jsonl] as TC
+  database [curriculum-alignment/transcript.jsonl] as TCA
+  database [nano-degree/transcript.jsonl] as TND
+}
+
+' Health monitoring flows
+GLC CONTROL_LINE GLR : manages
+GLC CONTROL_LINE ETM_C : ensures/recovers
+GLC CONTROL_LINE ETM_CA : ensures/recovers
+GLC CONTROL_LINE ETM_ND : ensures/recovers
+
+' Health file generation
+ETM_C DATA_LINE Health_C : writes
+ETM_CA DATA_LINE Health_CA : writes
+ETM_ND DATA_LINE Health_ND : writes
+
+' StatusLine monitoring
+SHM SYNC_LINE Health_C : reads
+SHM SYNC_LINE Health_CA : reads
+SHM SYNC_LINE Health_ND : reads
+SHM ASYNC_LINE CTF : discovers sessions
+
+' Claude sessions
+ClaudeC ASYNC_LINE TC : generates
+ClaudeCA ASYNC_LINE TCA : generates
+ClaudeND ASYNC_LINE TND : generates
+
+' Transcript monitoring
+ETM_C SYNC_LINE TC : monitors
+ETM_CA SYNC_LINE TCA : monitors
+ETM_ND SYNC_LINE TND : monitors
+
+' StatusLine configuration
+Settings_C SYNC_LINE ClaudeC : configures
+Settings_CA SYNC_LINE ClaudeCA : configures
+Settings_ND SYNC_LINE ClaudeND : configures
+
+' Additional health checks
+SHM SYNC_LINE CM : monitors
+SHM SYNC_LINE SA : monitors
+SHM SYNC_LINE TWM : monitors
+
+note right of GLC
+  Auto-recovery daemon
+  30-second health checks
+  Restarts dead monitors
+end note
+
+note right of SHM
+  Individual session status:
+  C:🟢 CA:🟢 ND:🟢
+  
+  Smart abbreviations from
+  project names
+end note
+
+note bottom of Health_C
+  Project-specific health files
+  enable individual monitoring
+end note
+
+@enduml

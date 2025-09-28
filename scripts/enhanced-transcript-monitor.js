@@ -56,7 +56,7 @@ class EnhancedTranscriptMonitor {
       debug: this.debug_enabled,
       sessionDuration: config.sessionDuration || 7200000, // 2 hours (generous for debugging)
       timezone: config.timezone || getTimezone(), // Use central timezone config
-      healthFile: path.join(process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || path.join(__dirname, '..'), '.transcript-monitor-health'),
+      healthFile: path.join(config.projectPath || this.getProjectPath(), '.transcript-monitor-health'),
       mode: config.mode || 'all', // Processing mode: 'all' or 'foreign'
       ...config
     };

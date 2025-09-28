@@ -280,6 +280,11 @@ class GlobalLSLCoordinator {
       clearInterval(this.healthTimer);
     }
     
+    // Update coordinator PID in registry to reflect current process
+    this.registry.coordinator.pid = process.pid;
+    this.registry.coordinator.startTime = Date.now();
+    this.saveRegistry();
+    
     this.healthTimer = setInterval(() => {
       this.performHealthCheck().catch(error => {
         console.error(`Health check failed: ${error.message}`);

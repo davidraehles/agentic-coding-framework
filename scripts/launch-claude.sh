@@ -219,6 +219,64 @@ else
   log "Warning: Could not create .specstory directory for transcript monitoring"
 fi
 
+# Start StatusLine Health Monitor daemon (global monitoring for all sessions)
+start_statusline_health_monitor() {
+  local coding_repo="$1"
+  
+  # Check if health monitor is already running
+  if pgrep -f "statusline-health-monitor.js" >/dev/null 2>&1; then
+    log "StatusLine Health Monitor already running"
+    return 0
+  fi
+  
+  log "Starting StatusLine Health Monitor daemon..."
+  
+  # Start the health monitor daemon in background
+  cd "$coding_repo"
+  nohup node scripts/statusline-health-monitor.js --daemon > .logs/statusline-health-daemon.log 2>&1 &
+  local health_monitor_pid=$!
+  
+  # Brief wait to check if it started successfully
+  sleep 1
+  if kill -0 "$health_monitor_pid" 2>/dev/null; then
+    log "✅ StatusLine Health Monitor started (PID: $health_monitor_pid)"
+  else
+    log "⚠️ StatusLine Health Monitor may have failed to start"
+  fi
+}
+
+# Start Global LSL Coordinator monitoring daemon for auto-recovery
+start_global_lsl_monitoring() {
+  local coding_repo="$1"
+  
+  # Check if Global LSL Coordinator monitoring is already running
+  if pgrep -f "global-lsl-coordinator.js monitor" >/dev/null 2>&1; then
+    log "Global LSL Coordinator monitoring already running"
+    return 0
+  fi
+  
+  log "Starting Global LSL Coordinator monitoring daemon for auto-recovery..."
+  
+  # Start the coordinator monitoring daemon in background
+  cd "$coding_repo"
+  nohup node scripts/global-lsl-coordinator.js monitor > .logs/global-lsl-coordinator-monitor.log 2>&1 &
+  local coordinator_pid=$!
+  
+  # Brief wait to check if it started successfully
+  sleep 1
+  if kill -0 "$coordinator_pid" 2>/dev/null; then
+    log "✅ Global LSL Coordinator monitoring started (PID: $coordinator_pid)"
+  else
+    log "⚠️ Global LSL Coordinator monitoring may have failed to start"
+  fi
+}
+
+# Start the health monitor for global session monitoring
+start_statusline_health_monitor "$CODING_REPO"
+
+# Start the Global LSL Coordinator monitoring for auto-recovery
+start_global_lsl_monitoring "$CODING_REPO"
+
 # Show session summary for continuity
 show_session_reminder
 
