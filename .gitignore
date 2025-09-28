@@ -87,6 +87,9 @@ semantic-analysis.log
 .transcript-monitor-health
 .global-lsl-registry.json
 
+# Centralized health monitoring files
+.health/
+
 # 4-Layer Monitoring Architecture runtime files
 .global-service-registry.json
 .mcp-sync/session-registry.json

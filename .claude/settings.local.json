@@ -25,7 +25,8 @@
       "mcp__serena__insert_after_symbol",
       "Bash(find:*)",
       "Bash(CODING_REPO=/Users/q284340/Agentic/coding node /Users/q284340/Agentic/coding/scripts/combined-status-line.js)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

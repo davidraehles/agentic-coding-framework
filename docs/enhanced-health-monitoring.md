@@ -118,10 +118,23 @@ The system provides seamless recovery without requiring user intervention:
 
 ## Health Data Storage
 
-### Health Files
+### Centralized Health Files
 
-Each project maintains a health file at `<project>/.transcript-monitor-health`:
+All health files are centralized in the coding project's `.health/` directory to maintain clean git workspaces:
 
+- **Location**: `/Users/q284340/Agentic/coding/.health/`
+- **Pattern**: `{projectName}-transcript-monitor-health.json`
+- **Git Management**: Excluded via coding's `.gitignore`
+
+#### File Structure
+```
+coding/.health/
+├── coding-transcript-monitor-health.json
+├── curriculum-alignment-transcript-monitor-health.json
+└── nano-degree-transcript-monitor-health.json
+```
+
+#### Health File Format
 ```json
 {
   "timestamp": 1759046473900,
@@ -153,6 +166,12 @@ Each project maintains a health file at `<project>/.transcript-monitor-health`:
   "errors": []
 }
 ```
+
+#### Benefits of Centralization
+- **Clean Git Workspaces**: No volatile files in other projects
+- **Single .gitignore**: Only coding project needs health file exclusions
+- **Centralized Management**: All health data in one location
+- **Zero User Configuration**: No .gitignore modifications needed in other projects
 
 ### Registry Files
 
@@ -289,8 +308,8 @@ The enhanced statusLine automatically displays in all Claude Code sessions start
 # Check all process health
 ps aux | grep -E "(transcript-monitor|global-lsl-coordinator)"
 
-# Verify health files
-ls -la */.transcript-monitor-health
+# Verify centralized health files
+ls -la .health/
 
 # Check registry status
 cat .global-lsl-registry.json | jq .

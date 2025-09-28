@@ -56,7 +56,7 @@ class EnhancedTranscriptMonitor {
       debug: this.debug_enabled,
       sessionDuration: config.sessionDuration || 7200000, // 2 hours (generous for debugging)
       timezone: config.timezone || getTimezone(), // Use central timezone config
-      healthFile: path.join(config.projectPath || this.getProjectPath(), '.transcript-monitor-health'),
+      healthFile: this.getCentralizedHealthFile(config.projectPath || this.getProjectPath()),
       mode: config.mode || 'all', // Processing mode: 'all' or 'foreign'
       ...config
     };
@@ -109,6 +109,20 @@ class EnhancedTranscriptMonitor {
       console.error('Failed to initialize semantic analyzer:', error.message);
       this.semanticAnalyzer = null;
     }
+  }
+  /**
+   * Get centralized health file path in coding project to avoid cluttering individual projects
+   */
+  getCentralizedHealthFile(projectPath) {
+    // Get coding project path
+    const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
+    
+    // Create project-specific health file name based on project path
+    const projectName = path.basename(projectPath);
+    const healthFileName = `${projectName}-transcript-monitor-health.json`;
+    
+    // Store in coding project's .health directory
+    return path.join(codingPath, '.health', healthFileName);
   }
 
   /**

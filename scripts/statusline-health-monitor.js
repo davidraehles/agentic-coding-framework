@@ -38,6 +38,20 @@ class StatusLineHealthMonitor {
     
     this.ensureLogDirectory();
   }
+  /**
+   * Get centralized health file path for a project (same logic as enhanced-transcript-monitor)
+   */
+  getCentralizedHealthFile(projectPath) {
+    // Get coding project path
+    const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || '/Users/q284340/Agentic/coding';
+    
+    // Create project-specific health file name based on project path
+    const projectName = path.basename(projectPath);
+    const healthFileName = `${projectName}-transcript-monitor-health.json`;
+    
+    // Store in coding project's .health directory
+    return path.join(codingPath, '.health', healthFileName);
+  }
 
   ensureLogDirectory() {
     const logDir = path.dirname(this.logPath);
@@ -144,13 +158,13 @@ class StatusLineHealthMonitor {
             // Skip if already found via registry
             if (sessions[projectName]) continue;
             
-            // Check if this project has a health file
+            // Check if this project has a centralized health file
             const projectPath = `/Users/q284340/Agentic/${projectName}`;
-            const healthFile = path.join(projectPath, '.transcript-monitor-health');
+            const centralizedHealthFile = this.getCentralizedHealthFile(projectPath);
             
-            if (fs.existsSync(healthFile)) {
+            if (fs.existsSync(centralizedHealthFile)) {
               // Has monitor running
-              sessions[projectName] = await this.getProjectSessionHealthFromFile(healthFile);
+              sessions[projectName] = await this.getProjectSessionHealthFromFile(centralizedHealthFile);
             } else {
               // Active session but no monitor - unmonitored session
               const mostRecent = transcriptFiles[0];
@@ -174,7 +188,7 @@ class StatusLineHealthMonitor {
         }
       }
       
-      // Method 3: Fallback hardcoded check for known project directories
+      // Method 3: Fallback hardcoded check for known project directories (using centralized health files)
       const commonProjectDirs = [
         this.codingRepoPath, // Current coding directory
         '/Users/q284340/Agentic/curriculum-alignment',
@@ -188,9 +202,9 @@ class StatusLineHealthMonitor {
         if (sessions[projectName]) continue;
         
         if (fs.existsSync(projectDir)) {
-          const healthFile = path.join(projectDir, '.transcript-monitor-health');
-          if (fs.existsSync(healthFile)) {
-            sessions[projectName] = await this.getProjectSessionHealthFromFile(healthFile);
+          const centralizedHealthFile = this.getCentralizedHealthFile(projectDir);
+          if (fs.existsSync(centralizedHealthFile)) {
+            sessions[projectName] = await this.getProjectSessionHealthFromFile(centralizedHealthFile);
           }
         }
       }
