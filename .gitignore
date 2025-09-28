@@ -95,7 +95,9 @@ semantic-analysis.log
 .mcp-sync/session-registry.json
 *-report-*.json
 .specstory/validation-report.json
+.specstory/change-log.json
 .specstory/logs/
+.logs/
 scripts/monitoring-*.log
 scripts/watchdog-*.log
 *-health-*.json
