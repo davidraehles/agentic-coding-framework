@@ -196,15 +196,40 @@ class LSLFileManager extends EventEmitter {
       const archiveDir = this.getArchiveDirectory(filePath);
       this.ensureDirectoryExists(archiveDir);
       
-      // Generate rotated filename with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      // Extract session info from filename (e.g., 2025-09-28_0900-1000_g9b30a.md)
       const fileName = path.basename(filePath, path.extname(filePath));
       const fileExt = path.extname(filePath);
-      const rotatedFileName = `${fileName}-${timestamp}${fileExt}`;
-      const rotatedPath = path.join(archiveDir, rotatedFileName);
       
-      // Move current file to archive location
-      fs.renameSync(filePath, rotatedPath);
+      // For session files, use session name without timestamp to consolidate
+      // This prevents multiple archives for the same session
+      let archiveFileName;
+      if (fileName.match(/^\d{4}-\d{2}-\d{2}_\d{4}-\d{4}_\w+$/)) {
+        // Session file pattern - use base session name for archiving
+        archiveFileName = `${fileName}${fileExt}`;
+      } else {
+        // Non-session files - use timestamp as before
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        archiveFileName = `${fileName}-${timestamp}${fileExt}`;
+      }
+      
+      const archivePath = path.join(archiveDir, archiveFileName);
+      
+      // If archive already exists, append content instead of creating new file
+      if (fs.existsSync(archivePath)) {
+        // Append current file content to existing archive
+        const currentContent = fs.readFileSync(filePath, 'utf8');
+        const appendContent = `\n\n--- ROTATION ${new Date().toISOString()} ---\n${currentContent}`;
+        fs.appendFileSync(archivePath, appendContent);
+        
+        // Remove the current file since content was appended
+        fs.unlinkSync(filePath);
+        
+        this.debug(`File content appended to existing archive: ${archiveFileName}`);
+      } else {
+        // Move current file to archive location (first rotation)
+        fs.renameSync(filePath, archivePath);
+        this.debug(`File rotated to new archive: ${archiveFileName}`);
+      }
       
       // Update stats
       this.stats.totalRotations++;
@@ -212,18 +237,18 @@ class LSLFileManager extends EventEmitter {
       
       const rotationTime = Date.now() - startTime;
       
-      this.debug(`File rotated: ${path.basename(filePath)} -> ${rotatedFileName} (${rotationTime}ms)`);
       this.emit('fileRotated', {
         originalPath: filePath,
-        rotatedPath,
+        rotatedPath: archivePath,
         originalSize,
-        rotationTime
+        rotationTime,
+        wasAppended: fs.existsSync(archivePath)
       });
       
-      // Compress the rotated file if compression is enabled
+      // Compress the archive file if compression is enabled
       let compressionResult = null;
       if (this.config.enableCompression) {
-        compressionResult = await this.compressFile(rotatedPath);
+        compressionResult = await this.compressFile(archivePath);
       }
       
       // Clean up old archived files if needed
@@ -231,7 +256,7 @@ class LSLFileManager extends EventEmitter {
       
       return {
         success: true,
-        rotatedPath,
+        rotatedPath: archivePath,
         compressionResult,
         originalSize,
         rotationTime
