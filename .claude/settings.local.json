@@ -55,7 +55,12 @@
       "mcp__spec-workflow__approvals",
       "Bash(PORT=3030 npm run dashboard)",
       "Bash(sort:*)",
-      "mcp__serena__think_about_task_adherence"
+      "mcp__serena__think_about_task_adherence",
+      "Bash(awk:*)",
+      "Bash(PORT=3031 node src/dashboard-server.js)",
+      "mcp__serena__onboarding",
+      "mcp__serena__write_memory",
+      "Bash(jq:*)"
     ],
     "deny": [],
     "ask": []
