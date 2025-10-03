@@ -106,7 +106,8 @@ This file provides essential guidance to Claude Code across all projects with gl
 - **code-change-critic**: Post-implementation review
 
 #### Claude Configuration
-- **MCP Priority**: Use Serena MCP for all file operations
+- **MCP Priority**: Use Serena MCP ONLY for understanding code (reading, searching, analysis)
+- **File Operations**: NEVER use Serena for editing - use standard Edit/Write/MultiEdit tools instead
 - **Memory Storage**: `.serena/memories/` for context persistence
 
 ---
