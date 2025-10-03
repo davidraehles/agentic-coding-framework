@@ -38,6 +38,15 @@ This file provides essential guidance to Claude Code across all projects with gl
 
 **Remember: If you're tempted to create a parallel version, you haven't understood the root problem yet. Keep debugging until you can fix the original.**
 
+### ❌ NEVER USE FALLBACK PATTERNS FOR UNCLEAR DATA SOURCES:
+- Don't use `data?.violations || violations` patterns
+- Don't silently fall back between different data sources
+- **Always have ONE clear source of truth**
+- **Throw errors when data is inconsistent or missing**
+- **Make data flow explicit and predictable**
+
+**Why**: Fallbacks hide bugs and create confusion about which data source is canonical.
+
 ---
 
 ## 🚨 GLOBAL: MANDATORY VERIFICATION RULE
