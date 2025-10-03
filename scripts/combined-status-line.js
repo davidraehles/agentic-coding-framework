@@ -249,7 +249,10 @@ class CombinedStatusLine {
         status: 'operational', 
         text: constraintData.text,
         compliance: actualCompliance,
-        violations: constraintData.text.includes('⚠️') ? 1 : 0,
+        violations: (() => {
+          const violationMatch = constraintData.text.match(/⚠️\s*(\d+)/);
+          return violationMatch ? parseInt(violationMatch[1]) : 0;
+        })(),
         rawData: constraintData
       };
     } catch (error) {
@@ -874,7 +877,7 @@ class CombinedStatusLine {
       }
       
       if (violationsCount > 0) {
-        parts.push(`[TRJ🛡️ ${score} ⚠️${violationsCount}]`);
+        parts.push(`[TRJ🛡️ ${score} ⚠️ ${violationsCount}]`);
         overallColor = 'yellow';
       } else {
         parts.push(`[TRJ🛡️ ${score} ${trajectoryIcon}]`);
@@ -896,24 +899,24 @@ class CombinedStatusLine {
         const thresholds = this.config.status_line?.display?.credit_thresholds || { critical: 10, warning: 20, moderate: 80 };
         
         if (remaining < thresholds.critical) {
-          parts.push(`[SEM🧠 API❌${remaining}%]`); // Critical - very low credits
+          parts.push(`[🧠API❌${remaining}%]`); // Critical - very low credits
           overallColor = 'red';
         } else if (remaining < thresholds.warning) {
-          parts.push(`[SEM🧠 API⚠️${remaining}%]`); // Warning - low credits
+          parts.push(`[🧠API⚠️${remaining}%]`); // Warning - low credits
           if (overallColor === 'green') overallColor = 'yellow';
         } else if (remaining < thresholds.moderate) {
-          parts.push(`[SEM🧠 API✅${remaining}%]`); // Show percentage when moderate
+          parts.push(`[🧠API✅${remaining}%]`); // Show percentage when moderate
         } else {
-          parts.push('[SEM🧠 API✅]'); // High credits - clean display
+          parts.push('[🧠API✅]'); // High credits - clean display
         }
       } else {
-        parts.push('[SEM🧠 API✅]'); // Unknown usage - assume OK
+        parts.push('[🧠API✅]'); // Unknown usage - assume OK
       }
     } else if (semantic.status === 'degraded') {
-      parts.push('[SEM🧠 API⚠️]');
+      parts.push('[🧠API⚠️]');
       if (overallColor === 'green') overallColor = 'yellow';
     } else {
-      parts.push('[SEM🧠 API❌]');
+      parts.push('[🧠API❌]');
       overallColor = 'red';
     }
 

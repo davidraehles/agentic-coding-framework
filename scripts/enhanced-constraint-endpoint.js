@@ -1,186 +1,174 @@
 #!/usr/bin/env node
 
 /**
- * Enhanced Constraint Monitor MCP Endpoint
- * Provides access to live session violations captured by the enhanced logging system
- * Integrates with the violation capture service for dashboard display
+ * Enhanced Constraint Endpoint
+ *
+ * Provides violation storage and retrieval for the constraint monitoring dashboard.
+ * This was missing and causing dashboard to show 0 violations.
  */
 
-import { getViolationCaptureService } from './violation-capture-service.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-/**
- * Enhanced get_violation_history that includes live session data
- */
-export async function getEnhancedViolationHistory(limit = 50) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// In-memory storage for violations (will be persisted to file)
+let violationsStorage = [];
+const STORAGE_FILE = path.join(__dirname, '.constraint-violations.json');
+
+// Initialize storage from file if it exists
+function initializeStorage() {
   try {
-    const violationService = getViolationCaptureService();
-    const history = await violationService.getViolationHistory(limit);
-    
-    // Enhance with live session context
-    const enhancedHistory = {
-      ...history,
-      source: 'enhanced_live_logging',
-      live_session_active: true,
-      session_types: {
-        live_logging: history.violations.filter(v => 
-          v.context && v.context.includes('live_logging')).length,
-        manual_testing: history.violations.filter(v => 
-          v.tool === 'ManualTest').length,
-        constraint_checks: history.violations.filter(v => 
-          v.tool === 'mcp__constraint-monitor__check_constraints').length
-      },
-      severity_breakdown: calculateSeverityBreakdown(history.violations),
-      recent_patterns: identifyRecentPatterns(history.violations)
-    };
-
-    return enhancedHistory;
+    if (fs.existsSync(STORAGE_FILE)) {
+      const data = fs.readFileSync(STORAGE_FILE, 'utf8');
+      violationsStorage = JSON.parse(data);
+    }
   } catch (error) {
-    console.error('Enhanced violation history error:', error);
-    return {
-      violations: [],
-      total_count: 0,
-      error: error.message,
-      source: 'enhanced_live_logging'
-    };
+    console.warn('Could not load violations storage:', error.message);
+    violationsStorage = [];
   }
 }
 
+// Persist storage to file
+function persistStorage() {
+  try {
+    fs.writeFileSync(STORAGE_FILE, JSON.stringify(violationsStorage, null, 2));
+  } catch (error) {
+    console.warn('Could not persist violations storage:', error.message);
+  }
+}
+
+// Clean up old violations (older than 7 days)
+function cleanupOldViolations() {
+  const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const initialCount = violationsStorage.length;
+
+  violationsStorage = violationsStorage.filter(violation => {
+    const violationTime = new Date(violation.timestamp).getTime();
+    return violationTime > weekAgo;
+  });
+
+  if (violationsStorage.length !== initialCount) {
+    console.log(`Cleaned up ${initialCount - violationsStorage.length} old violations`);
+    persistStorage();
+  }
+}
+
+// Initialize on import
+initializeStorage();
+cleanupOldViolations();
+
 /**
- * Get real-time session violations (violations from current session)
+ * Get current live session violations
  */
 export async function getLiveSessionViolations() {
-  try {
-    const violationService = getViolationCaptureService();
-    const history = await violationService.getViolationHistory(100);
-    
-    // Get violations from last 2 hours (current session)
-    const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
-    const sessionViolations = (history.violations || []).filter(violation => 
-      new Date(violation.timestamp).getTime() > twoHoursAgo
-    );
+  // Return violations from the last hour
+  const hourAgo = Date.now() - (60 * 60 * 1000);
 
-    return {
-      session_violations: sessionViolations,
-      active_session_count: sessionViolations.length,
-      session_compliance_score: calculateSessionCompliance(sessionViolations),
-      most_recent: sessionViolations[sessionViolations.length - 1] || null,
-      session_trends: analyzeSessionTrends(sessionViolations),
-      retrieved_at: new Date().toISOString()
-    };
-  } catch (error) {
-    return {
-      session_violations: [],
-      active_session_count: 0,
-      error: error.message
-    };
-  }
+  return violationsStorage.filter(violation => {
+    const violationTime = new Date(violation.timestamp).getTime();
+    return violationTime > hourAgo;
+  });
 }
 
 /**
- * Check constraints and capture violations for live session tracking
+ * Get enhanced violation history
  */
-export async function checkConstraintsWithCapture(content, type, context = {}) {
-  try {
-    // Import the original constraint monitor check function
-    const constraintResult = await import('../integrations/mcp-constraint-monitor/src/constraint-checker.js')
-      .then(module => module.checkConstraints?.(content, type))
-      .catch(() => {
-        // Fallback if constraint checker not available
-        return { violations: [], compliance_score: 10, suggestions: [] };
-      });
+export async function getEnhancedViolationHistory(limit = 50) {
+  // Sort by timestamp descending and limit results
+  const sortedViolations = [...violationsStorage]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit);
 
-    // If violations found, capture them
-    if (constraintResult.violations && constraintResult.violations.length > 0) {
-      const violationService = getViolationCaptureService();
-      await violationService.captureViolation(
-        { name: 'enhanced_constraint_check', params: { content: content.substring(0, 100), type } },
-        constraintResult.violations,
-        {
-          sessionContext: 'enhanced_mcp_endpoint',
-          checkType: type,
-          contentLength: content.length,
-          ...context
-        }
-      );
+  return {
+    violations: sortedViolations,
+    total: violationsStorage.length,
+    metadata: {
+      oldest: violationsStorage.length > 0 ?
+        Math.min(...violationsStorage.map(v => new Date(v.timestamp).getTime())) : null,
+      newest: violationsStorage.length > 0 ?
+        Math.max(...violationsStorage.map(v => new Date(v.timestamp).getTime())) : null,
+      storage_file: STORAGE_FILE
     }
+  };
+}
 
-    return {
-      ...constraintResult,
-      live_session_captured: constraintResult.violations?.length > 0,
-      source: 'enhanced_mcp_endpoint'
-    };
-  } catch (error) {
-    return {
-      violations: [],
-      compliance_score: 10,
-      suggestions: [],
-      error: error.message,
-      source: 'enhanced_mcp_endpoint'
-    };
+/**
+ * Store violations
+ */
+export function storeViolations(violations) {
+  if (!Array.isArray(violations)) {
+    console.warn('storeViolations expects an array');
+    return;
   }
+
+  const timestamp = new Date().toISOString();
+
+  // Add violations with enhanced metadata
+  violations.forEach(violation => {
+    const enhancedViolation = {
+      id: violation.id || `${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      constraint_id: violation.constraint_id,
+      message: violation.message,
+      severity: violation.severity,
+      timestamp: violation.timestamp || timestamp,
+      tool: violation.tool || 'api',
+      session_id: violation.session_id || 'unknown',
+      context: violation.context || violation.project || 'unknown',
+      repository: violation.context || violation.project || 'unknown',
+      file_path: violation.file_path || 'unknown',
+      matches: violation.matches || 1,
+      source: violation.source || 'constraint_test'
+    };
+
+    violationsStorage.push(enhancedViolation);
+  });
+
+  // Persist to file
+  persistStorage();
+
+  console.log(`Stored ${violations.length} violations. Total: ${violationsStorage.length}`);
+
+  return {
+    stored: violations.length,
+    total: violationsStorage.length
+  };
 }
 
-// Helper functions
-function calculateSeverityBreakdown(violations) {
-  return violations.reduce((acc, violation) => {
-    const severity = violation.severity || 'unknown';
-    acc[severity] = (acc[severity] || 0) + 1;
-    return acc;
-  }, {});
+/**
+ * Clear all violations (for testing)
+ */
+export function clearAllViolations() {
+  violationsStorage = [];
+  persistStorage();
+  console.log('Cleared all violations');
 }
 
-function identifyRecentPatterns(violations) {
-  const last24Hours = Date.now() - (24 * 60 * 60 * 1000);
-  const recent = violations.filter(v => 
-    new Date(v.timestamp).getTime() > last24Hours
-  );
+/**
+ * Get storage statistics
+ */
+export function getStorageStats() {
+  const now = Date.now();
+  const hour = 60 * 60 * 1000;
+  const day = 24 * hour;
 
-  const patterns = recent.reduce((acc, violation) => {
-    const pattern = violation.constraint_id;
-    acc[pattern] = (acc[pattern] || 0) + 1;
-    return acc;
-  }, {});
-
-  return Object.entries(patterns)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 5)
-    .map(([pattern, count]) => ({ pattern, count }));
+  return {
+    total: violationsStorage.length,
+    last_hour: violationsStorage.filter(v =>
+      (now - new Date(v.timestamp).getTime()) < hour
+    ).length,
+    last_24h: violationsStorage.filter(v =>
+      (now - new Date(v.timestamp).getTime()) < day
+    ).length,
+    by_severity: violationsStorage.reduce((acc, v) => {
+      acc[v.severity] = (acc[v.severity] || 0) + 1;
+      return acc;
+    }, {}),
+    storage_file: STORAGE_FILE
+  };
 }
 
-function calculateSessionCompliance(sessionViolations) {
-  if (sessionViolations.length === 0) return 10.0;
-  
-  const severityWeights = { critical: 4, error: 3, warning: 2, info: 1 };
-  const totalWeight = sessionViolations.reduce((sum, violation) => 
-    sum + (severityWeights[violation.severity] || 1), 0
-  );
-  
-  // Start with 10, subtract based on violations
-  const compliance = Math.max(0, 10 - (totalWeight * 0.5));
-  return Math.round(compliance * 10) / 10;
-}
-
-function analyzeSessionTrends(sessionViolations) {
-  if (sessionViolations.length < 2) return 'insufficient_data';
-  
-  const sortedViolations = sessionViolations.sort((a, b) => 
-    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
-  
-  const firstHalf = sortedViolations.slice(0, Math.floor(sortedViolations.length / 2));
-  const secondHalf = sortedViolations.slice(Math.floor(sortedViolations.length / 2));
-  
-  if (secondHalf.length > firstHalf.length) {
-    return 'degrading';
-  } else if (firstHalf.length > secondHalf.length) {
-    return 'improving';
-  } else {
-    return 'stable';
-  }
-}
-
-export default {
-  getEnhancedViolationHistory,
-  getLiveSessionViolations,
-  checkConstraintsWithCapture
-};
+// Auto-cleanup old violations every hour
+setInterval(cleanupOldViolations, 60 * 60 * 1000);
