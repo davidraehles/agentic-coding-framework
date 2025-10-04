@@ -881,16 +881,16 @@ class CombinedStatusLine {
       }
       
       if (violationsCount > 0) {
-        parts.push(`[TRJ🛡️ ${score} ⚠️ ${violationsCount}]`);
+        parts.push(`[🛡️ ${score} ⚠️ ${violationsCount}]`);
         overallColor = 'yellow';
       } else {
-        parts.push(`[TRJ🛡️ ${score} ${trajectoryIcon}]`);
+        parts.push(`[🛡️ ${score} ${trajectoryIcon}]`);
       }
     } else if (constraint.status === 'degraded') {
-      parts.push('[TRJ🛡️ ⚠️]');
+      parts.push('[🛡️ ⚠️]');
       overallColor = 'yellow';
     } else {
-      parts.push('[TRJ🛡️ ❌]');
+      parts.push('[🛡️ ❌]');
       overallColor = 'red';
     }
 
