@@ -7,74 +7,99 @@ The Claude Code status line displays real-time information about your coding env
 ## Status Line Format
 
 ```
-🛡️ 8.5 🔍EX 🧠 ✅
+[GCM✅] [C🟢] [🛡️ 85% 🔍EX] [🧠API✅]
 ```
 
-## Icon Reference
+## Status Line Components
 
-### 🛡️ Live Guardrails (Constraint Monitor)
+The status line consists of four main components in brackets:
 
-**Icon**: 🛡️ (Shield)  
+### [GCM✅] - Global Configuration Manager
+
+**Purpose**: Global system configuration and service management
+**Icon**: GCM (Global Configuration Manager)
+
+**Status Indicators:**
+- **[GCM✅]** - Configuration manager operational (green)
+- **[GCM⚠️]** - Configuration warnings detected (yellow)
+- **[GCM❌]** - Configuration manager offline (red)
+
+### [C🟢] - Core Services Status
+
+**Purpose**: Essential development services health check
+**Icon**: C (Core)
+
+**Status Indicators:**
+- **[C🟢]** - Core services operational (green)
+- **[C🟡]** - Some core services degraded (yellow)
+- **[C🔴]** - Core services offline (red)
+
+### [🛡️ 85% 🔍EX] - Live Guardrails (Constraint Monitor)
+
+**Icon**: 🛡️ (Shield)
 **Meaning**: Constraint monitoring and compliance protection
 
-**Status Indicators:**
-- **🛡️8.5** - Compliance score (0-10 scale)
-- **🛡️⚠️** - Some violations detected (yellow)
-- **🛡️❌** - Constraint monitor offline (red)
+**Status Format**: `[🛡️ {percentage} {trajectory}]`
+
+**Compliance Percentage (0-100%):**
+- **85%** - Percentage-based compliance score
+- **⚠️** - Active violations detected
+- **❌** - Constraint monitor offline
+
+**Trajectory Indicators:**
+- **🔍EX** - **Exploring**: Researching, understanding, analyzing
+- **📈ON** - **On Track**: Focused implementation work
+- **📉OFF** - **Off Track**: Diverged from planned work
+- **⚙️IMP** - **Implementing**: Active coding/building
+- **✅VER** - **Verifying**: Testing, validation, review
+- **🚫BLK** - **Blocked**: Stuck, waiting, dependencies
 
 **Colors:**
-- 🟢 Green: Excellent compliance (9.0+)
-- 🔵 Cyan: Good compliance (7.0-8.9)
-- 🟡 Yellow: Warning compliance (<7.0)
+- 🟢 Green: Excellent compliance (90%+)
+- 🔵 Cyan: Good compliance (70-89%)
+- 🟡 Yellow: Warning compliance (<70%)
 - 🔴 Red: Critical violations or offline
 
-### 📊 Trajectory Status
+### [🧠API✅] - Semantic Analysis Engine
 
-**Purpose**: Shows your current development activity pattern
-
-**Icons & Meanings:**
-- **🔍 EX** - **Exploring**: Researching, understanding, analyzing
-- **📈 ON** - **On Track**: Focused implementation work
-- **📉 OFF** - **Off Track**: Diverged from planned work
-- **⚙️ IMP** - **Implementing**: Active coding/building
-- **✅ VER** - **Verifying**: Testing, validation, review
-- **🚫 BLK** - **Blocked**: Stuck, waiting, dependencies
-
-### 🧠 Semantic Analysis Engine
-
-**Icon**: 🧠 (Brain)  
-**Meaning**: AI-powered code analysis and insights
+**Icon**: 🧠 (Brain)
+**Meaning**: AI-powered code analysis and API health
 
 **Status Indicators:**
-- **🧠✅** - Semantic analysis operational (green)
-- **🧠⚠️** - Semantic analysis degraded (yellow)  
-- **🧠❌** - Semantic analysis offline (red)
+- **[🧠API✅]** - Semantic analysis API operational (green)
+- **[🧠API⚠️]** - API degraded performance (yellow)
+- **[🧠API❌]** - API offline or failing (red)
 
 ## Example Status Lines
 
 ### All Systems Operational
 ```
-🛡️9.2 📈ON 🧠✅
+[GCM✅] [C🟢] [🛡️ 92% 📈ON] [🧠API✅]
 ```
-- Excellent compliance (9.2/10)
+- Global configuration manager operational
+- Core services healthy
+- Excellent compliance (92%)
 - On track with focused work
-- All systems operational
+- Semantic analysis API operational
 
 ### Warning State
 ```
-🛡️6.8 🔍EX 🧠⚠️
+[GCM✅] [C🟡] [🛡️ 68% 🔍EX] [🧠API⚠️]
 ```
-- Low compliance (6.8/10) needs attention
+- Configuration manager operational
+- Some core services degraded
+- Low compliance (68%) needs attention
 - Exploring/researching phase
-- Semantic analysis degraded
+- Semantic analysis API degraded
 
 ### Critical Issues
 ```
-🛡️❌ 🚫BLK 🧠❌
+[GCM❌] [C🔴] [🛡️ ❌] [🧠API❌]
 ```
+- Configuration manager offline
+- Core services failed
 - Constraint monitor offline
-- Work is blocked
-- Semantic analysis offline
+- Semantic analysis API offline
 
 ## Color Coding
 
@@ -84,32 +109,115 @@ The entire status line is colored based on the worst status:
 - **🟡 Yellow**: Some degradation or warnings
 - **🔴 Red**: Critical issues or systems offline
 
-## Configuration
+## Architecture & Configuration
 
-The status line is configured in:
-- **Global**: `~/.claude/settings.json`
-- **Project**: `.claude/settings.local.json`
+### System Architecture
 
+The status line system follows a layered architecture:
+
+1. **Claude Code Integration**: `~/.claude/settings.json` defines the status line command
+2. **Main Orchestrator**: `scripts/combined-status-line-wrapper.js` sets environment
+3. **Status Aggregator**: `scripts/combined-status-line.js` collects data from all sources
+4. **Component Services**: Individual services provide status data
+
+### Configuration Files
+
+**Global Settings**: `~/.claude/settings.json`
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "node /path/to/combined-status-line.js"
+    "command": "node /Users/q284340/Agentic/coding/scripts/combined-status-line-wrapper.js"
   }
 }
 ```
 
+**Project Settings**: `.claude/settings.local.json`
+```json
+{
+  "statusLine": {
+    "updateInterval": 5000,
+    "enableConstraintMonitor": true
+  }
+}
+```
+
+### Data Flow
+
+1. **Claude Code** calls the status line wrapper every 5 seconds
+2. **Wrapper** sets `CODING_REPO` environment and calls main script
+3. **Main Script** queries multiple data sources:
+   - Global Configuration Manager (port checking, service discovery)
+   - Core Services (Docker, databases, key infrastructure)
+   - Constraint Monitor API (`integrations/mcp-constraint-monitor`)
+   - Semantic Analysis API (AI/LLM services)
+4. **Aggregation** combines all status data into formatted brackets
+5. **Output** returns colored status line to Claude Code
+
 ## Troubleshooting
 
-**No Status Line**: Check if services are running with `./start-services.sh`
+### No Status Line Displayed
+1. Check Claude settings: `~/.claude/settings.json`
+2. Verify script permissions: `ls -la scripts/combined-status-line*`
+3. Test manually: `node scripts/combined-status-line-wrapper.js`
 
-**Red Status**: 
-1. Check Docker is running
-2. Verify services with: `docker ps`
-3. Restart services: `./start-services.sh`
+### Component-Specific Issues
 
-**Yellow Status**: Check logs for warnings, may continue working normally
+**[GCM❌] Global Configuration Manager**
+- Check port availability conflicts
+- Verify environment variables
+- Restart configuration services
+
+**[C🔴] Core Services**
+- Check Docker is running: `docker ps`
+- Verify databases: `docker logs <container-name>`
+- Restart infrastructure: `./start-services.sh`
+
+**[🛡️ ❌] Constraint Monitor**
+- Check constraint monitor API: `curl localhost:3031/api/health`
+- Verify MCP constraint monitor: `cd integrations/mcp-constraint-monitor && npm run api`
+- Check logs: `cd integrations/mcp-constraint-monitor && npm run logs`
+
+**[🧠API❌] Semantic Analysis**
+- Check semantic analysis server status
+- Verify API credentials and limits
+- Check network connectivity to AI services
+
+### Performance Issues
+
+**Slow Status Updates**
+- Default update interval: 5 seconds
+- Heavy API calls may cause delays
+- Check individual service response times
+
+**Status Line Flickering**
+- Usually indicates service instability
+- Check logs for repeated start/stop cycles
+- May need service restart or configuration fix
+
+## Implementation Details
+
+### Key Files
+
+- **`scripts/combined-status-line-wrapper.js`** - Environment setup and execution wrapper
+- **`scripts/combined-status-line.js`** - Main status aggregation logic
+- **`integrations/mcp-constraint-monitor/src/status/constraint-status-line.js`** - Constraint data provider
+- **`~/.claude/settings.json`** - Claude Code integration configuration
+
+### Service Dependencies
+
+- **Docker** - Container infrastructure
+- **MCP Constraint Monitor** - Compliance monitoring (port 3031)
+- **Semantic Analysis Server** - AI-powered insights
+- **VKB Server** - Knowledge base (port 8080)
+
+### Performance Characteristics
+
+- **Update Frequency**: 5 seconds (configurable)
+- **Response Time**: <500ms typical
+- **Cache Duration**: 2-5 seconds per component
+- **Failover**: Graceful degradation when services unavailable
 
 ---
 
-*This status line provides real-time feedback about your development environment health and coding compliance.*
+*This status line provides real-time feedback about your complete development environment health, coding compliance, and system status.*

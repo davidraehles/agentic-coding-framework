@@ -1,100 +1,90 @@
 @startuml
 !include _standard-style.puml
 
-title StatusLine Architecture & Session Discovery
+title Claude Code Status Line System Architecture
 
-' Main entry point
-component [combined-status-line.js] as CSL <<entry>>
+' Main entry point from Claude Code
+component [Claude Code] as CC <<client>>
+component [~/.claude/settings.json] as Config <<config>>
 
-' Core processing engine  
-component [statusline-health-monitor.js] as SHM <<core>>
+' Execution layer
+component [combined-status-line-wrapper.js] as Wrapper <<wrapper>>
+component [combined-status-line.js] as MainScript <<orchestrator>>
 
-' Discovery methods stacked vertically
-package "Session Discovery" {
-  component [LSL Registry] as M1 <<discovery>>
-  component [Claude Transcript Scan] as M2 <<discovery>>
-  component [Health File Scan] as M3 <<discovery>>
+' Service providers arranged horizontally
+package "Status Components" {
+  component [Global Config Manager] as GCM <<service>>
+  component [Core Services] as CoreSvc <<service>>
+  component [Constraint Monitor] as ConstraintSvc <<service>>
+  component [Semantic Analysis] as SemanticSvc <<service>>
 }
 
-' Data sources stacked vertically
+' Data sources
 package "Data Sources" {
-  database [~/.claude/projects/] as Claude_Transcripts
-  database [.global-lsl-registry.json] as LSL_Registry
-  database [project/.health/] as Health_Files
+  database [Port Scanner] as Ports
+  database [Docker Services] as Docker
+  database [MCP Constraint API\nhttp://localhost:3031] as ConstraintAPI
+  database [Semantic API] as SemanticAPI
 }
 
-' Session abbreviation engine
-component [Smart Abbreviation Engine] as SAE <<logic>>
-
-' Active sessions
-package "Active Sessions" {
-    component [coding → C] as C_Session
-    component [curriculum-alignment → CA] as CA_Session  
-    component [nano-degree → ND] as ND_Session
+' Status output format
+package "Status Output Format" {
+  component "[GCM✅]" as GCM_Out
+  component "[C🟢]" as Core_Out
+  component "[🛡️ 85% 🔍EX]" as Constraint_Out
+  component "[🧠API✅]" as Semantic_Out
 }
 
-' Output status components arranged vertically
-package "Status Output" {
-  component [✅ Global Monitor] as GCM_Status
-  component [C:🟢 CA:🟢 ND:🟢 Session Status] as ISS
-  component [🛡️ Constraint Monitor] as CM_Status
-  component [🔍 Semantic Analysis] as SA_Status
-  component [🧠 Memory Service] as MEM_Status
-  component [📋 Time Window] as TW_Status
-}
+' Main flow
+CC --> Config : reads statusLine config
+Config --> Wrapper : executes every 5s
+Wrapper --> MainScript : sets CODING_REPO env
 
-' Main processing flow (top to bottom)
-CSL --> SHM : orchestrates
-
-' Discovery methods flow downward
-SHM --> M1 : registry lookup
-SHM --> M2 : dynamic scan
-SHM --> M3 : health check
+' Service orchestration
+MainScript --> GCM : getGlobalConfigStatus()
+MainScript --> CoreSvc : getCoreServicesStatus()
+MainScript --> ConstraintSvc : getConstraintStatus()
+MainScript --> SemanticSvc : getSemanticStatus()
 
 ' Data source connections
-M1 --> LSL_Registry : reads
-M2 --> Claude_Transcripts : scans
-M3 --> Health_Files : checks
+GCM --> Ports : checks port availability
+CoreSvc --> Docker : verifies containers
+ConstraintSvc --> ConstraintAPI : GET /api/violations
+SemanticSvc --> SemanticAPI : checks AI services
 
-' Session processing flows through SAE
-SHM --> SAE : process sessions
-SAE --> C_Session : abbreviate
-SAE --> CA_Session : abbreviate  
-SAE --> ND_Session : abbreviate
+' Output generation
+GCM --> GCM_Out : operational/warning/failed
+CoreSvc --> Core_Out : healthy/degraded/failed
+ConstraintSvc --> Constraint_Out : compliance % + trajectory
+SemanticSvc --> Semantic_Out : API status
 
-' Status generation flows downward to output
-SAE --> GCM_Status : global status
-SAE --> ISS : session status
-SHM --> CM_Status : constraint check
-SHM --> SA_Status : semantic check
-SHM --> MEM_Status : memory check
-SHM --> TW_Status : time window
+' Final aggregation
+MainScript --> CC : [GCM✅] [C🟢] [🛡️ 85% 🔍EX] [🧠API✅]
 
-' Layout hints for vertical orientation
-CSL -[hidden]down-> SHM
-SHM -[hidden]down-> SAE
+note top of CC
+  **Current Status Line Format:**
+  [GCM✅] [C🟢] [🛡️ 85% 🔍EX] [🧠API✅]
 
-note top of CSL
-  **StatusLine Output Example:**
-  ✅C:🟢 CA:🟢 ND:🟢 🛡️ 8.5 🔍EX 🧠 ✅ 📋9-10
+  **Update Frequency:** Every 5 seconds
+  **Color Coding:** Green/Yellow/Red based on overall health
 end note
 
-note right of M2
-  **Discovery Process:**
-  • Scan ~/.claude/projects/
-  • Pattern: "-Users-*-Agentic-{project}"
-  • Extract project names
-  • Find active transcripts
-  • No 1-hour filter (recent fix)
+note right of ConstraintAPI
+  **Constraint Monitor Integration:**
+  • API: http://localhost:3031/api/violations
+  • Data: Recent violations, compliance score
+  • Calculation: 100% - penalties for violations
+  • Trajectory: Activity pattern detection
+  • Timeout: 2 seconds with graceful fallback
 end note
 
-note right of SAE
-  **Abbreviation Rules:**
-  • coding → C
-  • curriculum-alignment → CA  
-  • nano-degree → ND
-  • Handles conflicts intelligently
-  • Filters dormant sessions
+note left of MainScript
+  **buildCombinedStatus() Method:**
+  • Parallel status collection
+  • Individual component assessment
+  • Overall health calculation
+  • Color coding application
+  • Formatted bracket output
 end note
 
 @enduml

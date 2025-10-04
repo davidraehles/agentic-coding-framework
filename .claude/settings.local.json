@@ -60,7 +60,11 @@
       "Bash(PORT=3031 node src/dashboard-server.js)",
       "mcp__serena__onboarding",
       "mcp__serena__write_memory",
-      "Bash(jq:*)"
+      "Bash(jq:*)",
+      "mcp__serena__think_about_collected_information",
+      "mcp__serena__get_current_config",
+      "Bash(npm install:*)",
+      "Read(//Users/q284340/.claude/**)"
     ],
     "deny": [],
     "ask": []
