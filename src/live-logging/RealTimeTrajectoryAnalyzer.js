@@ -14,7 +14,7 @@ export class RealTimeTrajectoryAnalyzer {
   constructor(config = {}) {
     // Initialize debug early
     this.debugEnabled = config.debug || false;
-    
+
     this.config = {
       projectPath: config.projectPath,
       codingToolsPath: config.codingToolsPath || process.env.CODING_TOOLS_PATH,
@@ -22,7 +22,7 @@ export class RealTimeTrajectoryAnalyzer {
       debug: this.debugEnabled,
       ...config
     };
-    
+
     // Load trajectory config after codingToolsPath is available
     this.config.trajectoryConfig = config.trajectoryConfig || this.loadTrajectoryConfig();
 
@@ -31,6 +31,11 @@ export class RealTimeTrajectoryAnalyzer {
     this.lastAnalysisTime = null;
     this.stateHistory = [];
     this.interventionCount = 0;
+
+    // Smart analysis tracking
+    this.analysisCount = { hourly: 0, hourStart: Date.now() };
+    this.lastExchangeType = null;
+    this.consecutiveReads = 0;
     
     // Initialize fast inference engine
     this.fastInferenceEngine = null;
@@ -144,6 +149,72 @@ export class RealTimeTrajectoryAnalyzer {
   }
 
   /**
+   * Check if this exchange should be analyzed based on smart analysis rules
+   */
+  shouldAnalyzeExchange(exchange) {
+    const smartConfig = this.config.trajectoryConfig.smart_analysis;
+    if (!smartConfig?.enabled) return true;
+
+    // Reset hourly counter if needed
+    const now = Date.now();
+    if (now - this.analysisCount.hourStart > 3600000) {
+      this.analysisCount = { hourly: 0, hourStart: now };
+    }
+
+    // Check hourly limit
+    if (this.analysisCount.hourly >= (smartConfig.max_analyses_per_hour || 50)) {
+      this.debug('Skipping analysis: hourly limit reached', { count: this.analysisCount.hourly });
+      return false;
+    }
+
+    // Check if exchange is significant
+    if (smartConfig.only_significant_exchanges) {
+      const toolCalls = exchange.toolCalls || [];
+      const hasSignificantTools = toolCalls.some(t =>
+        ['Write', 'Edit', 'MultiEdit', 'Bash', 'Task'].includes(t.name) ||
+        (t.name === 'Bash' && JSON.stringify(t.input || {}).match(/test|build|npm|git/))
+      );
+
+      const hasUserMessage = exchange.userMessage && exchange.userMessage.trim().length > 10;
+      const hasErrors = (exchange.toolResults || []).some(r => r.is_error);
+
+      if (!hasSignificantTools && !hasUserMessage && !hasErrors) {
+        this.debug('Skipping analysis: exchange not significant');
+        return false;
+      }
+    }
+
+    // Skip consecutive reads
+    if (smartConfig.skip_consecutive_reads) {
+      const exchangeType = this.classifyExchangeType(exchange);
+      if (exchangeType === 'read' && this.lastExchangeType === 'read') {
+        this.consecutiveReads++;
+        if (this.consecutiveReads > 2) {
+          this.debug('Skipping analysis: too many consecutive reads');
+          return false;
+        }
+      } else {
+        this.consecutiveReads = 0;
+      }
+      this.lastExchangeType = exchangeType;
+    }
+
+    return true;
+  }
+
+  /**
+   * Classify exchange type for smart analysis
+   */
+  classifyExchangeType(exchange) {
+    const toolCalls = exchange.toolCalls || [];
+    if (toolCalls.some(t => ['Read', 'Glob', 'Grep'].includes(t.name))) return 'read';
+    if (toolCalls.some(t => ['Write', 'Edit', 'MultiEdit'].includes(t.name))) return 'write';
+    if (toolCalls.some(t => t.name === 'Bash')) return 'execute';
+    if (toolCalls.some(t => t.name === 'Task')) return 'task';
+    return 'other';
+  }
+
+  /**
    * Analyze exchange for trajectory state in real-time
    */
   async analyzeTrajectoryState(exchange) {
@@ -154,6 +225,14 @@ export class RealTimeTrajectoryAnalyzer {
     if (!this.fastInferenceEngine?.initialized) {
       return { state: this.currentState, confidence: 0, reasoning: 'Fast inference engine not available' };
     }
+
+    // Check if we should analyze this exchange
+    if (!this.shouldAnalyzeExchange(exchange)) {
+      return { state: this.currentState, confidence: 0, reasoning: 'Skipped by smart analysis rules' };
+    }
+
+    // Increment analysis counter
+    this.analysisCount.hourly++;
 
     try {
       const analysisStart = Date.now();
@@ -242,10 +321,51 @@ Return JSON: {"state": "state_name", "confidence": 0.0-1.0, "reasoning": "brief 
   }
 
   /**
-   * Perform fast inference using configured provider
+   * Perform fast inference using configured provider with fallback
    */
   async performFastInference(prompt) {
-    const { provider, model, apiKey, baseUrl } = this.fastInferenceEngine;
+    // Try primary provider first
+    try {
+      return await this.performInferenceWithProvider(prompt, this.fastInferenceEngine);
+    } catch (error) {
+      this.debug('Primary provider failed, trying fallback', {
+        primaryProvider: this.fastInferenceEngine.provider,
+        error: error.message
+      });
+
+      // Try fallback provider
+      const fallbackConfig = this.config.trajectoryConfig;
+      if (fallbackConfig.fallback_provider && fallbackConfig.fallback_model) {
+        const fallbackApiKey = this.getApiKeyForProvider(fallbackConfig.fallback_provider);
+        if (fallbackApiKey) {
+          const fallbackEngine = {
+            provider: fallbackConfig.fallback_provider,
+            model: fallbackConfig.fallback_model,
+            apiKey: fallbackApiKey,
+            baseUrl: this.getBaseUrlForProvider(fallbackConfig.fallback_provider)
+          };
+
+          try {
+            const result = await this.performInferenceWithProvider(prompt, fallbackEngine);
+            this.debug('Fallback provider succeeded', { provider: fallbackConfig.fallback_provider });
+            return result;
+          } catch (fallbackError) {
+            this.debug('Fallback provider also failed', { error: fallbackError.message });
+            throw fallbackError;
+          }
+        }
+      }
+
+      // If we get here, both primary and fallback failed
+      throw error;
+    }
+  }
+
+  /**
+   * Perform inference with specific provider configuration
+   */
+  async performInferenceWithProvider(prompt, engine) {
+    const { provider, model, apiKey, baseUrl } = engine;
     
     const requestBody = {
       model,
@@ -381,14 +501,21 @@ Return JSON: {"state": "state_name", "confidence": 0.0-1.0, "reasoning": "brief 
    */
   getCurrentTrajectoryState() {
     const stateConfig = this.config.trajectoryConfig.trajectory_states?.[this.currentState] || {};
-    
+
     return {
       state: this.currentState,
       icon: stateConfig.icon || '❓',
       description: stateConfig.description || 'Unknown state',
       lastUpdate: this.lastAnalysisTime,
       stateHistory: this.stateHistory.slice(-5), // Last 5 transitions
-      interventionCount: this.interventionCount
+      interventionCount: this.interventionCount,
+      analysisHealth: {
+        hourlyCount: this.analysisCount.hourly,
+        hourlyLimit: this.config.trajectoryConfig.smart_analysis?.max_analyses_per_hour || 50,
+        primaryProvider: this.fastInferenceEngine?.provider || 'none',
+        fallbackProvider: this.config.trajectoryConfig.fallback_provider || 'none',
+        engineStatus: this.fastInferenceEngine?.initialized ? 'healthy' : 'degraded'
+      }
     };
   }
 

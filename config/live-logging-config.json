@@ -199,8 +199,16 @@
   "trajectory_analysis": {
     "enabled": true,
     "inference_provider": "groq",
-    "inference_model": "openai/gpt-oss-20b",
-    "analysis_interval": 100,
+    "inference_model": "gpt-oss-20b",
+    "fallback_provider": "openai",
+    "fallback_model": "gpt-4o-mini",
+    "analysis_interval": 5000,
+    "smart_analysis": {
+      "enabled": true,
+      "only_significant_exchanges": true,
+      "skip_consecutive_reads": true,
+      "max_analyses_per_hour": 50
+    },
     "intervention_threshold": 0.8,
     "cross_project_sync": true,
     "watchdog_integration": true,

@@ -214,6 +214,34 @@ class CombinedStatusLine {
     }
   }
 
+  /**
+   * Get trajectory state from live-state.json
+   */
+  getTrajectoryState() {
+    try {
+      const trajectoryPath = join(rootDir, '.specstory', 'trajectory', 'live-state.json');
+      if (existsSync(trajectoryPath)) {
+        const trajectoryData = JSON.parse(readFileSync(trajectoryPath, 'utf8'));
+        const currentState = trajectoryData.currentState || 'exploring';
+
+        // Map states to icons (from config/live-logging-config.json)
+        const stateIconMap = {
+          'exploring': '🔍 EX',
+          'on_track': '📈 ON',
+          'off_track': '📉 OFF',
+          'implementing': '⚙️ IMP',
+          'verifying': '✅ VER',
+          'blocked': '🚫 BLK'
+        };
+
+        return stateIconMap[currentState] || '🔍 EX';
+      }
+    } catch (error) {
+      // Fallback to default if file doesn't exist or can't be read
+    }
+    return '🔍 EX'; // Default fallback
+  }
+
   async getConstraintStatus() {
     try {
       // Check if constraint monitor is running
@@ -871,14 +899,8 @@ class CombinedStatusLine {
       const score = `${compliancePercent}%`;
       const violationsCount = constraint.violations || 0;
       
-      // Extract trajectory if available from raw data
-      let trajectoryIcon = '🔍EX'; // Default
-      if (constraint.rawData && constraint.rawData.text) {
-        const trajMatch = constraint.rawData.text.match(/(📈|🔍|📉|🚫|⚙️|✅)(\w+)/);
-        if (trajMatch) {
-          trajectoryIcon = trajMatch[0];
-        }
-      }
+      // Get real-time trajectory state from live-state.json
+      const trajectoryIcon = this.getTrajectoryState();
       
       if (violationsCount > 0) {
         parts.push(`[🛡️ ${score} ⚠️ ${violationsCount}]`);

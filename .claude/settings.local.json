@@ -64,7 +64,8 @@
       "mcp__serena__think_about_collected_information",
       "mcp__serena__get_current_config",
       "Bash(npm install:*)",
-      "Read(//Users/q284340/.claude/**)"
+      "Read(//Users/q284340/.claude/**)",
+      "WebFetch(domain:console.groq.com)"
     ],
     "deny": [],
     "ask": []
