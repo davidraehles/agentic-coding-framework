@@ -1181,7 +1181,8 @@ class EnhancedTranscriptMonitor {
     }
 
     // Update comprehensive trajectory instead of individual trajectory files
-    await this.updateComprehensiveTrajectory(targetProject);
+    // DISABLED: This was causing constant timestamp-only updates with minimal value
+    // await this.updateComprehensiveTrajectory(targetProject);
     
     console.log(`📋 Completed user prompt set: ${meaningfulExchanges.length}/${completedSet.length} exchanges → ${path.basename(sessionFile)}`);
   }
