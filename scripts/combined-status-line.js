@@ -222,13 +222,14 @@ class CombinedStatusLine {
    */
   getTrajectoryState() {
     // Map states to icons (from config/live-logging-config.json) - SINGLE SOURCE OF TRUTH
+    // NOTE: Leading space is intentional for proper spacing when appended
     const stateIconMap = {
-      'exploring': '🔍EX',
-      'on_track': '📈ON',
-      'off_track': '📉OFF',
-      'implementing': '⚙️IMP',
-      'verifying': '✅VER',
-      'blocked': '🚫BLK'
+      'exploring': ' 🔍EX',
+      'on_track': ' 📈ON',
+      'off_track': ' 📉OFF',
+      'implementing': ' ⚙️IMP',
+      'verifying': ' ✅VER',
+      'blocked': ' 🚫BLK'
     };
 
     // Determine which project we're currently working in
@@ -1033,7 +1034,7 @@ class CombinedStatusLine {
         constraintPart += ` ⚠️ ${violationsCount}`;
         overallColor = 'yellow';
       }
-      constraintPart += ` ${trajectoryIcon}]`;
+      constraintPart += `${trajectoryIcon}]`;
       parts.push(constraintPart);
     } else if (constraint.status === 'degraded') {
       parts.push('[🛡️ ⚠️]');

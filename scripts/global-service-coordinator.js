@@ -67,9 +67,16 @@ class GlobalServiceCoordinator extends EventEmitter {
       },
       'trajectory-generator': {
         type: 'per-project',
-        script: 'scripts/trajectory-generator.js', 
+        script: 'scripts/trajectory-generator.js',
         healthCheck: 'health-file',
         priority: 2,
+        restartable: true
+      },
+      'constraint-dashboard': {
+        type: 'global',
+        script: 'scripts/dashboard-service.js',
+        healthCheck: 'port:3030',
+        priority: 3,
         restartable: true
       }
     };
@@ -239,8 +246,15 @@ class GlobalServiceCoordinator extends EventEmitter {
    */
   async ensureGlobalServices() {
     // MCP services are started by claude-mcp via coding/bin/coding
-    // This coordinator only manages project-specific services
-    this.debug('Global services (MCP stack) are managed by claude-mcp process');
+    // But we also manage other global services like the constraint dashboard
+    const globalServices = Object.entries(this.serviceDefinitions)
+      .filter(([_, def]) => def.type === 'global')
+      .sort((a, b) => a[1].priority - b[1].priority);
+
+    for (const [serviceName, serviceDef] of globalServices) {
+      await this.ensureService(serviceName, serviceDef, null);
+    }
+
     return true;
   }
 
@@ -349,6 +363,14 @@ class GlobalServiceCoordinator extends EventEmitter {
    */
   async isServiceHealthy(serviceKey, serviceDef, projectPath = null) {
     const service = this.registry.services[serviceKey];
+
+    // For port-based health checks, we can check even without registry entry
+    if (serviceDef.healthCheck && serviceDef.healthCheck.startsWith('port:')) {
+      const port = serviceDef.healthCheck.split(':')[1];
+      return await this.checkPort(port);
+    }
+
+    // For other health checks, we need the service in registry
     if (!service) return false;
 
     // Check if process exists
@@ -360,17 +382,11 @@ class GlobalServiceCoordinator extends EventEmitter {
     }
 
     // Service-specific health checks
-    switch (serviceDef.healthCheck) {
-      case 'health-file':
-        return await this.checkHealthFile(projectPath);
-      
-      case 'port':
-        const port = serviceDef.healthCheck.split(':')[1];
-        return await this.checkPort(port);
-      
-      case 'process':
-      default:
-        return true; // Process exists, assume healthy
+    if (serviceDef.healthCheck === 'health-file') {
+      return await this.checkHealthFile(projectPath);
+    } else {
+      // 'process' or default - process exists, assume healthy
+      return true;
     }
   }
 
