@@ -204,7 +204,7 @@ class KeywordMatcher {
 class EmbeddingClassifier {
   constructor(options = {}) {
     this.enabled = options.enabled !== false;
-    this.similarityThreshold = options.similarityThreshold || 0.65;
+    this.similarityThreshold = options.similarityThreshold || 0.50;  // Lowered from 0.65 for more decisive classification
     this.qdrantHost = options.qdrantHost || 'localhost';
     this.qdrantPort = options.qdrantPort || 6333;
     this.collection = options.collection || 'coding_infrastructure';
@@ -287,8 +287,8 @@ class EmbeddingClassifier {
       if (!searchResults || searchResults.length === 0) {
         this.stats.misses++;
         return {
-          isCoding: null,
-          confidence: 0,
+          isCoding: false,  // Explicit negative decision: no coding similarity found
+          confidence: 0.6,   // Moderate confidence - absence of coding patterns suggests non-coding
           reason: 'Embedding: No similar content found in coding infrastructure',
           details: { searchResults: 0 }
         };
@@ -300,15 +300,22 @@ class EmbeddingClassifier {
 
       this.stats.hits++;
 
+      // Return explicit decision with appropriate confidence
+      // High similarity (>= threshold) = coding
+      // Low similarity (< threshold) = NOT coding (with confidence based on how low)
+      const confidence = isCoding ? avgScore : Math.min(0.7, 0.5 + (this.similarityThreshold - avgScore));
+
       return {
         isCoding,
-        confidence: avgScore,
-        reason: `Embedding: ${searchResults.length} matches, avg similarity: ${avgScore.toFixed(3)}`,
+        confidence,
+        reason: `Embedding: ${searchResults.length} matches, avg similarity: ${avgScore.toFixed(3)} (${isCoding ? 'above' : 'below'} threshold ${this.similarityThreshold})`,
         details: {
           topMatches: searchResults.slice(0, 3).map(r => ({
             file: r.payload.file_path,
             score: r.score.toFixed(3)
-          }))
+          })),
+          avgScore: avgScore.toFixed(3),
+          threshold: this.similarityThreshold
         }
       };
 
@@ -498,6 +505,27 @@ class ReliableClassifier {
         );
       }
 
+      // Pre-filter: Explicit Coding Project Signals (bidirectional - positive coding detection)
+      if (this.hasCodingProjectSignals(context)) {
+        this.stats.codingProjectSignals = (this.stats.codingProjectSignals || 0) + 1;
+        return this.buildResult(
+          {
+            isCoding: true,
+            confidence: 0.90,
+            reason: 'Session filter: Explicit coding project activity detected',
+            details: { codingProjectSignal: true }
+          },
+          [{
+            layer: 'session-filter',
+            input: { content: context.content.substring(0, 100) + '...', fileOps: context.fileOperations },
+            output: { codingProject: true },
+            duration: Date.now() - startTime
+          }],
+          'session-filter',
+          Date.now() - startTime
+        );
+      }
+
       // Layer 1: Path Analysis (fastest)
       const pathResult = this.pathAnalyzer.analyze(context.fileOperations);
       decisionPath.push({
@@ -680,6 +708,66 @@ class ReliableClassifier {
       return true;
     }
     
+    return false;
+  }
+
+  /**
+   * Detect explicit coding project activity signals
+   * Used by session filter to make positive coding decisions
+   */
+  hasCodingProjectSignals(context) {
+    const content = context.content || '';
+    const contentLower = content.toLowerCase();
+    const fileOps = context.fileOperations || [];
+
+    // Check file paths for coding repo
+    const hasCodingPaths = fileOps.some(op =>
+      op.toLowerCase().includes('/coding/') ||
+      op.toLowerCase().includes('coding/')
+    );
+
+    if (hasCodingPaths) return true;
+
+    // Check for explicit coding project keywords
+    const codingProjectKeywords = [
+      'working on coding repository',
+      'coding project',
+      'live session logging',
+      'lsl system',
+      'transcript monitor',
+      'classification system',
+      'reliable classifier',
+      'embedding classifier',
+      'semantic analyzer',
+      'mcp server',
+      'qdrant',
+      'vector database',
+      'coding infrastructure',
+      'status line',
+      'trajectory analyzer'
+    ];
+
+    for (const keyword of codingProjectKeywords) {
+      if (contentLower.includes(keyword)) {
+        return true;
+      }
+    }
+
+    // Check for coding-specific file patterns in content
+    const codingFilePatterns = [
+      /scripts\/.*\.js/,
+      /integrations\/.*\.js/,
+      /config\/.*\.json/,
+      /.specstory\/.*\.md/,
+      /\.mcp-sync\//
+    ];
+
+    for (const pattern of codingFilePatterns) {
+      if (pattern.test(content)) {
+        return true;
+      }
+    }
+
     return false;
   }
 

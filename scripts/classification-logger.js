@@ -243,10 +243,10 @@ class ClassificationLogger {
 
         for (const decision of decisions) {
           markdown += `### Prompt Set: ${decision.promptSetId}\n\n`;
-          markdown += `**Time Range**: ${decision.timeRange.start} → ${decision.timeRange.end}\n`;
-          markdown += `**LSL File**: \`${path.basename(decision.lslFile)}\`\n`;
-          markdown += `**LSL Lines**: ${decision.lslLineRange.start}-${decision.lslLineRange.end}\n`;
-          markdown += `**Target**: ${decision.targetFile === 'foreign' ? '🌍 FOREIGN (coding)' : '📍 LOCAL'}\n`;
+          markdown += `**Time Range**: ${decision.timeRange.start} → ${decision.timeRange.end}  \n`;
+          markdown += `**LSL File**: \`${path.basename(decision.lslFile)}\`  \n`;
+          markdown += `**LSL Lines**: ${decision.lslLineRange.start}-${decision.lslLineRange.end}  \n`;
+          markdown += `**Target**: ${decision.targetFile === 'foreign' ? '🌍 FOREIGN (coding)' : '📍 LOCAL'}  \n`;
           markdown += `**Final Classification**: ${decision.classification.isCoding ? '✅ CODING' : '❌ LOCAL'} (confidence: ${decision.classification.confidence})\n\n`;
 
           markdown += `#### Layer-by-Layer Trace\n\n`;
