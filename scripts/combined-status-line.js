@@ -219,21 +219,38 @@ class CombinedStatusLine {
    */
   getTrajectoryState() {
     try {
+      // Determine which project we're currently working in
+      const targetProject = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
+      const codingPath = process.env.CODING_TOOLS_PATH || process.env.CODING_REPO || rootDir;
+
+      // Map states to icons (from config/live-logging-config.json)
+      const stateIconMap = {
+        'exploring': '🔍 EX',
+        'on_track': '📈 ON',
+        'off_track': '📉 OFF',
+        'implementing': '⚙️ IMP',
+        'verifying': '✅ VER',
+        'blocked': '🚫 BLK'
+      };
+
+      // Try to read from current project first (if not coding)
+      if (targetProject && !targetProject.includes(codingPath)) {
+        const targetTrajectoryPath = join(targetProject, '.specstory', 'trajectory', 'live-state.json');
+        if (existsSync(targetTrajectoryPath)) {
+          const trajectoryData = JSON.parse(readFileSync(targetTrajectoryPath, 'utf8'));
+          const currentState = trajectoryData.currentState || 'exploring';
+          return stateIconMap[currentState] || '🔍 EX';
+        }
+        // If we're in a non-coding project and it doesn't have a trajectory file,
+        // use default (exploring) rather than falling back to coding's state
+        return '🔍 EX';
+      }
+
+      // We're in the coding project - read its trajectory state
       const trajectoryPath = join(rootDir, '.specstory', 'trajectory', 'live-state.json');
       if (existsSync(trajectoryPath)) {
         const trajectoryData = JSON.parse(readFileSync(trajectoryPath, 'utf8'));
         const currentState = trajectoryData.currentState || 'exploring';
-
-        // Map states to icons (from config/live-logging-config.json)
-        const stateIconMap = {
-          'exploring': '🔍 EX',
-          'on_track': '📈 ON',
-          'off_track': '📉 OFF',
-          'implementing': '⚙️ IMP',
-          'verifying': '✅ VER',
-          'blocked': '🚫 BLK'
-        };
-
         return stateIconMap[currentState] || '🔍 EX';
       }
     } catch (error) {
@@ -862,13 +879,21 @@ class CombinedStatusLine {
     if (globalHealth && globalHealth.status !== 'error') {
       const gcmIcon = globalHealth.gcm?.icon || '🟡';
       const sessionEntries = Object.entries(globalHealth.sessions || {});
-      
+
       if (sessionEntries.length > 0) {
         // Build the full GCM and Sessions display without labels
+        // Determine current project to highlight it
+        const currentProject = process.env.TRANSCRIPT_SOURCE_PROJECT || process.cwd();
+        const currentProjectName = currentProject.split('/').pop();
+        const currentAbbrev = this.getProjectAbbreviation(currentProjectName);
+
         const sessionStatuses = sessionEntries
           .map(([project, health]) => {
             const abbrev = this.getProjectAbbreviation(project);
-            return `${abbrev}${health.icon}`;
+            // Underline the current project's abbreviation
+            const isCurrentProject = abbrev === currentAbbrev;
+            const displayAbbrev = isCurrentProject ? `\u001b[4m${abbrev}\u001b[24m` : abbrev;
+            return `${displayAbbrev}${health.icon}`;
           })
           .join(' ');
         

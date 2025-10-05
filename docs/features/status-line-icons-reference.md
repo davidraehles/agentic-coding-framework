@@ -7,8 +7,10 @@ The Claude Code status line displays real-time information about your coding env
 ## Status Line Format
 
 ```
-[GCM✅] [C🟢] [🛡️ 85% 🔍EX] [🧠API✅]
+[GCM✅] [C🟢 CA🟢] [🛡️ 85% 🔍EX] [🧠API✅]
 ```
+
+**Current Project Highlighting**: The abbreviation for the current project is underlined in the session status display. For example, when working in the `coding` project, "C" will be underlined. When working in `curriculum-alignment`, "CA" will be underlined.
 
 ## Status Line Components
 
@@ -24,15 +26,26 @@ The status line consists of four main components in brackets:
 - **[GCM⚠️]** - Configuration warnings detected (yellow)
 - **[GCM❌]** - Configuration manager offline (red)
 
-### [C🟢] - Core Services Status
+### [C🟢 CA🟢] - Session Services Status
 
-**Purpose**: Essential development services health check
-**Icon**: C (Core)
+**Purpose**: Multi-project session monitoring across all active projects
+**Icons**: C (Coding), CA (Curriculum-Alignment), ND (Nano-Degree), etc.
+
+**Display Format:**
+- Shows all monitored projects with their health status
+- Current project is **underlined** (e.g., <u>C</u>🟢 CA🟢 when in coding project)
+- Each project followed by its health icon
 
 **Status Indicators:**
-- **[C🟢]** - Core services operational (green)
-- **[C🟡]** - Some core services degraded (yellow)
-- **[C🔴]** - Core services offline (red)
+- **[C🟢]** - Project services operational (green)
+- **[C🟡]** - Project services degraded (yellow)
+- **[C🔴]** - Project services offline (red)
+
+**Project Abbreviations:**
+- **C** - coding (main development hub)
+- **CA** - curriculum-alignment
+- **ND** - nano-degree
+- Additional projects use smart abbreviation (first letters of words)
 
 ### [🛡️ 85% 🔍EX] - Live Guardrails (Constraint Monitor)
 
@@ -72,32 +85,34 @@ The status line consists of four main components in brackets:
 
 ## Example Status Lines
 
-### All Systems Operational
+### All Systems Operational (in coding project)
 ```
-[GCM✅] [C🟢] [🛡️ 92% 📈ON] [🧠API✅]
+[GCM✅] [C🟢 CA🟢] [🛡️ 92% 📈ON] [🧠API✅]
 ```
 - Global configuration manager operational
-- Core services healthy
+- Coding project active (underlined) and healthy
+- Curriculum-alignment project healthy
 - Excellent compliance (92%)
 - On track with focused work
 - Semantic analysis API operational
 
-### Warning State
+### Warning State (in curriculum-alignment project)
 ```
-[GCM✅] [C🟡] [🛡️ 68% 🔍EX] [🧠API⚠️]
+[GCM✅] [C🟢 CA🟡] [🛡️ 68% 🔍EX] [🧠API⚠️]
 ```
 - Configuration manager operational
-- Some core services degraded
+- Coding project healthy
+- Curriculum-alignment active (underlined) with degraded services
 - Low compliance (68%) needs attention
 - Exploring/researching phase
 - Semantic analysis API degraded
 
 ### Critical Issues
 ```
-[GCM❌] [C🔴] [🛡️ ❌] [🧠API❌]
+[GCM❌] [C🔴 CA🔴] [🛡️ ❌] [🧠API❌]
 ```
 - Configuration manager offline
-- Core services failed
+- All project services failed
 - Constraint monitor offline
 - Semantic analysis API offline
 

@@ -23,8 +23,10 @@ The status line system integrates with the real-time trajectory analysis system 
 ```
 Claude Code → Wrapper → Main Script → Service APIs → Status Display
      ↓           ↓          ↓            ↓             ↓
-  5s Timer → Env Setup → Aggregator → Data Sources → [GCM✅] [C🟢] [🛡️ 85% 🔍 EX] [🧠API✅]
+  5s Timer → Env Setup → Aggregator → Data Sources → [GCM✅] [C🟢 CA🟢] [🛡️ 85% 🔍 EX] [🧠API✅]
 ```
+
+**Current Project Highlighting**: The status line automatically underlines the abbreviation of the current active project (determined by `TRANSCRIPT_SOURCE_PROJECT` or working directory) to provide visual context about which project you're currently working in.
 
 ### Component Layers
 
@@ -74,10 +76,11 @@ Claude Code → Wrapper → Main Script → Service APIs → Status Display
 **Key Methods**:
 - `buildCombinedStatus()` - Main orchestration method
 - `getGlobalConfigStatus()` - GCM status checking
-- `getCoreServicesStatus()` - Core infrastructure status
+- `getGlobalHealthStatus()` - Multi-project session health monitoring
 - `getConstraintStatus()` - Constraint monitoring data
 - `getSemanticStatus()` - AI/API status checking
 - `getTrajectoryState()` - Real-time trajectory state from trajectory system
+- `getProjectAbbreviation()` - Smart project name abbreviation generation
 
 **Data Flow**:
 1. Parallel status collection from all services
@@ -93,10 +96,21 @@ Claude Code → Wrapper → Main Script → Service APIs → Status Display
 **Checks**: Port availability, environment variables, service registry
 **Output**: `[GCM✅]`, `[GCM⚠️]`, or `[GCM❌]`
 
-#### Core Services (C)
-**Purpose**: Essential infrastructure health
-**Checks**: Docker status, database connectivity, key services
-**Output**: `[C🟢]`, `[C🟡]`, or `[C🔴]`
+#### Session Services (Multi-Project Display)
+**Purpose**: Monitor health of all active project sessions
+**Source**: Global health monitor reading from `.logs/statusline-health-status.txt`
+**Output**: `[C🟢 CA🟢]`, `[C🟡 CA🟢]`, etc.
+
+**Features**:
+- **Multi-project monitoring**: Displays all projects with active sessions
+- **Current project highlighting**: Underlines the current project's abbreviation using ANSI escape codes (`\u001b[4m...\u001b[24m`)
+- **Smart abbreviations**: Automatically generates readable abbreviations (C=coding, CA=curriculum-alignment, ND=nano-degree)
+- **Individual health icons**: Each project shows its own health status (🟢/🟡/🔴)
+
+**Current Project Detection**:
+- Uses `TRANSCRIPT_SOURCE_PROJECT` environment variable
+- Falls back to current working directory (`process.cwd()`)
+- Compares project name against session entries to determine which to underline
 
 #### Constraint Monitor (🛡️)
 **File**: `integrations/mcp-constraint-monitor/src/status/constraint-status-line.js`
@@ -178,9 +192,11 @@ Claude Code → Wrapper → Main Script → Service APIs → Status Display
 | Component | Operational | Degraded | Failed |
 |-----------|------------|----------|--------|
 | GCM | ✅ | ⚠️ | ❌ |
-| Core | 🟢 | 🟡 | 🔴 |
+| Sessions | <u>C</u>🟢 CA🟢 | <u>C</u>🟡 CA🟢 | <u>C</u>🔴 CA🔴 |
 | Constraint | 85% 🔍 EX | ⚠️ violations | ❌ offline |
 | Semantic | API✅ | API⚠️ | API❌ |
+
+*Note: Underline indicates current active project*
 
 ## Data Collection
 

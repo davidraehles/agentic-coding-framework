@@ -454,23 +454,43 @@ class EnhancedTranscriptMonitor {
           // Process each exchange individually to respect session boundaries and build prompt sets
           for (const exchange of batch) {
             const currentTranche = this.getCurrentTimetranche(exchange.timestamp);
-            
-            // Check for session boundaries and complete prompt sets as needed
-            if (this.isNewSessionBoundary(currentTranche, this.lastTranche)) {
-              // Complete previous user prompt set if exists
-              if (this.currentUserPromptSet.length > 0) {
-                const targetProject = await this.determineTargetProject(this.currentUserPromptSet);
-                if (targetProject !== null) {
-                  await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
-                }
-                this.currentUserPromptSet = [];
-              }
-              this.lastTranche = currentTranche;
-            }
-            
-            // Add exchange to current user prompt set if it's a user prompt
+
             if (exchange.isUserPrompt) {
-              this.currentUserPromptSet.push(exchange);
+              // New user prompt detected
+
+              // Check for session boundaries and complete prompt sets as needed
+              if (this.isNewSessionBoundary(currentTranche, this.lastTranche)) {
+                // Complete previous user prompt set if exists
+                if (this.currentUserPromptSet.length > 0) {
+                  const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
+                  if (targetProject !== null) {
+                    // FIX: Use tranche from the FIRST exchange in the set being written
+                    const setTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
+                    await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, setTranche);
+                  }
+                  this.currentUserPromptSet = [];
+                }
+                this.lastTranche = currentTranche;
+              } else {
+                // Same session - complete current user prompt set before starting new one
+                if (this.currentUserPromptSet.length > 0) {
+                  const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
+                  if (targetProject !== null) {
+                    // FIX: Use tranche from the FIRST exchange in the set being written
+                    const setTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
+                    await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, setTranche);
+                  }
+                  this.currentUserPromptSet = [];
+                }
+              }
+
+              // Start new user prompt set
+              this.currentUserPromptSet = [exchange];
+            } else {
+              // Add non-user-prompt exchange to current user prompt set
+              if (this.currentUserPromptSet.length > 0) {
+                this.currentUserPromptSet.push(exchange);
+              }
             }
           }
         }
@@ -1509,29 +1529,33 @@ class EnhancedTranscriptMonitor {
         
         // Check if we crossed session boundary
         if (this.isNewSessionBoundary(currentTranche, this.lastTranche)) {
-          
+
           // Complete previous user prompt set if exists
           if (this.currentUserPromptSet.length > 0) {
             const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
             if (targetProject !== null) {
-              await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, this.lastTranche || currentTranche);
+              // FIX: Use tranche from the FIRST exchange in the set being written
+              const setTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
+              await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, setTranche);
             }
             this.currentUserPromptSet = [];
           }
-          
+
           // NO LONGER CREATE EMPTY FILES AT SESSION BOUNDARIES
           // Files are only created when processUserPromptSetCompletion has content to write
           this.lastTranche = currentTranche;
           this.debug('🕒 Session boundary crossed, but not creating empty files');
-          
+
         } else {
-          // Same session - complete current user prompt set  
+          // Same session - complete current user prompt set
           if (this.currentUserPromptSet.length > 0) {
             const targetProject = await this.determineTargetProject(this.currentUserPromptSet[0]);
             if (targetProject !== null) {
-              await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, currentTranche);
+              // FIX: Use tranche from the FIRST exchange in the set being written
+              const setTranche = this.getCurrentTimetranche(this.currentUserPromptSet[0].timestamp);
+              await this.processUserPromptSetCompletion(this.currentUserPromptSet, targetProject, setTranche);
             }
-            
+
             // Note: Redirect detection now handled by conversation-based analysis in status line
           }
         }
