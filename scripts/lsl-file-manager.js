@@ -22,7 +22,7 @@ class LSLFileManager {
         // File management settings
         this.maxFileSize = options.maxFileSize || 100 * 1024 * 1024; // 100MB
         this.enableAutoRotation = options.enableAutoRotation !== false;
-        this.enableCompression = options.enableCompression !== false;
+        this.enableCompression = false; // Disabled - keep files uncompressed
         this.enableArchiving = options.enableArchiving !== false;
         this.maxArchiveAge = options.maxArchiveAge || 30 * 24 * 60 * 60 * 1000; // 30 days
         

@@ -25,7 +25,7 @@ class LSLFileManager {
     this.options = {
       maxFileSize: options.maxFileSize || 50 * 1024 * 1024, // 50MB
       rotationThreshold: options.rotationThreshold || 40 * 1024 * 1024, // 40MB
-      enableCompression: options.enableCompression !== false,
+      enableCompression: false, // Disabled - keep files uncompressed
       compressionLevel: options.compressionLevel || 6,
       maxArchivedFiles: options.maxArchivedFiles || 50,
       monitoringInterval: options.monitoringInterval || 5 * 60 * 1000, // 5 minutes
@@ -682,7 +682,7 @@ class LiveLoggingCoordinator {
       this.fileManager = new LSLFileManager({
         maxFileSize: 50 * 1024 * 1024,
         rotationThreshold: 40 * 1024 * 1024,
-        enableCompression: true,
+        enableCompression: false, // Disabled - keep files uncompressed
         compressionLevel: 6,
         maxArchivedFiles: 50,
         monitoringInterval: 5 * 60 * 1000,

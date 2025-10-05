@@ -77,7 +77,7 @@ class EnhancedTranscriptMonitor {
     this.fileManager = new LSLFileManager({
       maxFileSize: config.maxFileSize || (50 * 1024 * 1024), // 50MB default
       rotationThreshold: config.rotationThreshold || (40 * 1024 * 1024), // 40MB rotation trigger
-      enableCompression: config.enableCompression !== false,
+      enableCompression: false, // Disabled - keep files uncompressed
       compressionLevel: config.compressionLevel || 6,
       maxArchivedFiles: config.maxArchivedFiles || 50,
       monitoringInterval: config.fileMonitoringInterval || (5 * 60 * 1000), // 5 minutes
