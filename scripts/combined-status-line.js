@@ -363,20 +363,27 @@ class CombinedStatusLine {
                            gcmMatch[1] === '🟡' ? 'warning' : 'unhealthy';
       }
       
-      // Parse sessions status
+      // Parse sessions status - format: "project:icon" or "project:icon(reason)"
       if (sessionsMatch) {
         const sessionsStr = sessionsMatch[1];
         const sessionPairs = sessionsStr.split(/\s+/);
-        
+
         for (const pair of sessionPairs) {
-          const [projectName, icon] = pair.split(':');
-          if (projectName && icon) {
-            result.sessions[projectName] = {
-              icon: icon,
-              status: icon === '🟢' ? 'healthy' : 
-                     icon === '🟡' ? 'warning' : 'unhealthy'
-            };
-          }
+          // Split on : to get project and icon+reason
+          const [projectName, iconPart] = pair.split(':');
+          if (!projectName || !iconPart) continue;
+
+          // Extract icon and optional reason - look for pattern like "icon(reason)"
+          const reasonMatch = iconPart.match(/\(([^)]+)\)/);
+          const icon = reasonMatch ? iconPart.substring(0, iconPart.indexOf('(')) : iconPart;
+          const reason = reasonMatch ? reasonMatch[1] : undefined;
+
+          result.sessions[projectName] = {
+            icon: icon,
+            reason: reason,
+            status: icon === '🟢' ? 'healthy' :
+                   icon === '🟡' ? 'warning' : 'unhealthy'
+          };
         }
       }
       
@@ -893,6 +900,10 @@ class CombinedStatusLine {
             // Underline the current project's abbreviation
             const isCurrentProject = abbrev === currentAbbrev;
             const displayAbbrev = isCurrentProject ? `\u001b[4m${abbrev}\u001b[24m` : abbrev;
+            // Add reason for yellow/red statuses
+            if ((health.icon === '🟡' || health.icon === '🔴') && health.reason) {
+              return `${displayAbbrev}${health.icon}(${health.reason})`;
+            }
             return `${displayAbbrev}${health.icon}`;
           })
           .join(' ');

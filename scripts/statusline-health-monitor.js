@@ -245,29 +245,29 @@ class StatusLineHealthMonitor {
   getProjectAbbreviation(projectName) {
     // Handle common patterns and generate readable abbreviations
     const name = projectName.toLowerCase();
-    
+
     // Known project mappings
     const knownMappings = {
       'coding': 'C',
-      'curriculum-alignment': 'CA', 
+      'curriculum-alignment': 'CA',
       'nano-degree': 'ND',
       'curriculum': 'CU',
       'alignment': 'AL',
       'nano': 'N'
     };
-    
+
     // Check for exact match first
     if (knownMappings[name]) {
       return knownMappings[name];
     }
-    
+
     // Smart abbreviation generation
     if (name.includes('-')) {
       // Multi-word projects: take first letter of each word
       const parts = name.split('-');
       return parts.map(part => part.charAt(0).toUpperCase()).join('');
     } else if (name.includes('_')) {
-      // Underscore separated: take first letter of each word  
+      // Underscore separated: take first letter of each word
       const parts = name.split('_');
       return parts.map(part => part.charAt(0).toUpperCase()).join('');
     } else if (name.length <= 3) {
@@ -287,6 +287,27 @@ class StatusLineHealthMonitor {
         }
       }
     }
+  }
+
+  /**
+   * Convert health details/status to short reason codes for status line
+   */
+  getShortReason(details) {
+    const text = (details || '').toLowerCase();
+
+    // Map common reasons to short codes
+    if (text.includes('not streaming')) return 'idle';
+    if (text.includes('stale')) return 'stale';
+    if (text.includes('too old')) return 'old';
+    if (text.includes('inactive')) return 'sleep';
+    if (text.includes('dormant')) return 'sleep';
+    if (text.includes('exchanges')) return 'active';
+    if (text.includes('warning')) return 'warn';
+    if (text.includes('unhealthy')) return 'down';
+    if (text.includes('error')) return 'err';
+
+    // Default: first 5 chars
+    return text.substring(0, 5);
   }
 
   /**
@@ -723,6 +744,11 @@ class StatusLineHealthMonitor {
       const sessionStatuses = sessionEntries
         .map(([projectName, health]) => {
           const abbrev = this.getProjectAbbreviation(projectName);
+          // Add reason in parentheses for yellow/red statuses
+          if (health.icon === '🟡' || health.icon === '🔴') {
+            const reason = this.getShortReason(health.details || health.status);
+            return `${abbrev}:${health.icon}(${reason})`;
+          }
           return `${abbrev}:${health.icon}`;
         })
         .join(' ');

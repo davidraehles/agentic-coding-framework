@@ -239,21 +239,30 @@ Four-layer classification system that accurately determines content routing with
 
 **Location**: `scripts/classification-logger.js`
 
-The Classification Logger provides comprehensive tracking and analysis of all classification decisions across the 4-layer system.
+The Classification Logger provides comprehensive tracking and analysis of all classification decisions across the 5-layer system (including session-filter pre-filter).
 
 **Key Features**:
-- **Full Decision Trace**: Captures complete decision path through all 4 layers
+- **Full Decision Trace**: Captures complete decision path through all layers (0-4)
+- **Time-Window Organization**: Logs organized by time windows matching LSL files
 - **JSONL Format**: Machine-readable logs for programmatic analysis
-- **Markdown Summaries**: Human-readable reports with statistics and examples
+- **Markdown Summaries**: Human-readable reports with clickable navigation
+- **Overall Status File**: Aggregated statistics across all classification sessions
 - **Performance Metrics**: Tracks processing time for each layer and overall classification
 - **Confidence Tracking**: Records confidence scores for quality monitoring
+- **Git-Trackable**: Classification logs are version-controlled for historical analysis
 
 **Log File Organization**:
 ```
 .specstory/logs/classification/
-├── classification-<project>-<timestamp>.jsonl              # Raw decision data
-└── classification-<project>-<timestamp>-summary.md         # Human-readable summary
+├── YYYY-MM-DD_HHMM-HHMM_<userhash>.jsonl              # Time-window data (matches LSL)
+├── YYYY-MM-DD_HHMM-HHMM_<userhash>-summary.md         # Time-window summary
+└── classification-status-<project>.md                  # Overall status file
 ```
+
+**File Naming**: Classification log filenames match LSL file naming exactly (except extension) for easy correlation:
+- LSL: `2025-10-05_1400-1500_g9b30a.md`
+- Classification Data: `2025-10-05_1400-1500_g9b30a.jsonl`
+- Classification Summary: `2025-10-05_1400-1500_g9b30a-summary.md`
 
 **JSONL Log Format**:
 ```json
@@ -284,18 +293,69 @@ The Classification Logger provides comprehensive tracking and analysis of all cl
 }
 ```
 
-**Summary Report Statistics**:
+**Summary Report Statistics with Clickable Navigation**:
 ```markdown
 ## Statistics
-- Total Prompt Sets: 26
-- Classified as CODING: 15 (58%)
-- Classified as LOCAL: 11 (42%)
-- Layer 1 (Path) Decisions: 9
-- Layer 2 (Keyword) Decisions: 6
-- Layer 3 (Embedding) Decisions: 1
-- Layer 4 (Semantic) Decisions: 7
-- Average Processing Time: 2173ms
-- Average Confidence: 0.73
+
+- **Total Prompt Sets**: 17
+- **Classified as CODING**: 2 (12%)
+- **Classified as LOCAL**: 15 (88%)
+- **[Layer 0 (Session Filter) Decisions](#layer-0-session-filter)**: 1
+- **[Layer 1 (Path) Decisions](#layer-1-path)**: 0
+- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 2
+- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 10
+- **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 4
+- **Average Processing Time**: 49ms
+
+---
+
+## Layer 0: Session Filter
+
+**Decisions**: 1
+
+### Prompt Set: ps_2025-09-22T08:38:35.379Z
+...
+```
+
+**Overall Status File** (`classification-status-<project>.md`):
+Provides aggregated statistics across all classification sessions with clickable links to individual window summaries.
+
+```markdown
+# Classification Status - curriculum-alignment
+
+**Generated**: 2025-10-05T13:19:39.769Z
+**Total Sessions**: 173
+**Total Decisions**: 1396
+
+---
+
+## Overall Statistics
+
+- **Total Prompt Sets Classified**: 1396
+- **Classified as CODING**: 470 (34%)
+- **Classified as LOCAL**: 926 (66%)
+
+### Classification Method Distribution
+
+| Layer | Method | Decisions | Percentage |
+|-------|--------|-----------|------------|
+| 0 | Session Filter | 243 | 17% |
+| 1 | Path Analysis | 248 | 18% |
+| 2 | Keyword Matching | 218 | 16% |
+| 3 | Embedding Search | 293 | 21% |
+| 4 | Semantic Analysis | 394 | 28% |
+
+**Average Processing Time**: 25ms
+
+---
+
+## Session Windows
+
+Click on any window to view detailed classification decisions for that time period.
+
+- **[2025-09-22_1000-1100_g9b30a](2025-09-22_1000-1100_g9b30a-summary.md)** - 17 decisions (2 coding, 15 local)
+- **[2025-09-22_1100-1200_g9b30a](2025-09-22_1100-1200_g9b30a-summary.md)** - 23 decisions (5 coding, 18 local)
+...
 ```
 
 **Example Classification Decision**:

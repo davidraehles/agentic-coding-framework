@@ -99,18 +99,33 @@ Claude Code → Wrapper → Main Script → Service APIs → Status Display
 #### Session Services (Multi-Project Display)
 **Purpose**: Monitor health of all active project sessions
 **Source**: Global health monitor reading from `.logs/statusline-health-status.txt`
-**Output**: `[C🟢 CA🟢]`, `[C🟡 CA🟢]`, etc.
+**Output**: `[C🟢 CA🟢]`, `[C🟡(idle) ND🔴(old)]`, etc.
 
 **Features**:
 - **Multi-project monitoring**: Displays all projects with active sessions
 - **Current project highlighting**: Underlines the current project's abbreviation using ANSI escape codes (`\u001b[4m...\u001b[24m`)
 - **Smart abbreviations**: Automatically generates readable abbreviations (C=coding, CA=curriculum-alignment, ND=nano-degree)
 - **Individual health icons**: Each project shows its own health status (🟢/🟡/🔴)
+- **Status reasons**: Yellow/red statuses include brief reason codes in parentheses (e.g., `CA🟡(idle)`, `ND🔴(old)`)
 
 **Current Project Detection**:
 - Uses `TRANSCRIPT_SOURCE_PROJECT` environment variable
 - Falls back to current working directory (`process.cwd()`)
 - Compares project name against session entries to determine which to underline
+
+**Health Status Reasons**:
+When a project session shows yellow (🟡) or red (🔴) status, a short reason code is displayed:
+- `idle` - Session exists but not actively streaming exchanges
+- `stale` - Health data is slightly outdated (90s-2min old)
+- `old` - Health data is too old (2min-6hrs)
+- `err` - Error occurred while checking health
+- `warn` - General warning state
+- `down` - Unhealthy or failed state
+
+**Example Outputs**:
+- `[C🟢 CA🟢]` - Both projects healthy and streaming
+- `[C🟢 CA🟡(idle)]` - C is active, CA session idle
+- `[C🟡(stale) CA🔴(old)]` - C has stale data, CA has old data
 
 #### Constraint Monitor (🛡️)
 **File**: `integrations/mcp-constraint-monitor/src/status/constraint-status-line.js`
