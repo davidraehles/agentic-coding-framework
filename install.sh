@@ -519,14 +519,26 @@ install_serena() {
     # Install or update Serena
     if [[ -d "$serena_dir" ]]; then
         info "Serena already exists, updating..."
-        cd "$serena_dir"
-        
+
+        if ! cd "$serena_dir"; then
+            error_exit "Failed to change to Serena directory: $serena_dir"
+            return 1
+        fi
+
         if timeout 10s git pull origin main 2>/dev/null; then
             success "Serena updated from repository"
         else
             warning "Could not update Serena, using existing version"
         fi
-        
+
+        # Verify pyproject.toml exists before running uv sync
+        if [[ ! -f "pyproject.toml" ]]; then
+            warning "pyproject.toml not found in $serena_dir"
+            INSTALLATION_WARNINGS+=("Serena: pyproject.toml missing")
+            cd "$CODING_REPO"
+            return 1
+        fi
+
         # Update dependencies
         info "Updating Serena dependencies..."
         if uv sync; then
@@ -548,8 +560,20 @@ install_serena() {
         
         # Install dependencies
         info "Installing Serena dependencies..."
-        cd "$serena_dir"
-        
+
+        if ! cd "$serena_dir"; then
+            error_exit "Failed to change to Serena directory: $serena_dir"
+            return 1
+        fi
+
+        # Verify pyproject.toml exists
+        if [[ ! -f "pyproject.toml" ]]; then
+            warning "pyproject.toml not found after clone in $serena_dir"
+            INSTALLATION_WARNINGS+=("Serena: pyproject.toml missing after clone")
+            cd "$CODING_REPO"
+            return 1
+        fi
+
         if uv sync; then
             success "Serena dependencies installed"
         else
