@@ -231,10 +231,23 @@ check_dependencies() {
         missing_deps+=("plantuml")
     fi
     
-    # Check for uv (required for Serena)
+    # Install uv if missing (required for Serena MCP server)
     if ! command -v uv >/dev/null 2>&1; then
-        warning "uv not found. Required for Serena MCP server installation."
-        info "Install uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
+        info "Installing uv (Python package installer, required for Serena MCP)..."
+        if curl -LsSf https://astral.sh/uv/install.sh | sh; then
+            # Source shell config to update PATH
+            export PATH="$HOME/.local/bin:$PATH"
+            if command -v uv >/dev/null 2>&1; then
+                success "uv installed successfully"
+            else
+                warning "uv installed but not in PATH. You may need to restart your shell."
+                info "Add to PATH: export PATH=\"\$HOME/.local/bin:\$PATH\""
+            fi
+        else
+            error_exit "Failed to install uv. Serena MCP server will not be available."
+        fi
+    else
+        success "uv is already installed"
     fi
     
     # Platform-specific checks
