@@ -1,11 +1,5 @@
-@startuml 4-layer-monitoring-architecture
-!theme plain
-skinparam backgroundColor #FFFFFF
-skinparam handwritten false
-skinparam shadowing false
-skinparam classBorderColor #333333
-skinparam classBackgroundColor #F8F9FA
-skinparam arrowColor #333333
+@startuml
+!include _standard-style.puml
 
 title 4-Layer Monitoring Architecture\nBulletproof LSL System Protection
 

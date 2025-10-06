@@ -1,277 +1,277 @@
-# Unified Semantic Analysis & Knowledge Management System
+# Coding - AI Development Toolkit
 
-A comprehensive AI-powered development toolkit featuring **unified multi-agent semantic analysis** with seamless integration for both **Claude Code** (MCP tools) and **GitHub CoPilot** (enhanced VSCode integration). The system uses a **single agent infrastructure** and **unified SynchronizationAgent** to ensure consistent knowledge management across all AI coding assistants.
+A comprehensive AI-powered development toolkit featuring live session logging, real-time constraint monitoring, semantic knowledge management, and multi-agent analysis — supporting both Claude Code and GitHub CoPilot.
+
+---
 
 ## 🚀 Quick Start
 
 ```bash
-# Install the unified system
+# Install the system
 ./install.sh
 
-# Test installation and verify agent system
-./scripts/test-coding.sh
+# Start Claude Code with all features
+coding
 
-# Use best available agent (auto-detects)
-./bin/coding
-
-# Force specific agent (both use SAME agent system)
-./bin/coding --claude     # Claude Code with MCP + Unified Agent System
-./bin/coding --copilot    # GitHub CoPilot + Unified Agent System
+# Or use specific agent
+coding --claude
+coding --copilot
 ```
 
-## 🏗️ System Architecture
+**Next Steps**: [Getting Started Guide](docs/getting-started.md)
 
-![Unified Semantic Analysis System](docs/images/unified-semantic-architecture.png)
+---
 
-The system provides:
+## 🎯 What It Provides
 
-- **🤖 Unified Multi-Agent System** - 11 specialized agents for comprehensive analysis
-- **🔄 Single SynchronizationAgent** - Sole authority for data integrity across all systems
-- **📊 Universal Command Interface** - `determine_insights`, `update_knowledge_base`, `lessons_learned`
-- **🎯 Agent-Agnostic Design** - Same functionality in Claude Code (MCP) and CoPilot (VSCode)
-- **🔗 Multi-Database Sync** - MCP Memory ↔ Graphology ↔ shared-memory.json
-- **👁️ Transparent Progress** - Real-time agent activity logging and visualization
+### Core Capabilities
 
-## 🔧 Core Systems
+- **📋 Live Session Logging** - Real-time conversation classification and routing
+- **🛡️ Constraint Monitoring** - PreToolUse hook enforcement for code quality
+- **🧠 Knowledge Management** - Capture, visualize, and share development insights
+- **🤖 Multi-Agent Analysis** - 11 specialized AI agents for comprehensive code analysis
+- **📊 Status Line System** - Real-time health monitoring and activity indicators
+- **🚀 Trajectory Generation** - Automated project analysis and documentation
 
-### Enhanced Live Session Logging (LSL) System
+### Integration Support
 
-**[📚 Complete Enhanced LSL Documentation](docs/live-session-logging.md)** - Enterprise-grade conversation classification and security system
+- **Claude Code** - Full MCP server integration
+- **GitHub CoPilot** - Enhanced VSCode integration with fallback services
+- **Agent-Agnostic** - Same features regardless of AI assistant
 
-![Enhanced LSL System Architecture](docs/images/enhanced-lsl-architecture.png)
-
-**Key Features**:
-- **98.3% Security Effectiveness**: Enhanced redaction system with bypass protection (improved from 25%)
-- **Multi-User Support**: Secure user isolation with SHA-256 hash generation and collision protection
-- **Real-time Health Monitoring**: Sub-millisecond performance tracking with automated alerting
-- **Three-Layer Classification**: PathAnalyzer (100% accuracy) → KeywordMatcher (fast) → SemanticAnalyzer (selective)
-- **Zero Trust Security**: Multi-layered protection against social engineering and bypass attempts
-- **Enterprise Ready**: GDPR, HIPAA compliance with comprehensive audit trails
-
-**Security Architecture**:
-
-![Enhanced LSL Security Architecture](docs/images/enhanced-lsl-security.png)
-
-**System Status**: ✅ **Enhanced & Production Ready** (Deployed: Task 30 Complete)
-
-### Knowledge Management Tools
-
-- **[UKB-CLI](docs/ukb/)** - Update Knowledge Base (capture insights)
-- **[VKB-CLI](docs/vkb/)** - View Knowledge Base (web visualization)
-
-### Unified Semantic Analysis System
-
-- **[MCP Server Documentation](integrations/mcp-server-semantic-analysis/README.md)** - Standalone Node.js MCP server (12 tools, 11 agents)
-- **[11-Agent System Architecture](docs/components/semantic-analysis/unified-architecture.md)** - Complete agent ecosystem
-- **[MCP Integration](docs/components/semantic-analysis/mcp-server-setup.md)** - Claude Code unified tools
-- **[VSCode Integration](docs/integrations/vscode-copilot-integration.md)** - Enhanced CoPilot with same agents
-- **[SynchronizationAgent](docs/components/semantic-analysis/synchronization-agent.md)** - Single source of truth
-
-### AST-Based Code Analysis (Serena)
-
-- **[Serena AST Analysis](docs/integrations/serena-ast-analysis.md)** - 🧠 **AST-based semantic code analysis and retrieval**
-- **Smart Code Search** - Search by code structure, not just text patterns
-- **Semantic Relationships** - Understand function calls, inheritance, and dependencies
-- **Security Analysis** - Find vulnerabilities through code structure analysis
-- **Refactoring Support** - Intelligent code reorganization suggestions
-
-### Real-time Constraint Monitoring
-
-- **[MCP Constraint Monitor](https://github.com/fwornle/mcp-server-constraint-monitor)** - 🛡️ **Standalone MCP server** for universal constraint monitoring
-- **[Real-time Constraint Monitoring](docs/features/real-time-constraint-monitoring.md)** - Live constraint violation detection and intervention  
-- **[Status Line Integration](https://github.com/fwornle/mcp-server-constraint-monitor/blob/main/docs/status-line-integration.md)** - Real-time constraint compliance display
-- **Universal Compatibility** - Works with Claude Code, Cursor, Copilot, Aider and any coding project
+---
 
 ## 📚 Documentation
 
-### 🚀 Getting Started
+### Getting Started
 
-- **[Quick Start Guide](docs/installation/quick-start.md)** - Get running in 30 seconds
-- **[Network Setup](docs/installation/network-setup.md)** - Corporate firewall configuration
-- **[MCP Configuration](docs/installation/mcp-configuration.md)** - Claude Code setup
+- **[Installation & Setup](docs/getting-started.md)** - Complete installation guide with configuration
+- **[System Overview](docs/system-overview.md)** - High-level architecture and capabilities
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 
-### 🏗️ Architecture & Design
+### Core Systems
 
-- **[Unified Architecture](docs/architecture/unified-system-overview.md)** - Complete unified system guide
-- **[Knowledge Flow](docs/architecture/unified-knowledge-flow.md)** - How knowledge flows through unified agents
-- **[Multi-Database Sync](docs/architecture/unified-memory-systems.md)** - SynchronizationAgent and data consistency
+- **[Live Session Logging](docs/core-systems/live-session-logging.md)** - Real-time conversation classification (98.3% security effectiveness)
+- **[Constraint Monitoring](docs/core-systems/constraint-monitoring.md)** - Real-time code quality enforcement (18 active constraints)
+- **[Status Line System](docs/core-systems/status-line.md)** - Visual health monitoring and activity indicators
+- **[Trajectory Generation](docs/core-systems/trajectory-generation.md)** - Automated project analysis
 
-### 🧩 Component Documentation
+### Knowledge Management
 
-- **[Live Session Logging](docs/live-session-logging.md)** - 📚 **Complete LSL system documentation**
-- **[UKB-CLI Documentation](docs/ukb/)** - Knowledge capture system
-- **[VKB-CLI Documentation](docs/vkb/)** - Knowledge visualization
-- **[Semantic Analysis System](docs/components/semantic-analysis/)** - AI analysis agents
-- **[MCP Server](integrations/mcp-server-semantic-analysis/)** - Standalone Node.js semantic analysis server
+- **[Knowledge Management Overview](docs/knowledge-management/README.md)** - UKB, VKB, and workflows
+- **[UKB - Update Knowledge Base](docs/knowledge-management/ukb-update.md)** - Capture development insights
+- **[VKB - Visualize Knowledge Base](docs/knowledge-management/vkb-visualize.md)** - Interactive graph visualization
+- **[Workflows](docs/knowledge-management/workflows.md)** - Orchestrated analysis workflows
 
-### 🎯 Use Cases & Workflows
+### Integration Components
 
-- **[Use Cases Overview](docs/use-cases/)** - Complete workflow examples
-- **[Managing Knowledge Base](docs/use-cases/managing-knowledge-base.md)** - Team knowledge capture and access
-- **[Semantic Workflows](docs/use-cases/semantic-workflows.md)** - Orchestrated multi-step analysis processes
-- **[Cross-Project Learning](docs/use-cases/cross-project-learning.md)** - Knowledge accumulation across projects
+- **[Integrations Overview](docs/integrations/README.md)** - All integration components
+- **[MCP Semantic Analysis](docs/integrations/mcp-semantic-analysis.md)** - 11-agent AI analysis system
+- **[MCP Constraint Monitor](docs/integrations/mcp-constraint-monitor.md)** - Real-time constraint enforcement
+- **[Serena AST Analysis](docs/integrations/serena-ast-analysis.md)** - Structure-aware code search
+- **[Browser Access](docs/integrations/browser-access.md)** - Browser automation (Stagehand)
+- **[VSCode CoPilot](docs/integrations/vscode-copilot.md)** - Enhanced GitHub CoPilot
 
-### 🔌 Integrations
+### Architecture
 
-- **[Serena AST Analysis](docs/integrations/serena-ast-analysis.md)** - 🧠 **AST-based semantic code analysis and retrieval**
-- **[VSCode CoPilot Integration](docs/integrations/vscode-copilot-integration.md)** - Enhanced development experience
-- **[API Reference](docs/integrations/api-reference.md)** - HTTP and MCP APIs
-- **[Testing Guide](docs/integrations/vscode-testing-guide.md)** - Integration testing
+- **[Architecture Overview](docs/architecture/README.md)** - System architecture and design patterns
+- **[Reference Documentation](docs/reference/README.md)** - API keys, troubleshooting, advanced topics
 
-### 📋 Reference
+---
 
-- **[Reference Documentation](docs/reference/)** - Complete reference materials
-- **[API Keys Setup](docs/reference/api-keys-setup.md)** - LLM provider configuration
-- **[Troubleshooting](docs/reference/troubleshooting-knowledge-base.md)** - Common issues and solutions
+## 🔧 Core Features
 
-## 🎯 Key Features
+### Live Session Logging (LSL)
 
-### Unified Agent System Design
+Real-time conversation classification and routing with enterprise-grade security:
 
-- **Single Agent Infrastructure**: Both Claude and CoPilot use the SAME 11-agent system
-- **Unified Commands**: `determine_insights`, `update_knowledge_base`, `lessons_learned` work everywhere
-- **SynchronizationAgent Authority**: Single source of truth for data integrity
-- **Auto-Detection**: Automatically uses the best available AI agent
-- **Transparent Progress**: Real-time visibility into agent activities
+- **3-Layer Classification**: Path analysis → Keyword matching → Semantic analysis
+- **98.3% Security Effectiveness**: Enhanced redaction with bypass protection
+- **Multi-User Support**: Secure user isolation with SHA-256 hash generation
+- **Zero Data Loss**: Every exchange properly classified and preserved
+- **200x Performance**: Optimized bulk processing with sub-millisecond tracking
 
-### Live Session Logging Features
+**Status**: ✅ Production Ready
 
-- **Intelligent Classification**: Three-layer decision architecture with 95%+ accuracy
-- **Real-time Routing**: All conversation content properly classified and routed
-- **Zero Data Loss**: Every exchange is preserved in appropriate project directories
-- **Performance Optimized**: 200x speed improvement for bulk processing
-- **Status Line Integration**: Visual feedback with coding activity indicators
+### Constraint Monitoring
 
-### Developer Experience
+PreToolUse hook integration for real-time code quality enforcement:
 
-- **Zero Configuration**: Auto-starts required services when needed
-- **Rich Diagnostics**: `mcp-status` command for system health checking
-- **Hot Reloading**: Live updates during development
-- **Cross-Platform**: Works on macOS, Linux, and Windows
+- **18 Active Constraints**: Security, architecture, code quality, PlantUML, documentation
+- **Severity-Based**: CRITICAL/ERROR blocks, WARNING/INFO allows with feedback
+- **Dashboard Monitoring**: Live violation feed (port 3030)
+- **REST API**: Programmatic access (port 3031)
+- **Testing Framework**: Automated and interactive constraint testing
+
+**Status**: ✅ Production Ready
+
+### Knowledge Management
+
+Capture, organize, and visualize development insights:
+
+- **UKB (Update Knowledge Base)**: Auto git analysis + interactive capture
+- **VKB (Visualize Knowledge Base)**: Web-based graph visualization
+- **MCP Memory**: Runtime knowledge graph storage
+- **Cross-Project Learning**: Share patterns across multiple projects
+- **Domain-Specific**: Automatic domain knowledge bases per team
+
+**Status**: ✅ Production Ready
+
+### Multi-Agent Semantic Analysis
+
+11 specialized agents for comprehensive code analysis:
+
+1. **GitHistoryAgent** - Git commits and architectural decisions
+2. **VibeHistoryAgent** - Conversation file processing
+3. **SemanticAnalysisAgent** - Deep code analysis
+4. **WebSearchAgent** - External pattern research
+5. **InsightGenerationAgent** - Insight generation with PlantUML
+6. **ObservationGenerationAgent** - Structured UKB-compatible observations
+7. **QualityAssuranceAgent** - Output validation with auto-correction
+8. **PersistenceAgent** - Knowledge base persistence
+9. **SynchronizationAgent** - Multi-source data synchronization
+10. **DeduplicationAgent** - Semantic duplicate detection
+11. **CoordinatorAgent** - Workflow orchestration
+
+**Status**: ✅ Production Ready
+
+---
 
 ## ⚡ Usage Examples
 
-### LSL System Usage
+### Knowledge Management
 
 ```bash
-# Real-time monitoring (automatic during Claude Code sessions)
-# Session files are automatically updated in .specstory/history/
+# Capture insights from recent git commits
+ukb
 
-# Manual LSL generation for nano-degree project
-TRANSCRIPT_SOURCE_PROJECT="/Users/q284340/Agentic/nano-degree" \
-  node /Users/q284340/Agentic/coding/scripts/generate-proper-lsl-from-transcripts.js
+# Interactive structured capture
+ukb --interactive
 
-# Status line indicators show:
-📋🟠2130-2230(3min) →coding
-# 📋 = session logging, 🟠 = window closing, →coding = coding activity detected
+# Start visualization server
+vkb
+
+# View at http://localhost:8080
 ```
 
-### Unified Command Examples
+### Constraint Monitoring
+
+```bash
+# Start dashboard (automatic with install)
+cd integrations/mcp-constraint-monitor
+npm run dashboard  # http://localhost:3030
+
+# API access
+curl http://localhost:3031/api/status
+curl http://localhost:3031/api/violations
+```
+
+### Live Session Logging
+
+```bash
+# Automatic during Claude Code sessions
+# Session files in .specstory/history/
+
+# Status line shows:
+📋🟠2130-2230(3min) →coding
+# 📋 = logging, 🟠 = window closing, →coding = activity detected
+```
+
+### Semantic Analysis Workflows
 
 **Claude Code:**
-```bash
-determine_insights {
-  "repository": ".",
-  "conversationContext": "Current refactoring work",
-  "depth": 10,
-  "significanceThreshold": 7
+```
+# Repository analysis workflow
+start_workflow {
+  "workflowType": "repository-analysis",
+  "parameters": {
+    "repository": ".",
+    "depth": 25,
+    "significanceThreshold": 6
+  }
 }
 ```
 
 **VSCode CoPilot:**
 ```bash
-@KM determine insights "Current refactoring work" --depth 10
+# Via HTTP API
+curl -X POST http://localhost:8765/api/semantic/analyze-repository \
+  -H "Content-Type: application/json" \
+  -d '{"repository": ".", "depth": 25}'
 ```
 
-*Both commands use the same 11-agent system*
+---
 
-### Serena AST Analysis Examples
+## 🛠️ Configuration
 
-**Smart Code Search:**
+### Quick Configuration
+
 ```bash
-# Find all authentication functions by structure, not text
-search_code_by_ast {
-  "pattern": "function_def", 
-  "context": "authentication",
-  "include_dependencies": true
-}
+# Set API keys
+export ANTHROPIC_API_KEY="your-key-here"
+export OPENAI_API_KEY="optional-fallback"
+
+# Configure preferred agent
+export CODING_AGENT="claude"  # or "copilot"
 ```
 
-**Security Analysis:**
-```bash
-# Find potential SQL injection points through AST analysis
-search_code_by_ast {
-  "pattern": "function_call",
-  "name": "*.query", 
-  "context": "user_input",
-  "analysis_type": "security"
-}
-```
+### Detailed Configuration
 
-**Refactoring Assistant:**
-```bash
-# Analyze code dependencies before refactoring
-retrieve_semantic_code {
-  "target": "UserService",
-  "relationship": "calls", 
-  "depth": 3,
-  "suggest_improvements": true
-}
-```
+See [Getting Started](docs/getting-started.md) for:
+- API key setup
+- MCP configuration
+- Network setup (proxies/firewalls)
+- Verification steps
 
-## 🔍 System Status
+---
 
-### Current Status: ✅ Fully Operational
-
-- **LSL System**: Real-time classification and routing with 200x performance improvement
-- **Multi-Agent System**: 11 specialized agents providing comprehensive analysis
-- **Cross-Platform Integration**: Works seamlessly with Claude Code and GitHub CoPilot
-- **Zero Data Loss**: All conversations properly classified and preserved
+## 📊 System Status
 
 ### Quick Health Check
 
 ```bash
-# Check unified system status
-get_system_status  # In Claude Code
-@KM system status  # In CoPilot
-
-# Test all components  
+# Test all components
 ./scripts/test-coding.sh
 
-# Check agent infrastructure
-mcp-status
+# Check MCP servers
+cd integrations/mcp-server-semantic-analysis && npm test
+
+# Check constraint monitor
+cd integrations/mcp-constraint-monitor && npm test
 ```
 
-## 🛠️ Configuration
+### Current Status
 
-### API Keys Setup
-
-Configure in `semantic-analysis-system/.env`:
-
-```bash
-# Recommended: Anthropic only
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-DEFAULT_LLM_PROVIDER=claude
-
-# Optional: Fallback support
-OPENAI_API_KEY=sk-your-key-here
-```
-
-### Service Architecture
-
-- **MCP Server**: Node.js process (Claude Code semantic analysis)
-- **VKB Web Server**: Port 8080 (knowledge visualization)  
-- **CoPilot HTTP Server**: Port 8765 (VSCode integration)
-- **Knowledge Databases**: MCP Memory, Graphology, shared-memory.json
-- **LSL System**: Real-time conversation classification and routing
-
-## 🤝 Contributing
-
-1. Follow the existing code patterns
-2. Update relevant documentation
-3. Test with both Claude Code and CoPilot
-4. Use `ukb` to capture insights from your changes
+✅ **Live Session Logging** - Real-time classification with 98.3% security
+✅ **Constraint Monitoring** - 18 active constraints with PreToolUse hooks
+✅ **Knowledge Management** - UKB/VKB with MCP integration
+✅ **Multi-Agent Analysis** - 11 agents with workflow orchestration
+✅ **Status Line System** - 4-layer health monitoring
+✅ **Cross-Platform** - macOS, Linux, Windows support
 
 ---
 
-**🎯 The goal**: Make AI-assisted development more intelligent by learning from every interaction and accumulating knowledge across projects and team members through unified agent systems and intelligent conversation routing.
+## 🤝 Contributing
+
+This is a personal development toolkit. For issues or suggestions:
+
+1. Check [Troubleshooting](docs/troubleshooting.md)
+2. Review [Architecture Documentation](docs/architecture/README.md)
+3. Create an issue with detailed information
+
+---
+
+## 📄 License
+
+Copyright © 2024. All rights reserved.
+
+---
+
+## 🔗 Quick Links
+
+- **Documentation Hub**: [docs/README.md](docs/README.md)
+- **Installation Guide**: [docs/getting-started.md](docs/getting-started.md)
+- **System Overview**: [docs/system-overview.md](docs/system-overview.md)
+- **Core Systems**: [docs/core-systems/](docs/core-systems/)
+- **Integrations**: [docs/integrations/](docs/integrations/)
+- **Knowledge Management**: [docs/knowledge-management/](docs/knowledge-management/)
