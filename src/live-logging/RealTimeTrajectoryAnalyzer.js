@@ -44,7 +44,10 @@ export class RealTimeTrajectoryAnalyzer {
     // Initialize trajectory persistence
     this.trajectoryDir = path.join(this.config.projectPath, '.specstory', 'trajectory');
     this.ensureTrajectoryDirectory();
-    
+
+    // Start heartbeat to keep live-state.json fresh even when no activity
+    this.startHeartbeat();
+
     this.debug('RealTimeTrajectoryAnalyzer initialized', {
       projectPath: this.config.projectPath,
       provider: this.config.trajectoryConfig?.inference_provider,
@@ -594,6 +597,34 @@ Return JSON: {"state": "state_name", "confidence": 0.0-1.0, "reasoning": "brief 
     }
     
     return guidance;
+  }
+
+  /**
+   * Start heartbeat to keep live-state.json fresh
+   * Updates the file every 30 minutes to prevent staleness detection
+   */
+  startHeartbeat() {
+    // Update every 30 minutes (half the 1-hour staleness threshold)
+    const heartbeatInterval = 30 * 60 * 1000;
+
+    this.heartbeatTimer = setInterval(() => {
+      this.updateLiveState();
+      this.debug('Heartbeat: Updated live-state.json');
+    }, heartbeatInterval);
+
+    // Initial update immediately
+    this.updateLiveState();
+  }
+
+  /**
+   * Stop heartbeat timer (for cleanup)
+   */
+  stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+      this.debug('Heartbeat stopped');
+    }
   }
 
   /**

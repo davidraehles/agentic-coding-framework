@@ -1868,13 +1868,19 @@ class EnhancedTranscriptMonitor {
       clearInterval(this.healthIntervalId);
       this.healthIntervalId = null;
     }
-    
+
+    // Stop trajectory analyzer heartbeat
+    if (this.trajectoryAnalyzer) {
+      this.trajectoryAnalyzer.stopHeartbeat();
+      this.debug('🎯 Trajectory analyzer heartbeat stopped');
+    }
+
     // Shutdown file manager gracefully
     if (this.fileManager) {
       await this.fileManager.shutdown();
       this.debug('📁 LSL File Manager shut down gracefully');
     }
-    
+
     this.cleanupHealthFile();
     console.log('📋 Enhanced transcript monitor stopped');
   }
