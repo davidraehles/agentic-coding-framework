@@ -146,8 +146,45 @@ export class RealTimeTrajectoryAnalyzer {
         fs.mkdirSync(this.trajectoryDir, { recursive: true });
         this.debug('Created trajectory directory:', this.trajectoryDir);
       }
+
+      // Ensure live-state.json is in .gitignore (it's volatile runtime data)
+      this.ensureLiveStateInGitignore();
     } catch (error) {
       console.error('Failed to create trajectory directory:', error.message);
+    }
+  }
+
+  /**
+   * Ensure live-state.json is in .gitignore
+   * This file contains volatile runtime state and should not be committed
+   */
+  ensureLiveStateInGitignore() {
+    try {
+      const projectRoot = this.config.projectPath;
+      const gitignorePath = path.join(projectRoot, '.gitignore');
+      const ignoreEntry = '.specstory/trajectory/live-state.json';
+
+      // Check if .gitignore exists
+      if (!fs.existsSync(gitignorePath)) {
+        // Create .gitignore with the entry
+        fs.writeFileSync(gitignorePath, `# Live logging runtime data (volatile state - not for version control)\n${ignoreEntry}\n`);
+        this.debug('Created .gitignore with live-state.json entry');
+        return;
+      }
+
+      // Check if entry already exists
+      const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+      if (gitignoreContent.includes(ignoreEntry)) {
+        return; // Already present
+      }
+
+      // Add entry to .gitignore
+      const newContent = gitignoreContent.trimEnd() + '\n\n# Live logging runtime data (volatile state - not for version control)\n' + ignoreEntry + '\n';
+      fs.writeFileSync(gitignorePath, newContent);
+      this.debug('Added live-state.json to .gitignore');
+    } catch (error) {
+      // Non-critical error - just log it
+      this.debug('Failed to update .gitignore:', error.message);
     }
   }
 

@@ -86,10 +86,11 @@ semantic-analysis.log
 
 # MCP Constraint Monitor now standalone - no local ignore patterns needed
 
-# Live logging runtime data  
+# Live logging runtime data
 .mcp-sync/
 .transcript-monitor-health
 .global-lsl-registry.json
+.specstory/trajectory/live-state.json
 
 # Centralized health monitoring files
 .health/
