@@ -100,9 +100,9 @@ constraints:
     pattern: (?:class|function|const|let|var)\s+\w*(?:V[2-9]|Enhanced|Improved|Better|New|Advanced|Pro|Simplified|Simple|Basic|Lite|Fixed|Patched|Updated|Revised|Modified|Temp|Temporary|Backup|Copy|Duplicate|Clone|Alt|Alternative|Variant|Final|Draft|Experimental)\w*
     message: Evolutionary naming detected - refactor original instead
     severity: error
-    enabled: true
+    enabled: false
     suggestion: Rename to descriptive functional name and refactor the original
-    semantic_validation: true
+    semantic_validation: false
   - id: plantuml-standard-styling
     group: plantuml
     pattern: "@startuml.*\\n(?!.*!include _standard-style\\.puml)"

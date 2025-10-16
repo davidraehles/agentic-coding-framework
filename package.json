@@ -25,7 +25,9 @@
     "graphology-utils": "^2.5.2",
     "groq-sdk": "^0.31.0",
     "js-yaml": "^4.1.0",
+    "openai": "^6.3.0",
     "playwright": "^1.40.0",
+    "proper-lockfile": "^4.1.2",
     "ws": "^8.16.0"
   },
   "devDependencies": {

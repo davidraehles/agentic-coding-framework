@@ -136,3 +136,5 @@ dist/
 *.tmp
 *.temp
 .tmp/
+# Process state registry (volatile runtime data)
+.live-process-registry.json
