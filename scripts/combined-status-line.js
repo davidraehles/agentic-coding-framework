@@ -393,12 +393,37 @@ class CombinedStatusLine {
       
       // Parse sessions status - format: "project:icon" or "project:icon(reason)"
       if (sessionsMatch) {
-        const sessionsStr = sessionsMatch[1];
-        const sessionPairs = sessionsStr.split(/\s+/);
+        const sessionsStr = sessionsMatch[1].trim();
+        // CRITICAL: Properly handle reasons with spaces like "(no tr)" by parsing character-by-character
+        // tracking parenthesis depth
+        const sessionPairs = [];
+        let current = '';
+        let inParens = false;
+
+        for (let i = 0; i < sessionsStr.length; i++) {
+          const char = sessionsStr[i];
+          if (char === '(') {
+            inParens = true;
+            current += char;
+          } else if (char === ')') {
+            inParens = false;
+            current += char;
+          } else if (char === ' ' && !inParens) {
+            if (current) sessionPairs.push(current);
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        if (current) sessionPairs.push(current);
 
         for (const pair of sessionPairs) {
           // Split on : to get project and icon+reason
-          const [projectName, iconPart] = pair.split(':');
+          const colonIndex = pair.indexOf(':');
+          if (colonIndex === -1) continue;
+
+          const projectName = pair.substring(0, colonIndex);
+          const iconPart = pair.substring(colonIndex + 1);
           if (!projectName || !iconPart) continue;
 
           // Extract icon and optional reason - look for pattern like "icon(reason)"

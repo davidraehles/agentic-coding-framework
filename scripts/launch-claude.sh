@@ -11,6 +11,29 @@ log() {
   echo "[Claude] $1"
 }
 
+# Generate unique session ID for this Claude session
+SESSION_ID="claude-$$-$(date +%s)"
+export CLAUDE_SESSION_ID="$SESSION_ID"
+
+# Register session with Process State Manager
+register_session() {
+  log "Registering session: $SESSION_ID"
+  node "$SCRIPT_DIR/psm-register-session.js" "$SESSION_ID" "$$" "$TARGET_PROJECT_DIR" 2>/dev/null || {
+    log "Warning: Failed to register session with Process State Manager"
+  }
+}
+
+# Cleanup handler for session termination
+cleanup_session() {
+  log "Session ending - cleaning up services..."
+  node "$SCRIPT_DIR/psm-session-cleanup.js" "$SESSION_ID" 2>/dev/null || {
+    log "Warning: Session cleanup failed"
+  }
+}
+
+# Set up trap handlers for cleanup on exit
+trap cleanup_session EXIT INT TERM
+
 # 🚨 MANDATORY MONITORING VERIFICATION 🚨
 # This MUST succeed before Claude starts - implements user's requirement for robust monitoring
 verify_monitoring_systems() {
@@ -97,6 +120,9 @@ else
   TARGET_PROJECT_DIR="$CODING_REPO"
   log "Working in coding repository: $TARGET_PROJECT_DIR"
 fi
+
+# Register this Claude session with Process State Manager
+register_session
 
 # Load environment configuration BEFORE starting services (from coding repo)
 if [ -f "$CODING_REPO/.env" ]; then

@@ -34,6 +34,7 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import { fileURLToPath } from 'url';
 import { EventEmitter } from 'events';
+import ProcessStateManager from './process-state-manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,49 +43,50 @@ const execAsync = promisify(exec);
 class GlobalServiceCoordinator extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     this.codingRepoPath = options.codingRepoPath || path.resolve(__dirname, '..');
-    this.registryPath = path.join(this.codingRepoPath, '.global-service-registry.json');
     this.logPath = path.join(this.codingRepoPath, '.logs', 'global-coordinator.log');
     this.isDaemon = options.daemon || false;
     this.isDebugMode = options.debug || false;
-    
+
+    // Initialize Process State Manager for unified tracking
+    this.psm = new ProcessStateManager(this.codingRepoPath);
+
     // Health check intervals
     this.healthCheckInterval = 15000; // 15 seconds
     this.serviceStartTimeout = 30000; // 30 seconds
     this.maxRestartAttempts = 5;
     this.restartBackoffBase = 1000; // 1 second
-    
-    // Service definitions - only project-specific services
-    // MCP services are started by claude-mcp via coding/bin/coding, not by this coordinator
+
+    // Service definitions - only services not managed elsewhere
+    // NOTE: enhanced-transcript-monitor is started by bin/coding, not by this coordinator
+    // NOTE: MCP services are started by claude-mcp via bin/coding, not by this coordinator
     this.serviceDefinitions = {
-      'enhanced-transcript-monitor': {
-        type: 'per-project',
-        script: 'scripts/enhanced-transcript-monitor.js',
-        healthCheck: 'health-file', // .transcript-monitor-health
-        priority: 1,
-        restartable: true
-      },
-      'trajectory-generator': {
-        type: 'per-project',
-        script: 'scripts/trajectory-generator.js',
-        healthCheck: 'health-file',
-        priority: 2,
-        restartable: true
-      },
       'constraint-dashboard': {
         type: 'global',
         script: 'scripts/dashboard-service.js',
         healthCheck: 'port:3030',
-        priority: 3,
+        priority: 1,
         restartable: true
       }
     };
-    
-    this.registry = this.loadRegistry();
+
+    // In-memory registry for coordinator state (all persistence via PSM)
+    this.registry = {
+      version: "2.0.0",
+      lastUpdated: Date.now(),
+      coordinator: {
+        pid: process.pid,
+        startTime: Date.now(),
+        healthCheckInterval: this.healthCheckInterval,
+        version: "2.0.0"
+      },
+      services: {},
+      projects: {}
+    };
     this.healthTimer = null;
     this.recoveryQueue = new Map(); // Track services being recovered
-    
+
     this.ensureLogDirectory();
     this.setupSignalHandlers();
   }
@@ -135,56 +137,6 @@ class GlobalServiceCoordinator extends EventEmitter {
   }
 
   /**
-   * Load or create service registry
-   */
-  loadRegistry() {
-    try {
-      if (fs.existsSync(this.registryPath)) {
-        const data = fs.readFileSync(this.registryPath, 'utf8');
-        const registry = JSON.parse(data);
-        
-        // Validate registry format
-        if (!registry.services) registry.services = {};
-        if (!registry.projects) registry.projects = {};
-        if (!registry.coordinator) registry.coordinator = {};
-        
-        return registry;
-      }
-    } catch (error) {
-      this.warn(`Could not load registry: ${error.message}`);
-    }
-    
-    return {
-      version: "2.0.0",
-      lastUpdated: Date.now(),
-      coordinator: {
-        pid: process.pid,
-        startTime: Date.now(),
-        healthCheckInterval: this.healthCheckInterval,
-        version: "2.0.0"
-      },
-      services: {},
-      projects: {}
-    };
-  }
-
-  /**
-   * Save registry to disk
-   */
-  saveRegistry() {
-    try {
-      this.registry.lastUpdated = Date.now();
-      this.registry.coordinator.lastHealthCheck = Date.now();
-      
-      fs.writeFileSync(this.registryPath, JSON.stringify(this.registry, null, 2));
-      
-      this.debug(`Registry saved: ${Object.keys(this.registry.services).length} services, ${Object.keys(this.registry.projects).length} projects`);
-    } catch (error) {
-      this.error(`Error saving registry: ${error.message}`);
-    }
-  }
-
-  /**
    * Register a new project for monitoring
    */
   async registerProject(projectPath, sessionPid = null) {
@@ -212,8 +164,7 @@ class GlobalServiceCoordinator extends EventEmitter {
     
     // Start project-specific services
     await this.ensureProjectServices(projectName);
-    
-    this.saveRegistry();
+
     this.log(`✅ Project registered: ${projectName}`);
     
     return projectName;
@@ -272,7 +223,7 @@ class GlobalServiceCoordinator extends EventEmitter {
 
     // Clean up stale service
     if (existingService && existingService.pid) {
-      await this.cleanupStaleService(existingService);
+      await this.cleanupStaleService(existingService, serviceKey);
     }
 
     // Check if service is in recovery queue
@@ -332,7 +283,22 @@ class GlobalServiceCoordinator extends EventEmitter {
       // Verify startup
       const isHealthy = await this.isServiceHealthy(serviceKey, serviceDef, projectPath);
       if (isHealthy) {
-        // Register service
+        // Register service with Process State Manager
+        const serviceInfo = {
+          name: serviceKey,
+          pid: child.pid,
+          type: serviceDef.type,
+          script: serviceDef.script,
+          projectPath: projectPath,
+          metadata: {
+            managedBy: 'coordinator',
+            restartCount: 0
+          }
+        };
+
+        await this.psm.registerService(serviceInfo);
+
+        // Also keep in local registry for backward compatibility (temporary)
         this.registry.services[serviceKey] = {
           pid: child.pid,
           serviceType: serviceDef.type,
@@ -345,7 +311,6 @@ class GlobalServiceCoordinator extends EventEmitter {
         };
 
         this.log(`✅ Service started: ${serviceKey} (PID: ${child.pid})`);
-        this.saveRegistry();
         return true;
       } else {
         this.error(`❌ Service failed to start: ${serviceKey}`);
@@ -362,32 +327,32 @@ class GlobalServiceCoordinator extends EventEmitter {
    * Check if a service is healthy
    */
   async isServiceHealthy(serviceKey, serviceDef, projectPath = null) {
-    const service = this.registry.services[serviceKey];
+    // Check PSM first for unified health status
+    const context = {};
+    if (projectPath) {
+      context.projectPath = projectPath;
+    }
 
-    // For port-based health checks, we can check even without registry entry
+    const isPsmHealthy = await this.psm.isServiceRunning(serviceKey, serviceDef.type, context);
+
+    // If PSM says it's not running, it's not healthy
+    if (!isPsmHealthy) {
+      return false;
+    }
+
+    // For port-based health checks, verify the port is actually responding
     if (serviceDef.healthCheck && serviceDef.healthCheck.startsWith('port:')) {
       const port = serviceDef.healthCheck.split(':')[1];
       return await this.checkPort(port);
     }
 
-    // For other health checks, we need the service in registry
-    if (!service) return false;
-
-    // Check if process exists
-    try {
-      process.kill(service.pid, 0);
-    } catch (error) {
-      this.debug(`Service process ${service.pid} not found: ${serviceKey}`);
-      return false;
-    }
-
-    // Service-specific health checks
+    // For health-file checks, verify the health file
     if (serviceDef.healthCheck === 'health-file') {
       return await this.checkHealthFile(projectPath);
-    } else {
-      // 'process' or default - process exists, assume healthy
-      return true;
     }
+
+    // Default: PSM says it's running, assume healthy
+    return true;
   }
 
   /**
@@ -395,14 +360,16 @@ class GlobalServiceCoordinator extends EventEmitter {
    */
   async checkHealthFile(projectPath) {
     if (!projectPath) return false;
-    
-    const healthFile = path.join(projectPath, '.transcript-monitor-health');
+
+    // Health files are now centralized in coding/.health/ directory
+    const projectName = path.basename(projectPath);
+    const healthFile = path.join(this.codingRepoPath, '.health', `${projectName}-transcript-monitor-health.json`);
     if (!fs.existsSync(healthFile)) return false;
 
     try {
       const healthData = JSON.parse(fs.readFileSync(healthFile, 'utf8'));
       const age = Date.now() - healthData.timestamp;
-      
+
       // Health file should be recent (within 90 seconds)
       return age < 90000;
     } catch (error) {
@@ -425,18 +392,24 @@ class GlobalServiceCoordinator extends EventEmitter {
   /**
    * Clean up stale service
    */
-  async cleanupStaleService(service) {
+  async cleanupStaleService(service, serviceKey) {
     if (service.pid) {
       try {
         process.kill(service.pid, 'SIGTERM');
         this.debug(`Cleaned up stale service PID ${service.pid}`);
-        
+
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         try {
           process.kill(service.pid, 'SIGKILL');
         } catch (error) {
           // Process already gone
+        }
+
+        // Unregister from PSM
+        if (serviceKey) {
+          const context = service.projectPath ? { projectPath: service.projectPath } : {};
+          await this.psm.unregisterService(serviceKey, service.serviceType || 'global', context);
         }
       } catch (error) {
         // Process already gone
@@ -462,11 +435,15 @@ class GlobalServiceCoordinator extends EventEmitter {
       if (!serviceDef) continue;
       
       const isHealthy = await this.isServiceHealthy(serviceKey, serviceDef, service.projectPath);
-      
+
       if (isHealthy) {
         healthyCount++;
         service.lastHealthCheck = Date.now();
         service.status = 'running';
+
+        // Refresh PSM health check timestamp
+        const context = service.projectPath ? { projectPath: service.projectPath } : {};
+        await this.psm.refreshHealthCheck(serviceKey, service.serviceType || serviceDef.type, context);
       } else {
         this.warn(`Service unhealthy: ${serviceKey}`);
         
@@ -501,7 +478,13 @@ class GlobalServiceCoordinator extends EventEmitter {
       }
     }
     
-    this.saveRegistry();
+    // Refresh coordinator's own health check in PSM
+    try {
+      await this.psm.refreshHealthCheck('global-service-coordinator', 'global');
+    } catch (error) {
+      this.warn('Failed to refresh coordinator health in PSM', error);
+    }
+
     this.debug(`Health check complete: ${healthyCount} healthy, ${recoveredCount} recovered`);
   }
 
@@ -523,25 +506,50 @@ class GlobalServiceCoordinator extends EventEmitter {
    */
   async startDaemon() {
     this.log('🚀 Starting Global Service Coordinator daemon...');
-    
+
+    // Register coordinator with PSM
+    await this.registerSelfWithPSM();
+
     // Ensure global services
     await this.ensureGlobalServices();
-    
+
     // Start health monitoring
     this.healthTimer = setInterval(() => {
       this.performHealthCheck().catch(error => {
         this.error('Health check failed', error);
       });
     }, this.healthCheckInterval);
-    
+
     // Initial health check
     await this.performHealthCheck();
-    
+
     this.log('✅ Global Service Coordinator daemon started');
-    
+
     // Keep process alive
     if (this.isDaemon) {
       process.stdin.resume();
+    }
+  }
+
+  /**
+   * Register coordinator itself with PSM
+   */
+  async registerSelfWithPSM() {
+    try {
+      await this.psm.registerService({
+        name: 'global-service-coordinator',
+        pid: process.pid,
+        type: 'global',
+        script: 'scripts/global-service-coordinator.js',
+        metadata: {
+          version: '2.0.0',
+          startTime: Date.now(),
+          managedBy: 'self'
+        }
+      });
+      this.log('✅ Coordinator registered with PSM');
+    } catch (error) {
+      this.error('Failed to register coordinator with PSM', error);
     }
   }
 
@@ -550,14 +558,22 @@ class GlobalServiceCoordinator extends EventEmitter {
    */
   async gracefulShutdown() {
     this.log('🛑 Shutting down Global Service Coordinator...');
-    
+
     if (this.healthTimer) {
       clearInterval(this.healthTimer);
     }
-    
+
+    // Unregister from PSM
+    try {
+      await this.psm.unregisterService('global-service-coordinator', 'global');
+      this.log('✅ Coordinator unregistered from PSM');
+    } catch (error) {
+      this.warn('Failed to unregister coordinator from PSM', error);
+    }
+
     // Optional: Clean shutdown of managed services
     // (for now, let services continue running)
-    
+
     this.log('✅ Global Service Coordinator shutdown complete');
     process.exit(0);
   }

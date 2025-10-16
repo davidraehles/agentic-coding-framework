@@ -24,6 +24,7 @@ import path from 'path';
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import { fileURLToPath } from 'url';
+import ProcessStateManager from './process-state-manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,11 +33,13 @@ const execAsync = promisify(exec);
 class SystemMonitorWatchdog {
   constructor(options = {}) {
     this.codingRepoPath = options.codingRepoPath || path.resolve(__dirname, '..');
-    this.registryPath = path.join(this.codingRepoPath, '.global-service-registry.json');
     this.watchdogLogPath = path.join(this.codingRepoPath, '.logs', 'system-watchdog.log');
     this.coordinatorScript = path.join(this.codingRepoPath, 'scripts', 'global-service-coordinator.js');
     this.launchdPlistPath = `${process.env.HOME}/Library/LaunchAgents/com.coding.system-watchdog.plist`;
-    
+
+    // Initialize Process State Manager for unified tracking
+    this.psm = new ProcessStateManager(this.codingRepoPath);
+
     this.ensureLogDirectory();
   }
 
@@ -73,24 +76,28 @@ class SystemMonitorWatchdog {
    */
   async isCoordinatorAlive() {
     try {
-      // Check registry first
-      if (!fs.existsSync(this.registryPath)) {
-        this.warn('Registry file missing - coordinator likely never started');
-        return { alive: false, reason: 'no_registry' };
+      // Use PSM to check coordinator status
+      const isRunning = await this.psm.isServiceRunning('global-service-coordinator', 'global');
+
+      if (!isRunning) {
+        this.warn('Coordinator not running according to PSM');
+        return { alive: false, reason: 'not_in_psm' };
       }
 
-      const registry = JSON.parse(fs.readFileSync(this.registryPath, 'utf8'));
-      const coordinatorPid = registry.coordinator?.pid;
+      // Get detailed service info from PSM
+      const service = await this.psm.getService('global-service-coordinator', 'global');
 
-      if (!coordinatorPid) {
-        this.warn('No coordinator PID in registry');
-        return { alive: false, reason: 'no_pid_in_registry' };
+      if (!service) {
+        this.warn('Coordinator not found in PSM registry');
+        return { alive: false, reason: 'not_found_in_psm' };
       }
+
+      const coordinatorPid = service.pid;
 
       // Test if PID is actually alive
       try {
         process.kill(coordinatorPid, 0); // Signal 0 tests existence without killing
-        
+
         // Additional check: ensure process is actually our coordinator
         const { stdout } = await execAsync(`ps -p ${coordinatorPid} -o command=`);
         if (!stdout.includes('global-service-coordinator')) {
@@ -98,15 +105,15 @@ class SystemMonitorWatchdog {
           return { alive: false, reason: 'wrong_process' };
         }
 
-        // Check registry age - should be updated recently
-        const registryAge = Date.now() - registry.lastUpdated;
-        if (registryAge > 120000) { // 2 minutes
-          this.warn(`Registry stale (${registryAge}ms old) - coordinator may be frozen`);
-          return { alive: false, reason: 'stale_registry' };
+        // Check health timestamp - should be updated recently
+        const healthAge = Date.now() - service.lastHealthCheck;
+        if (healthAge > 120000) { // 2 minutes
+          this.warn(`Health check stale (${healthAge}ms old) - coordinator may be frozen`);
+          return { alive: false, reason: 'stale_health_check' };
         }
 
-        return { alive: true, pid: coordinatorPid, registryAge };
-        
+        return { alive: true, pid: coordinatorPid, healthAge };
+
       } catch (error) {
         this.warn(`Coordinator PID ${coordinatorPid} not found: ${error.message}`);
         return { alive: false, reason: 'pid_dead', pid: coordinatorPid };
@@ -148,6 +155,23 @@ class SystemMonitorWatchdog {
 
       // Wait and verify startup
       await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Register with PSM
+      try {
+        await this.psm.registerService({
+          name: 'global-service-coordinator',
+          pid: child.pid,
+          type: 'global',
+          script: 'scripts/global-service-coordinator.js',
+          metadata: {
+            managedBy: 'watchdog',
+            restartedBy: 'system-monitor-watchdog'
+          }
+        });
+        this.log(`Registered coordinator with PSM (PID: ${child.pid})`);
+      } catch (error) {
+        this.warn(`Failed to register with PSM: ${error.message}`);
+      }
 
       const status = await this.isCoordinatorAlive();
       if (status.alive) {
@@ -197,11 +221,19 @@ class SystemMonitorWatchdog {
   async generateHealthReport() {
     const status = await this.isCoordinatorAlive();
     const timestamp = new Date().toISOString();
-    
+
+    // Get PSM health status
+    let psmHealth = null;
+    try {
+      psmHealth = await this.psm.getHealthStatus();
+    } catch (error) {
+      // PSM might not be accessible
+    }
+
     const report = {
       timestamp,
       watchdog: {
-        version: '1.0.0',
+        version: '2.0.0', // Updated to reflect PSM integration
         logPath: this.watchdogLogPath,
         lastCheck: timestamp
       },
@@ -209,9 +241,10 @@ class SystemMonitorWatchdog {
         alive: status.alive,
         reason: status.reason,
         pid: status.pid,
-        registryAge: status.registryAge,
-        registryPath: this.registryPath
+        healthAge: status.healthAge,
+        registryPath: this.registryPath // Legacy, kept for backward compatibility
       },
+      psm: psmHealth, // Include PSM health status
       system: {
         platform: process.platform,
         nodeVersion: process.version,
@@ -223,7 +256,7 @@ class SystemMonitorWatchdog {
     // Save report
     const reportPath = path.join(this.codingRepoPath, '.logs', 'system-health.json');
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-    
+
     return report;
   }
 
@@ -238,7 +271,7 @@ class SystemMonitorWatchdog {
       const report = await this.generateHealthReport();
 
       if (status.alive) {
-        this.log(`✅ Coordinator healthy (PID: ${status.pid}, registry age: ${status.registryAge}ms)`);
+        this.log(`✅ Coordinator healthy (PID: ${status.pid}, health age: ${status.healthAge}ms)`);
         return { success: true, action: 'verified_healthy', report };
       } else {
         this.warn(`❌ Coordinator failed: ${status.reason}`);

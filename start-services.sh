@@ -275,7 +275,7 @@ cd "$CODING_DIR"
 echo "🧹 Checking for existing live-logging processes..."
 
 # Check if enhanced-transcript-monitor is already running
-if pgrep -f "enhanced-transcript-monitor.js" > /dev/null 2>&1; then
+if node scripts/psm-register.js --check transcript-monitor global 2>/dev/null; then
     echo "⚠️  Transcript Monitor already running globally, skipping startup..."
     echo "   (Per-project monitors will be started by global-lsl-coordinator)"
     TRANSCRIPT_PID="already-running"
@@ -285,10 +285,15 @@ else
     nohup node scripts/enhanced-transcript-monitor.js > transcript-monitor.log 2>&1 &
     TRANSCRIPT_PID=$!
     echo "   Transcript Monitor PID: $TRANSCRIPT_PID"
+
+    # Register with Process State Manager
+    if [ "$TRANSCRIPT_PID" != "already-running" ]; then
+        node scripts/psm-register.js transcript-monitor $TRANSCRIPT_PID global scripts/enhanced-transcript-monitor.js
+    fi
 fi
 
 # Check if live-logging coordinator is already running
-if pgrep -f "live-logging-coordinator.js" > /dev/null 2>&1; then
+if node scripts/psm-register.js --check live-logging-coordinator global 2>/dev/null; then
     LIVE_LOGGING_PID="already-running"
     echo "⚠️  Live Logging Coordinator already running, skipping startup..."
 else
@@ -297,6 +302,11 @@ else
     nohup node scripts/live-logging-coordinator.js > logs/live-logging.log 2>&1 &
     LIVE_LOGGING_PID=$!
     echo "   Live Logging Coordinator PID: $LIVE_LOGGING_PID"
+
+    # Register with Process State Manager
+    if [ "$LIVE_LOGGING_PID" != "already-running" ]; then
+        node scripts/psm-register.js live-logging-coordinator $LIVE_LOGGING_PID global scripts/live-logging-coordinator.js
+    fi
 fi
 
 # Log startup
@@ -307,6 +317,9 @@ echo "🟢 Starting VKB Server (port 8080)..."
 cd "$CODING_DIR"
 nohup node lib/vkb-server/cli.js server start --foreground > vkb-server.log 2>&1 &
 VKB_PID=$!
+
+# Register with Process State Manager
+node scripts/psm-register.js vkb-server $VKB_PID global lib/vkb-server/cli.js
 
 # Start Semantic Analysis MCP Server
 echo "🟢 Starting Semantic Analysis MCP Server (Standard MCP)..."
@@ -392,31 +405,10 @@ if [ "$CONSTRAINT_MONITOR_STATUS" = "✅ FULLY OPERATIONAL" ]; then
     fi
 fi
 
-# Update services tracking file
-cat > .services-running.json << EOF
-{
-  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")",
-  "services": ["live-logging", "vkb-server", "semantic-analysis", "constraint-monitor"],
-  "ports": {
-    "vkb-server": 8080,
-    "semantic-analysis": 8001,
-    "qdrant": 6333,
-    "redis": 6379
-  },
-  "pids": {
-    "transcript-monitor": $TRANSCRIPT_PID,
-    "live-logging": $LIVE_LOGGING_PID,
-    "vkb-server": $VKB_PID,
-    "semantic-analysis": "$SEMANTIC_PID"
-  },
-  "constraint_monitor": {
-    "status": "$CONSTRAINT_MONITOR_STATUS",
-    "warning": "$CONSTRAINT_MONITOR_WARNING"
-  },
-  "services_running": $services_running,
-  "agent": "claude"
-}
-EOF
+# Process State Manager now handles service tracking
+# Query current status
+echo "📊 Querying Process State Manager status..."
+node scripts/process-state-manager.js status > /dev/null 2>&1 || echo "⚠️  Warning: Process State Manager query failed"
 
 echo ""
 echo "═══════════════════════════════════════════════════════════════════════"
@@ -442,7 +434,7 @@ if [ -n "$CONSTRAINT_MONITOR_WARNING" ]; then
     echo "   ⚠️ $CONSTRAINT_MONITOR_WARNING"
 fi
 echo ""
-echo "📊 Full status: .services-running.json"
+echo "📊 Process State: node scripts/process-state-manager.js status"
 echo "📝 Logs: live-logging.log, vkb-server.log, semantic-analysis.log"
 echo "═══════════════════════════════════════════════════════════════════════"
 echo ""

@@ -29,8 +29,7 @@ class StatusLineHealthMonitor {
     this.codingRepoPath = options.codingRepoPath || path.resolve(__dirname, '..');
     this.updateInterval = options.updateInterval || 15000; // 15 seconds
     this.isDebug = options.debug || false;
-    
-    this.registryPath = path.join(this.codingRepoPath, '.global-service-registry.json');
+
     this.logPath = path.join(this.codingRepoPath, '.logs', 'statusline-health.log');
     
     this.lastStatus = null;
