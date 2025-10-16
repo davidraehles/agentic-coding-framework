@@ -70,6 +70,25 @@ Each integration component is self-contained with its own comprehensive document
 
 ---
 
+## 📄 Additional System Documentation
+
+Detailed standalone documentation for specific systems:
+
+### Monitoring & Health
+- **[Process Monitoring System](monitoring-system.md)** - Consolidated monitoring architecture with PSM
+- **[Enhanced Health Monitoring](enhanced-health-monitoring.md)** - Comprehensive health tracking and status reporting
+
+### Core System Details
+- **[Constraint Monitoring System](constraint-monitoring-system.md)** - Detailed constraint enforcement documentation
+- **[Trajectory Generation System](trajectory-generation-system.md)** - Repository analysis and trajectory reporting
+- **[Adaptive Transcript Format Detection](adaptive-transcript-format-detection.md)** - LSL format detection and adaptation
+
+### Configuration & Setup
+- **[Multi-Team Knowledge Base Setup](multi-team-setup.md)** - Team-based knowledge organization
+- **[Custom Slash Commands](slash-commands.md)** - `/sl` (session logs) and `/lg` (live guardrails)
+
+---
+
 ## 📖 Legacy Documentation
 
 Historical documentation and migration guides have been archived in `.obsolete/docs/` for reference.

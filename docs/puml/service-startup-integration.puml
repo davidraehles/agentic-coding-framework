@@ -1,0 +1,126 @@
+@startuml
+!include _standard-style.puml
+
+title Service Startup with PSM Integration
+
+actor User
+participant "launch-claude.sh" as LaunchScript
+participant "start-services.sh" as StartScript
+participant "Global Service\nCoordinator" as Coordinator
+participant "Process State\nManager" as PSM
+database ".live-process-\nregistry.json" as Registry
+participant "Constraint\nDashboard" as Dashboard
+
+== Claude Session Startup ==
+
+User -> LaunchScript : coding / claude-mcp
+activate LaunchScript
+
+LaunchScript -> LaunchScript : generate SESSION_ID\nsetup trap handlers
+
+LaunchScript -> PSM : registerSession(SESSION_ID, $$)
+activate PSM
+PSM -> Registry : write session with lock
+Registry --> PSM : registered
+deactivate PSM
+
+LaunchScript -> StartScript : start all services
+activate StartScript
+
+StartScript -> PSM : isServiceRunning('vkb-server')
+activate PSM
+PSM -> Registry : check if exists
+Registry --> PSM : false
+deactivate PSM
+
+StartScript -> StartScript : spawn vkb-server
+StartScript --> StartScript : new PID
+
+StartScript -> PSM : registerService('vkb-server', PID)
+activate PSM
+PSM -> Registry : write with lock
+Registry --> PSM : registered
+deactivate PSM
+
+StartScript --> LaunchScript : services started
+deactivate StartScript
+
+LaunchScript -> Coordinator : verify running
+Coordinator --> LaunchScript : ✅ healthy
+
+LaunchScript --> User : Claude starts
+deactivate LaunchScript
+
+== Coordinator Manages Dashboard ==
+
+Coordinator -> Coordinator : ensureGlobalServices()
+activate Coordinator
+
+Coordinator -> PSM : isServiceRunning('constraint-dashboard')
+activate PSM
+PSM -> Registry : check if exists
+Registry --> PSM : false
+deactivate PSM
+
+Coordinator -> Dashboard : spawn service
+activate Dashboard
+Dashboard --> Coordinator : PID
+
+Coordinator -> PSM : registerService({name, PID, type: 'global'})
+activate PSM
+PSM -> Registry : write with lock
+Registry --> PSM : registered
+deactivate PSM
+
+Coordinator -> Dashboard : health check (port 3030)
+Dashboard --> Coordinator : ✅ responding
+
+Coordinator -> PSM : refreshHealthCheck('constraint-dashboard')
+activate PSM
+PSM -> Registry : update lastHealthCheck
+Registry --> PSM : updated
+deactivate PSM
+
+deactivate Coordinator
+
+== Session Cleanup ==
+
+User -> LaunchScript : Ctrl+C / exit
+activate LaunchScript
+
+LaunchScript -> LaunchScript : trap EXIT handler
+
+LaunchScript -> PSM : cleanupSession(SESSION_ID)
+activate PSM
+
+loop for each session service
+  PSM -> PSM : get service PID
+  PSM -> PSM : kill PID (SIGTERM → SIGKILL)
+  PSM -> Registry : unregister service
+end
+
+PSM -> Registry : remove session entry
+Registry --> PSM : cleaned
+deactivate PSM
+
+LaunchScript --> User : session ended
+deactivate LaunchScript
+
+note over StartScript, Registry
+  **PSM Integration Benefits:**
+  - Duplicate prevention via isServiceRunning()
+  - Session-aware tracking
+  - Atomic registration with file locking
+  - Auto-cleanup on session end
+  - Health check timestamps
+end note
+
+note over Coordinator, Dashboard
+  **Coordinator Benefits:**
+  - Services registered in PSM immediately
+  - Health checks update PSM timestamps
+  - Unified view with watchdog
+  - No registry conflicts
+end note
+
+@enduml
