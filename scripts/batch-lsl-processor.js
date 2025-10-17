@@ -1712,7 +1712,7 @@ Examples:
   
   try {
     const result = await processor.process(mode, ...args.slice(1));
-    
+
     if (result) {
       console.log(`✅ Batch processing completed successfully`);
       if (Array.isArray(result)) {
@@ -1721,7 +1721,11 @@ Examples:
     } else {
       console.log(`⚠️  No results generated`);
     }
-    
+
+    // Clean up empty LSL files for closed time windows
+    console.log(`\n🧹 Cleaning up empty LSL files...`);
+    await processor.cleanupEmptyLSLFiles();
+
     process.exit(0);
   } catch (error) {
     console.error(`❌ Batch processing failed:`, error.message);
