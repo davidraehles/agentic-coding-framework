@@ -1242,7 +1242,7 @@ class EnhancedTranscriptMonitor {
    */
   hasMeaningfulContent(content) {
     if (!content) return false;
-    
+
     // Handle string content
     if (typeof content === 'string') {
       const trimmed = content.trim();
@@ -1251,18 +1251,42 @@ class EnhancedTranscriptMonitor {
       if (trimmed === '{}' || trimmed === '[]' || trimmed === '""' || trimmed === "''") return false; // Empty JSON objects/arrays/strings
       return true;
     }
-    
+
     // Handle object content
     if (typeof content === 'object') {
       // Check if it's an empty object or array
       if (Array.isArray(content)) return content.length > 0;
       if (Object.keys(content).length === 0) return false;
-      
+
       // Convert to string and check - avoid JSON.stringify issues
       const stringified = JSON.stringify(content);
       return stringified !== '{}' && stringified !== '[]' && stringified !== '""' && stringified.trim() !== '';
     }
-    
+
+    return false;
+  }
+
+  /**
+   * Check if a message is an /sl command that should be filtered out
+   * /sl commands are context restoration commands that don't add value to LSL files
+   * @param {string} content - The message content to check
+   * @returns {boolean} True if this is an /sl command to filter out
+   */
+  isSlCommand(content) {
+    if (!content || typeof content !== 'string') return false;
+
+    const trimmedContent = content.trim();
+
+    // Check for simple /sl commands (with optional number and whitespace)
+    const slPattern = /^\/sl\s*(\d+)?\s*$/i;
+    if (slPattern.test(trimmedContent)) return true;
+
+    // Check for XML-like format: <command-name>/sl</command-name>
+    if (trimmedContent.includes('<command-name>/sl</command-name>')) return true;
+
+    // Check for command-message format: <command-message>sl is running
+    if (trimmedContent.includes('<command-message>sl is running')) return true;
+
     return false;
   }
 
@@ -1275,7 +1299,7 @@ class EnhancedTranscriptMonitor {
     // Filter out exchanges with no meaningful content
     const meaningfulExchanges = completedSet.filter(exchange => {
       // Skip slash commands (like /sl)
-      if (exchange.userMessage && typeof exchange.userMessage === 'string' && exchange.userMessage.trim().startsWith('/sl')) {
+      if (exchange.userMessage && this.isSlCommand(exchange.userMessage)) {
         return false;
       }
       
@@ -1437,9 +1461,9 @@ class EnhancedTranscriptMonitor {
       this.debug(`Skipping exchange with no meaningful content (no user message and no tool calls)`);
       return;
     }
-    
+
     // Skip /sl commands only, process all other exchanges regardless of tool calls
-    if (exchange.userMessage && typeof exchange.userMessage === 'string' && exchange.userMessage.trim().startsWith('/sl')) {
+    if (exchange.userMessage && this.isSlCommand(exchange.userMessage)) {
       this.debug(`Skipping /sl command: ${exchange.userMessage.substring(0, 50)}...`);
       return;
     }

@@ -567,12 +567,20 @@ class BatchLSLProcessor {
    */
   isSlCommand(content) {
     if (!content || typeof content !== 'string') return false;
-    
-    // Check for /sl commands (with optional number and whitespace)
-    const slPattern = /^\/sl\s*(\d+)?\s*$/i;
+
     const trimmedContent = content.trim();
-    
-    return slPattern.test(trimmedContent);
+
+    // Check for simple /sl commands (with optional number and whitespace)
+    const slPattern = /^\/sl\s*(\d+)?\s*$/i;
+    if (slPattern.test(trimmedContent)) return true;
+
+    // Check for XML-like format: <command-name>/sl</command-name>
+    if (trimmedContent.includes('<command-name>/sl</command-name>')) return true;
+
+    // Check for command-message format: <command-message>sl is running
+    if (trimmedContent.includes('<command-message>sl is running')) return true;
+
+    return false;
   }
 
   /**
@@ -584,12 +592,16 @@ class BatchLSLProcessor {
   parseIntoPromptSets(entries) {
     const promptSets = [];
     let currentSet = null;
-    
+
     for (const entry of entries) {
       if (!entry || typeof entry !== 'object') continue;
-      
+
       const entryType = entry.type;
-      const timestamp = entry.timestamp || entry.time || Date.now();
+      // Ensure timestamp is always a number (convert ISO strings to milliseconds)
+      let timestamp = entry.timestamp || entry.time || Date.now();
+      if (typeof timestamp === 'string') {
+        timestamp = new Date(timestamp).getTime();
+      }
       const content = this.extractContentFromEntry(entry);
       
       // Check if this is a /sl command to filter out
