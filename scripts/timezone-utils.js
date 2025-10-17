@@ -34,7 +34,37 @@ function getTimezone() {
 export function utcToLocalTime(utcTimestamp, timezone = null) {
   const tz = timezone || getTimezone();
   const utcDate = new Date(utcTimestamp);
-  return new Date(utcDate.toLocaleString('en-US', { timeZone: tz }));
+
+  // FIXED: Use Intl.DateTimeFormat to get components in target timezone
+  // Previous bug: toLocaleString() + new Date() caused timezone parsing errors
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(utcDate);
+  const components = {};
+  parts.forEach(({ type, value }) => {
+    if (type !== 'literal') {
+      components[type] = parseInt(value);
+    }
+  });
+
+  // Create Date with timezone components (month is 0-indexed)
+  return new Date(
+    components.year,
+    components.month - 1,
+    components.day,
+    components.hour,
+    components.minute,
+    components.second
+  );
 }
 
 /**
