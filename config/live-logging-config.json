@@ -69,6 +69,20 @@
       "polling_interval": 5000,
       "debounce_delay": 2000,
       "max_retries": 3
+    },
+    "session_filter": {
+      "enabled": true,
+      "window_size": 5,
+      "bias_strength_threshold": 0.65,
+      "working_dir_weight": 0.1,
+      "temporal_decay": 0.9,
+      "neutrality_thresholds": {
+        "path_confidence": 0.5,
+        "keyword_score": 0.3,
+        "embedding_similarity_diff": 0.15,
+        "embedding_threshold": 0.7
+      },
+      "bias_confidence_discount": 0.8
     }
   },
   "embedding_classifier": {

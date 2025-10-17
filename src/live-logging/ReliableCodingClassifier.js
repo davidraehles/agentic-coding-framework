@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 
 /**
- * Reliable Coding Classifier - Rock-Solid Four-Layer Classification System
- * 
- * Implements four-layer classification architecture:
+ * Reliable Coding Classifier - Rock-Solid Five-Layer Classification System
+ *
+ * Implements five-layer classification architecture:
+ * Layer 0: ConversationBiasTracker - Session filter with conversation bias (context-aware)
  * Layer 1: PathAnalyzer - File operation detection (100% accuracy)
  * Layer 2: KeywordMatcher - Fast keyword matching
  * Layer 3: EmbeddingClassifier - Semantic vector similarity search
  * Layer 4: SemanticAnalyzer - LLM-based deep semantic analysis
- * 
+ *
  * Features:
  * - Drop-in replacement for FastEmbeddingClassifier
  * - <10ms response time target
  * - 95%+ accuracy improvement
+ * - Conversation context tracking for neutral prompts
  * - Comprehensive operational logging
  * - Machine-agnostic environment variable configuration
  */
@@ -24,6 +26,7 @@ import { SemanticAnalyzer } from './SemanticAnalyzer.js';
 import PathAnalyzer from './PathAnalyzer.js';
 import SemanticAnalyzerAdapter from './SemanticAnalyzerAdapter.js';
 import KeywordMatcher from './KeywordMatcher.js';
+import ConversationBiasTracker from './ConversationBiasTracker.js';
 // EmbeddingClassifier is CommonJS - will be imported dynamically in initialize()
 import OperationalLogger from './OperationalLogger.js';
 import PerformanceMonitor from './PerformanceMonitor.js';
@@ -44,10 +47,11 @@ class ReliableCodingClassifier {
     }
     
     // Layer components (initialized lazily)
-    this.pathAnalyzer = null;
-    this.keywordMatcher = null;
-    this.embeddingClassifier = null;
-    this.semanticAnalyzer = null;
+    this.biasTracker = null;          // Layer 0
+    this.pathAnalyzer = null;         // Layer 1
+    this.keywordMatcher = null;       // Layer 2
+    this.embeddingClassifier = null;  // Layer 3
+    this.semanticAnalyzer = null;     // Layer 4
     
     // Performance tracking (compatible with FastEmbeddingClassifier)
     this.stats = {
@@ -56,11 +60,12 @@ class ReliableCodingClassifier {
       avgClassificationTime: 0,
       cacheHits: 0,
       cacheMisses: 0,
-      // New metrics
-      pathAnalysisHits: 0,
-      keywordAnalysisHits: 0,
-      embeddingAnalysisHits: 0,
-      semanticAnalysisHits: 0,
+      // Layer-specific metrics
+      sessionFilterHits: 0,        // Layer 0
+      pathAnalysisHits: 0,         // Layer 1
+      keywordAnalysisHits: 0,      // Layer 2
+      embeddingAnalysisHits: 0,    // Layer 3
+      semanticAnalysisHits: 0,     // Layer 4
       // User prompt set metrics
       userPromptSetsProcessed: 0,
       semanticAnalysisSkipped: 0,
@@ -121,15 +126,32 @@ class ReliableCodingClassifier {
    */
   async initialize() {
     const startTime = Date.now();
-    
+
     try {
-      // Initialize path analyzer
+      // Load configuration for session filter settings
+      const configPath = path.join(this.codingRepo, 'config', 'live-logging-config.json');
+      let sessionFilterConfig = {};
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        sessionFilterConfig = config.live_logging?.session_filter || {};
+      } catch (error) {
+        // Config not found or invalid, use defaults
+        this.log('Session filter config not found, using defaults');
+      }
+
+      // Initialize conversation bias tracker (Layer 0)
+      this.biasTracker = new ConversationBiasTracker({
+        ...sessionFilterConfig,
+        codingRepo: this.codingRepo
+      });
+
+      // Initialize path analyzer (Layer 1)
       this.pathAnalyzer = new PathAnalyzer({
         codingRepo: this.codingRepo,
         debug: this.debug
       });
-      
-      // Initialize semantic analyzer adapter
+
+      // Initialize semantic analyzer adapter (Layer 4)
       this.semanticAnalyzer = new SemanticAnalyzerAdapter({
         apiKey: process.env.XAI_API_KEY || process.env.GROK_API_KEY || process.env.OPENAI_API_KEY,
         debug: this.debug
@@ -675,6 +697,47 @@ class ReliableCodingClassifier {
    * @param {array} individualResults - Results from individual exchanges
    * @returns {object} Aggregated result
    */
+  /**
+   * Determine if a prompt set is "neutral" (no strong indicators either way)
+   * @param {Object} pathResult - Result from path analysis
+   * @param {Object} keywordResult - Result from keyword analysis
+   * @param {Object} embeddingResult - Result from embedding analysis
+   * @returns {boolean} - True if prompt set is neutral
+   */
+  isNeutralPromptSet(pathResult, keywordResult, embeddingResult) {
+    const config = this.biasTracker?.neutralityThresholds || {
+      path_confidence: 0.5,
+      keyword_score: 0.3,
+      embedding_similarity_diff: 0.15,
+      embedding_threshold: 0.7
+    };
+
+    // Check path analysis - should have weak or no file signals
+    const pathIsNeutral = !pathResult.isCoding || pathResult.confidence < config.path_confidence;
+
+    // Check keyword analysis - should have low score
+    const keywordIsNeutral = !keywordResult.isCoding || keywordResult.score < config.keyword_score;
+
+    // Check embedding analysis - scores should be close or all below threshold
+    let embeddingIsNeutral = false;
+    if (embeddingResult && embeddingResult.similarity_scores) {
+      const scores = embeddingResult.similarity_scores;
+      const maxSimilarity = scores.max_similarity || 0;
+      const scoreDiff = scores.score_difference || 0;
+
+      embeddingIsNeutral = (
+        scoreDiff < config.embedding_similarity_diff ||
+        maxSimilarity < config.embedding_threshold
+      );
+    } else {
+      // No embedding result yet, consider neutral for now
+      embeddingIsNeutral = true;
+    }
+
+    // All three must be neutral
+    return pathIsNeutral && keywordIsNeutral && embeddingIsNeutral;
+  }
+
   aggregatePromptSetResults(individualResults) {
     if (!individualResults || individualResults.length === 0) {
       return this.formatResult('NOT_CODING_INFRASTRUCTURE', 0.1, 'Empty prompt set', 0);
@@ -910,7 +973,41 @@ class ReliableCodingClassifier {
             }
           }
         }
-        
+
+        // Layer 0: Session Filter (Conversation Bias) - only for neutral prompts
+        if (!result && this.biasTracker) {
+          // Check if this is a neutral prompt set
+          const isNeutral = this.isNeutralPromptSet(pathResult, keywordResult, embeddingResult);
+
+          if (isNeutral && this.biasTracker.hasSufficientBias()) {
+            const layer0Start = Date.now();
+            const biasDecision = this.biasTracker.getBiasDecision();
+
+            if (biasDecision) {
+              layer = 'session-filter';
+              this.stats.sessionFilterHits++;
+              result = this.formatResult(
+                biasDecision.target,
+                biasDecision.confidence,
+                biasDecision.reason,
+                Date.now() - layer0Start
+              );
+
+              decisionPath.push({
+                layer: 'session-filter',
+                input: {
+                  biasState: this.biasTracker.getState(),
+                  neutralityScore: { pathIsNeutral: true, keywordIsNeutral: true, embeddingIsNeutral: true }
+                },
+                output: biasDecision,
+                duration: Date.now() - layer0Start
+              });
+
+              this.log(`✅ SESSION FILTER (Layer 0) TRIGGERED: Classification set to ${biasDecision.target} based on conversation bias`);
+            }
+          }
+        }
+
         // Fallback if no result yet
         if (!result) {
           // Default to NOT_CODING_INFRASTRUCTURE if all layers say no
@@ -969,6 +1066,16 @@ class ReliableCodingClassifier {
         });
       }
       
+      // Update conversation bias tracker with this classification
+      if (this.biasTracker && result) {
+        const target = result.classification === 'CODING_INFRASTRUCTURE' ? 'CODING_INFRASTRUCTURE' : 'LOCAL';
+        this.biasTracker.addClassification({
+          target: target,
+          confidence: result.confidence,
+          timestamp: Date.now()
+        });
+      }
+
       this.log(`Classification complete: ${result.classification} (${layer} layer, ${totalTime}ms)`);
       return result;
       
