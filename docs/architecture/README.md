@@ -48,7 +48,7 @@ These files will be moved to `.obsolete/docs/architecture/` during Phase 2H clea
 
 The system supports multiple AI coding assistants through a unified adapter pattern with shared infrastructure:
 
-![Agent-Agnostic Architecture](../images/agent-agnostic-architecture-new.png)
+![Agent-Agnostic Architecture - Components](../images/agent-agnostic-architecture-components.png)
 
 **Architecture Layers:**
 
@@ -175,7 +175,8 @@ See [API Contract](../integrations/api-reference.md) for complete details.
 
 Key architecture diagrams are located in `docs/puml/`:
 
-- **Agent-Agnostic Architecture** - [puml](../puml/agent-agnostic-architecture-new.puml) | [png](../images/agent-agnostic-architecture-new.png)
+- **Agent-Agnostic Architecture (Components)** - [puml](../puml/agent-agnostic-architecture-components.puml) | [png](../images/agent-agnostic-architecture-components.png)
+- **Agent-Agnostic Architecture (Sequence)** - [puml](../puml/agent-agnostic-architecture-sequence.puml) | [png](../images/agent-agnostic-architecture-sequence.png)
 - **Agent Integration Flow** - [puml](../puml/agent-integration-flow.puml) | [png](../images/agent-integration-flow.png)
 - **4-Layer Monitoring** - [puml](../puml/4-layer-monitoring-architecture.puml)
 - **LSL Classification** - [puml](../puml/lsl-5-layer-classification.puml)
