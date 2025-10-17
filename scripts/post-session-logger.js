@@ -9,7 +9,6 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { AutoInsightTrigger } from './auto-insight-trigger.js';
-import LLMContentClassifier from './llm-content-classifier.js';
 
 class PostSessionLogger {
   constructor(projectPath, codingRepo, sessionId) {
@@ -306,17 +305,7 @@ class PostSessionLogger {
 
   async detectCodingContent(content) {
     try {
-      // Use LLM-based semantic analysis
-      const classifier = new LLMContentClassifier();
-      const classification = await classifier.classifyContent(content);
-      
-      console.log(`🤖 LLM Classification: ${classification}`);
-      
-      return classification === 'coding';
-    } catch (error) {
-      console.warn('⚠️  LLM classification failed, using fallback detection:', error.message);
-      
-      // Fallback to basic pattern detection
+      // Use pattern-based detection (LLM classifier removed as post-session-logger is fallback only)
       const lowerContent = content.toLowerCase();
       
       // VERY SPECIFIC coding infrastructure keywords - must be precise to avoid false positives
