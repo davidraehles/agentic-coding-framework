@@ -48,7 +48,7 @@ These files will be moved to `.obsolete/docs/architecture/` during Phase 2H clea
 
 The system supports multiple AI coding assistants through a unified adapter pattern with shared infrastructure:
 
-![Agent-Agnostic Architecture](../puml/agent-agnostic-architecture-new.png)
+![Agent-Agnostic Architecture](../images/agent-agnostic-architecture-new.png)
 
 **Architecture Layers:**
 
@@ -150,7 +150,7 @@ vkb
 
 The system makes it easy to add new AI coding assistants. See the [Agent Integration Guide](../agent-integration-guide.md) for step-by-step instructions.
 
-![Agent Integration Flow](../puml/agent-integration-flow.png)
+![Agent Integration Flow](../images/agent-integration-flow.png)
 
 **Integration Steps:**
 1. Implement `AgentAdapter` interface
@@ -175,8 +175,8 @@ See [API Contract](../integrations/api-reference.md) for complete details.
 
 Key architecture diagrams are located in `docs/puml/`:
 
-- **Agent-Agnostic Architecture** - [puml](../puml/agent-agnostic-architecture-new.puml) | [png](../puml/agent-agnostic-architecture-new.png)
-- **Agent Integration Flow** - [puml](../puml/agent-integration-flow.puml) | [png](../puml/agent-integration-flow.png)
+- **Agent-Agnostic Architecture** - [puml](../puml/agent-agnostic-architecture-new.puml) | [png](../images/agent-agnostic-architecture-new.png)
+- **Agent Integration Flow** - [puml](../puml/agent-integration-flow.puml) | [png](../images/agent-integration-flow.png)
 - **4-Layer Monitoring** - [puml](../puml/4-layer-monitoring-architecture.puml)
 - **LSL Classification** - [puml](../puml/lsl-5-layer-classification.puml)
 - **Constraint Monitor** - [puml](../puml/constraint-monitor-architecture.puml)
