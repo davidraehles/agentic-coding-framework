@@ -26,10 +26,23 @@ const __dirname = path.dirname(__filename);
 
 class ClassificationLogger {
   constructor(options = {}) {
-    this.logDir = options.logDir || path.join(process.cwd(), '.specstory', 'logs', 'classification');
+    // CRITICAL FIX: Always use absolute paths from projectPath, never process.cwd()
+    const projectPath = options.projectPath ? path.resolve(options.projectPath) : null;
+    const codingRepo = options.codingRepo ? path.resolve(options.codingRepo) : path.resolve('/Users/q284340/Agentic/coding');
+
+    // Determine logDir from projectPath if provided, otherwise use explicit logDir or fall back to coding repo
+    if (options.logDir) {
+      this.logDir = path.resolve(options.logDir);
+    } else if (projectPath) {
+      this.logDir = path.join(projectPath, '.specstory', 'logs', 'classification');
+    } else {
+      // Fallback to coding repo (should rarely happen)
+      this.logDir = path.join(codingRepo, '.specstory', 'logs', 'classification');
+    }
+
     this.projectName = options.projectName || 'unknown';
     this.sessionId = options.sessionId || `session-${Date.now()}`;
-    this.codingRepo = options.codingRepo || '/Users/q284340/Agentic/coding';
+    this.codingRepo = codingRepo;
 
     // userHash is REQUIRED - throw error if not provided
     if (!options.userHash) {

@@ -40,8 +40,9 @@ const __dirname = dirname(__filename);
  */
 class BatchLSLProcessor {
   constructor(options = {}) {
-    this.projectPath = options.projectPath || process.cwd();
-    this.codingRepo = options.codingRepo || '/Users/q284340/Agentic/coding';
+    // CRITICAL FIX: Always resolve to absolute paths, regardless of where script runs
+    this.projectPath = path.resolve(options.projectPath || process.cwd());
+    this.codingRepo = path.resolve(options.codingRepo || '/Users/q284340/Agentic/coding');
     this.batchMode = options.batchMode || false; // If true, only create foreign files
     this.timeWindow = options.timeWindow || null; // { start: Date, end: Date }
     this.retryAttempts = options.retryAttempts || 3;
@@ -62,6 +63,7 @@ class BatchLSLProcessor {
     this.projectName = projectName; // Store for use in regenerate method
     this.userHash = userHash; // Store for use in regenerate method
     this.classificationLogger = new ClassificationLogger({
+      projectPath: this.projectPath, // CRITICAL: Pass absolute project path
       projectName: projectName,
       sessionId: `batch-${Date.now()}`,
       userHash: userHash,
@@ -311,6 +313,7 @@ class BatchLSLProcessor {
 
     // Create a temporary classification logger to regenerate files
     const tempLogger = new ClassificationLogger({
+      projectPath: this.projectPath, // CRITICAL: Pass absolute project path
       projectName: this.projectName,
       logDir: classificationLogDir,
       codingRepo: this.codingRepo,
@@ -1501,8 +1504,9 @@ Examples:
 
   const mode = args[0];
   const options = {
-    projectPath: process.env.PROJECT_PATH || process.cwd(),
-    codingRepo: process.env.CODING_REPO || '/Users/q284340/Agentic/coding',
+    // CRITICAL FIX: Resolve paths immediately to ensure absolute paths
+    projectPath: path.resolve(process.env.PROJECT_PATH || process.cwd()),
+    codingRepo: path.resolve(process.env.CODING_REPO || '/Users/q284340/Agentic/coding'),
     sessionDuration: parseInt(process.env.SESSION_DURATION) || 3600000,
     retryAttempts: parseInt(process.env.RETRY_ATTEMPTS) || 3
   };
