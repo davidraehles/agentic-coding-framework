@@ -18,14 +18,22 @@ This document describes the custom slash commands available in the coding system
 
 ### What It Does
 
-The `/sl` command provides intelligent session continuity by:
+The `/sl` command provides intelligent session continuity with **context-aware behavior**:
 
-1. **Determining current project** from git remote or directory name
-2. **Finding session logs** from both:
-   - Local project: `.specstory/history/YYYY-MM-DD_HHMM-HHMM_<hash>.md`
-   - Coding project: `coding/.specstory/history/YYYY-MM-DD_HHMM-HHMM_<hash>_from-<project>.md`
-3. **Comparing timestamps** to determine work context
-4. **Presenting summaries** based on detected work patterns
+#### In Non-Coding Projects (e.g., nano-degree, curriculum-alignment)
+1. **Determines current project** from directory path
+2. **Finds local session logs** in current project's `.specstory/history/`
+3. **Finds redirected logs** in `coding/.specstory/history/*_from-<project>.md`
+4. **Presents combined summary** of both local and redirected work
+
+#### In Coding Project
+1. **Confirms coding project** from directory path
+2. **Finds local coding logs** (WITHOUT `_from-` postfix)
+3. **Finds ALL redirected logs** from all projects (`*_from-*.md`)
+4. **Presents comprehensive summary** showing:
+   - Direct coding infrastructure work
+   - Cross-project work from all projects
+   - Holistic view of all development activities
 
 ### Session Log Locations
 
@@ -46,32 +54,71 @@ coding/.specstory/history/2025-10-15_0600-0700_g9b30a_from-curriculum-alignment.
 
 ### Context Determination
 
-The command intelligently determines which logs to prioritize:
+The command uses **context-aware logic** based on current project:
 
-- **Coding files newer/same**: Present coding summary (infrastructure work)
-- **Only coding files exist**: Present coding summary
-- **Mixed timeframes**: Present combined summary
-- **Local files only**: Present local summary
+**In Non-Coding Projects:**
+- Reads (n) local project logs + (n) redirected logs from coding
+- Example: `/sl 2` in nano-degree reads:
+  - 2 newest from `nano-degree/.specstory/history/*.md`
+  - 2 newest from `coding/.specstory/history/*_from-nano-degree.md`
+
+**In Coding Project:**
+- Reads (n) local coding logs + (n) redirected logs from ALL projects
+- Example: `/sl 2` in coding reads:
+  - 2 newest from `coding/.specstory/history/*.md` (no `_from-` postfix)
+  - 2 newest from `coding/.specstory/history/*_from-nano-degree.md`
+  - 2 newest from `coding/.specstory/history/*_from-curriculum-alignment.md`
+  - 2 newest from `coding/.specstory/history/*_from-*.md` (any other projects)
 
 ### Example Output
 
-When you run `/sl`, you'll see:
+#### Example 1: `/sl` in Non-Coding Project (nano-degree)
 
 ```
 📋 Session Log Summary (Last Session)
 ══════════════════════════════════════
 
-📁 Project: curriculum-alignment
-⏰ Session: 2025-10-15 06:00-07:00
-🔄 Cross-project work detected
+📁 Project: nano-degree
+⏰ Local Session: 2025-10-17 14:00-15:00
+🔄 Redirected Session: 2025-10-17 15:00-16:00
 
-Key Activities:
-• Documentation cleanup and consolidation
-• Removed evolutionary language from diagrams
-• Archived obsolete planning documents
-• Updated architecture diagrams
+Local Activities:
+• Course content development
+• Updated learning modules
+• Fixed exercise code examples
 
-🔗 Related coding work: Yes (see coding/.specstory/history/)
+Redirected Activities (from coding):
+• Developed new LSL logging system
+• Fixed post-session-logger syntax error
+• Updated slash command documentation
+
+💡 Combined Context: Course work + infrastructure improvements
+```
+
+#### Example 2: `/sl 2` in Coding Project
+
+```
+📋 Session Log Summary (Last 2 Sessions)
+══════════════════════════════════════
+
+📁 Project: coding (infrastructure)
+⏰ Sessions: 2025-10-17 14:00-18:00
+
+Coding Infrastructure Work:
+• Centralized health monitoring system
+• Updated MCP service configuration
+• Fixed transcript monitor processes
+
+Cross-Project Work:
+nano-degree (2 sessions):
+  • Course module refactoring
+  • Exercise solution updates
+
+curriculum-alignment (2 sessions):
+  • Dashboard UI improvements
+  • API endpoint fixes
+
+💡 Holistic Context: Infrastructure + all project work
 ```
 
 ### When to Use `/sl`
