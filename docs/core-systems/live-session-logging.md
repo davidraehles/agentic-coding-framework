@@ -1,6 +1,6 @@
-# Live Session Logging (LSL) System - Robust 4-Layer Monitoring Architecture
+# Live Session Logging (LSL) System
 
-A bulletproof real-time conversation monitoring and classification system that ensures all Claude Code conversations are properly captured and routed to the correct `.specstory/history/` directories with **zero data loss** and **automatic recovery capabilities**. Features a comprehensive 4-layer monitoring architecture designed to prevent single points of failure.
+A bulletproof real-time conversation monitoring and classification system that ensures all Claude Code conversations are properly captured and routed to the correct `.specstory/history/` directories with **zero data loss** and **automatic recovery capabilities**. Features intelligent 5-layer classification and a comprehensive 4-layer monitoring architecture designed to prevent single points of failure.
 
 ## Overview
 
@@ -13,13 +13,15 @@ The LSL system provides **real-time transcript monitoring** with intelligent cla
 - **🔄 Real-time Monitoring**: Captures conversations as they happen during active Claude sessions
 - **🛡️ 4-Layer Monitoring Architecture**: Comprehensive failsafe system prevents single points of failure
 - **📦 Zero Data Loss**: Every conversation exchange is preserved and routed appropriately
-- **🎯 Smart Classification**: Four-layer analysis prevents false positives and ensures accurate routing
+- **🎯 Smart Classification**: Five-layer analysis with conversation context prevents false positives
 - **🏥 Health Monitoring**: Automatic detection and recovery from failed processes across all layers
 - **🌍 Multi-Project Support**: Simultaneous monitoring across multiple concurrent projects
 - **⚡ Session Continuation Detection**: Prevents inappropriate redirection of session continuation messages
 - **🚨 Mandatory Verification**: Blocks Claude startup until monitoring infrastructure is healthy
 
 ## 4-Layer Monitoring Architecture
+
+> **Note**: This refers to the **monitoring/health protection system**, distinct from the 5-layer **classification system** described later.
 
 ![4-Layer Monitoring Architecture](../images/4-layer-monitoring-architecture.png)
 
@@ -188,20 +190,33 @@ The core monitoring system that runs as a background process for each project, n
 
 **Location**: `src/live-logging/ReliableCodingClassifier.js`
 
-Four-layer classification system that accurately determines content routing with advanced semantic understanding.
+> **Note**: This is the **5-layer classification system** (Layers 0-4), distinct from the 4-layer **monitoring architecture** above.
+
+Five-layer classification system that accurately determines content routing with conversation context and advanced semantic understanding.
 
 ![Classification Flow](../images/lsl-classification-flow.png)
 
-![4-Layer Classification Flow](../images/lsl-4-layer-classification.png)
+![5-Layer Classification Flow](../images/lsl-5-layer-classification.png)
 
 **Classification Layers**:
+
+0. **Session Filter (Layer 0)**: Conversation context and bias tracking
+   - **Location**: `src/live-logging/ConversationBiasTracker.js`
+   - Maintains sliding window of recent classifications (default: 5 prompt sets)
+   - Calculates conversation bias (CODING vs LOCAL) with temporal decay
+   - Applies only to neutral prompts lacking strong signals
+   - **Activation**: Requires bias strength ≥ 0.65 and neutral prompt indicators
+   - **Neutrality Detection**: Path confidence < 0.5, keyword score < 0.3, embedding similarity diff < 0.15
+   - **Confidence**: Bias strength × 0.8 (discounted to reflect contextual nature)
+   - **Benefits**: Handles follow-up prompts ("continue", "looks good") by following conversation momentum
+   - **Configuration**: `config/live-logging-config.json` → `session_filter` section
 
 1. **PathAnalyzer (Layer 1)**: File operation pattern matching
    - Analyzes file paths and operations for direct coding infrastructure detection
    - Fastest decision path with <1ms response time
    - High accuracy for known file patterns and operations
 
-2. **KeywordMatcher (Layer 2)**: Fast keyword-based classification  
+2. **KeywordMatcher (Layer 2)**: Fast keyword-based classification
    - Uses intelligent keyword analysis for coding-related term detection
    - Immediate classification for clear coding infrastructure content
    - <10ms response time for obvious cases
@@ -221,19 +236,21 @@ Four-layer classification system that accurately determines content routing with
    - <10ms response time with performance monitoring and caching
 
 **Additional Components**:
+- **ConversationBiasTracker**: Maintains sliding window of recent classifications for context-aware decisions
 - **FastEmbeddingGenerator**: Native JavaScript embedding generation using Transformers.js
 - **RepositoryIndexer**: Automatically indexes coding repository content into Qdrant vector database
 - **ChangeDetector**: Monitors repository changes and triggers reindexing when needed
 - **PerformanceMonitor**: Enhanced monitoring with embedding-specific metrics
-- **ClassificationLogger**: Comprehensive logging system tracking all 4-layer decisions
+- **ClassificationLogger**: Comprehensive logging system tracking all 5-layer decisions
 
 **Performance Features**:
-- **Four-Layer Optimization**: Progressively more expensive layers, early exit when confident
+- **Five-Layer Optimization**: Session filter pre-processes, then progressively expensive layers with early exit
 - **Native JavaScript Embeddings**: Transformers.js provides 10-100x speedup over Python subprocess spawning
 - **Vector Database**: HNSW indexing for <3ms similarity search
 - **Model Caching**: One-time 77ms model load, subsequent embeddings ~50ms
 - **Repository Indexing**: Fast batch indexing with native JavaScript embeddings
-- **Performance Monitoring**: Tracks classification times across all four layers
+- **Conversation Context**: Bias tracking adds <1ms overhead, significant accuracy improvement
+- **Performance Monitoring**: Tracks classification times across all five layers
 
 ### Classification Logging System
 
@@ -471,6 +488,7 @@ launchctl load ~/Library/LaunchAgents/com.coding.system-watchdog.plist
 ### Performance Metrics
 
 **Classification Performance**:
+- Session Filter (Layer 0): <1ms (bias calculation and neutrality check)
 - PathAnalyzer (Layer 1): <1ms (file pattern matching)
 - KeywordMatcher (Layer 2): <10ms (keyword analysis)
 - EmbeddingClassifier (Layer 3): <3ms (vector similarity search)

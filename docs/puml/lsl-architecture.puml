@@ -1,7 +1,7 @@
 @startuml lsl-architecture
 !include _standard-style.puml
 
-title LSL System - 4-Layer Monitoring + Multi-Layer Classification Architecture
+title LSL System - 4-Layer Monitoring + 5-Layer Classification Architecture
 
 package "4-Layer Monitoring Protection" #FFE6E6 {
   [System Watchdog (launchd)] as Watchdog <<infra>>
@@ -26,7 +26,8 @@ package "Live Session Logging (LSL)" <<core>> {
   }
   
   package "ReliableCodingClassifier" #E8F5E8 {
-    component "Four-Layer Decision Engine" as DecisionEngine <<agent>> {
+    component "Five-Layer Decision Engine" as DecisionEngine <<agent>> {
+      [Layer 0: Session Filter] as SessionFilter <<core>>
       [Layer 1: PathAnalyzer] as PathAnalyzer <<core>>
       [Layer 2: KeywordMatcher] as KeywordMatcher <<util>>
       [Layer 3: EmbeddingClassifier] as EmbeddingClassifier <<core>>
@@ -76,7 +77,10 @@ TransitionDetector --> WorkingDir
 TranscriptAnalyzer --> Orchestrator
 
 ' Classification flow
-Orchestrator --> PathAnalyzer : "1. File ops check\n(<10ms)"
+Orchestrator --> SessionFilter : "0. Bias check\n(<1ms, if neutral)"
+SessionFilter --> OpLogger : logs decision
+
+Orchestrator --> PathAnalyzer : "1. File ops check\n(<1ms)"
 PathAnalyzer --> OpLogger : logs decision
 
 Orchestrator --> KeywordMatcher : "2. Keyword analysis\n(<10ms)"
@@ -106,15 +110,16 @@ StatusLine --> ConstraintMCP : hook integration
 OpLogger --> Orchestrator : performance metrics
 
 note right of DecisionEngine
-  **Four-Layer Architecture**
+  **Five-Layer Architecture**
+  • Layer 0: Session Filter (<1ms, conversation bias)
   • Layer 1: PathAnalyzer (<1ms, file patterns)
   • Layer 2: KeywordMatcher (<10ms, keyword analysis)
   • Layer 3: EmbeddingClassifier (<3ms, vector similarity)
   • Layer 4: SemanticAnalyzer (<10ms, LLM analysis)
-  
+
   Early exit on high confidence
   Progressive complexity with fallback
-  Vector database powered semantic search
+  Context-aware conversation tracking
 end note
 
 note bottom of GrokAPI

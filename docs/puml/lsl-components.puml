@@ -18,11 +18,12 @@ package "Global LSL Coordinator" {
 }
 
 package "Classification System" {
+  component [Conversation Bias\nTracker (Layer 0)] as biastrack <<core>>
   component [Session Continuation\nFilter] as sessionfilter <<util>>
-  component [Path Analyzer] as pathanalyzer <<util>>
-  component [Keyword Matcher] as keywords <<util>>
-  component [Embedding Classifier] as embedding <<core>>
-  component [Semantic Analyzer] as semantic <<api>>
+  component [Path Analyzer\n(Layer 1)] as pathanalyzer <<util>>
+  component [Keyword Matcher\n(Layer 2)] as keywords <<util>>
+  component [Embedding Classifier\n(Layer 3)] as embedding <<core>>
+  component [Semantic Analyzer\n(Layer 4)] as semantic <<api>>
   component [Performance\nMonitor] as perfmon <<util>>
 }
 
