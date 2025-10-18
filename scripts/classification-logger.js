@@ -52,10 +52,14 @@ class ClassificationLogger {
 
     this.decisions = [];
     this.windowedLogs = new Map(); // Track logs by time window
-    this.lastFinalizedDecisionCount = 0; // Track number of decisions at last finalization
 
     // Ensure log directory exists
     fs.mkdirSync(this.logDir, { recursive: true });
+
+    // CRITICAL FIX: Initialize lastFinalizedDecisionCount from disk state
+    // to prevent regenerating status files on restart when no new decisions exist
+    const existingDecisions = this.readAllDecisionsFromDisk();
+    this.lastFinalizedDecisionCount = existingDecisions.length;
   }
 
   /**
