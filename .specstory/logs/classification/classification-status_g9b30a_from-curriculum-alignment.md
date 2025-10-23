@@ -1,16 +1,16 @@
 # Classification Status - curriculum-alignment
 
-**Generated**: 2025-10-22T11:23:39.149Z
-**Total Sessions**: 5
-**Total Decisions**: 19
+**Generated**: 2025-10-23T05:37:15.239Z
+**Total Sessions**: 7
+**Total Decisions**: 27
 
 ---
 
 ## Overall Statistics
 
-- **Total Prompt Sets Classified**: 19
-- **Classified as CODING**: 7 (37%)
-- **Classified as LOCAL**: 12 (63%)
+- **Total Prompt Sets Classified**: 27
+- **Classified as CODING**: 10 (37%)
+- **Classified as LOCAL**: 17 (63%)
 
 ### Classification Method Distribution
 
@@ -20,11 +20,11 @@ Click on a classification method to view all sessions decided by that layer.
 |-------|--------|-----------|------------|
 | 0 | [Session Filter](#layer-0-session-filter) | 0 | 0% |
 | 1 | [Path Analysis](#layer-1-path-analysis) | 0 | 0% |
-| 2 | [Keyword Matching](#layer-2-keyword-matching) | 4 | 21% |
-| 3 | [Embedding Search](#layer-3-embedding-search) | 15 | 79% |
+| 2 | [Keyword Matching](#layer-2-keyword-matching) | 6 | 22% |
+| 3 | [Embedding Search](#layer-3-embedding-search) | 21 | 78% |
 | 4 | [Semantic Analysis](#layer-4-semantic-analysis) | 0 | 0% |
 
-**Average Processing Time**: 713ms
+**Average Processing Time**: 609ms
 
 ---
 
@@ -47,6 +47,7 @@ Sessions grouped by the classification layer that made the final decision.
 - **[2025-10-18_1100-1200_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-18_1100-1200_g9b30a_from-curriculum-alignment.md)** - 2 coding decisions
 - **[2025-10-19_1600-1700_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-19_1600-1700_g9b30a_from-curriculum-alignment.md)** - 1 coding decisions
 - **[2025-10-22_1100-1200_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-22_1100-1200_g9b30a_from-curriculum-alignment.md)** - 1 coding decisions
+- **[2025-10-23_0700-0800_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-23_0700-0800_g9b30a_from-curriculum-alignment.md)** - 2 coding decisions
 
 ### Layer 3: Embedding Search
 
@@ -54,6 +55,7 @@ Sessions grouped by the classification layer that made the final decision.
 
 - **[2025-10-19_1600-1700_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-19_1600-1700_g9b30a_from-curriculum-alignment.md)** - 1 coding decisions
 - **[2025-10-21_0600-0700_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-21_0600-0700_g9b30a_from-curriculum-alignment.md)** - 2 coding decisions
+- **[2025-10-23_0700-0800_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-23_0700-0800_g9b30a_from-curriculum-alignment.md)** - 1 coding decisions
 
 #### Local (LOCAL)
 
@@ -61,6 +63,8 @@ Sessions grouped by the classification layer that made the final decision.
 - **[2025-10-21_0600-0700_g9b30a](2025-10-21_0600-0700_g9b30a.md)** - 2 local decisions
 - **[2025-10-22_1100-1200_g9b30a](2025-10-22_1100-1200_g9b30a.md)** - 5 local decisions
 - **[2025-10-22_1300-1400_g9b30a](2025-10-22_1300-1400_g9b30a.md)** - 1 local decisions
+- **[2025-10-22_2100-2200_g9b30a](2025-10-22_2100-2200_g9b30a.md)** - 1 local decisions
+- **[2025-10-23_0700-0800_g9b30a](2025-10-23_0700-0800_g9b30a.md)** - 4 local decisions
 
 ### Layer 4: Semantic Analysis
 
@@ -77,6 +81,8 @@ Complete chronological list of all classification sessions.
 - **2025-10-21_0600-0700_g9b30a** - 4 decisions ([CODING: 2](../../../../coding/.specstory/logs/classification/2025-10-21_0600-0700_g9b30a_from-curriculum-alignment.md), [LOCAL: 2](2025-10-21_0600-0700_g9b30a.md))
 - **2025-10-22_1100-1200_g9b30a** - 6 decisions ([CODING: 1](../../../../coding/.specstory/logs/classification/2025-10-22_1100-1200_g9b30a_from-curriculum-alignment.md), [LOCAL: 5](2025-10-22_1100-1200_g9b30a.md))
 - **2025-10-22_1300-1400_g9b30a** - 1 decisions ([LOCAL: 1](2025-10-22_1300-1400_g9b30a.md))
+- **2025-10-22_2100-2200_g9b30a** - 1 decisions ([LOCAL: 1](2025-10-22_2100-2200_g9b30a.md))
+- **2025-10-23_0700-0800_g9b30a** - 7 decisions ([CODING: 3](../../../../coding/.specstory/logs/classification/2025-10-23_0700-0800_g9b30a_from-curriculum-alignment.md), [LOCAL: 4](2025-10-23_0700-0800_g9b30a.md))
 
 ---
 
