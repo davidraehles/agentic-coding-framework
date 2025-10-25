@@ -1,16 +1,16 @@
 # Classification Status - coding
 
-**Generated**: 2025-10-24T13:52:00.404Z
-**Total Sessions**: 15
-**Total Decisions**: 57
+**Generated**: 2025-10-25T20:32:05.815Z
+**Total Sessions**: 20
+**Total Decisions**: 68
 
 ---
 
 ## Overall Statistics
 
-- **Total Prompt Sets Classified**: 57
-- **Classified as CODING**: 28 (49%)
-- **Classified as LOCAL**: 29 (51%)
+- **Total Prompt Sets Classified**: 68
+- **Classified as CODING**: 38 (56%)
+- **Classified as LOCAL**: 30 (44%)
 
 ### Classification Method Distribution
 
@@ -20,11 +20,11 @@ Click on a classification method to view all sessions decided by that layer.
 |-------|--------|-----------|------------|
 | 0 | [Session Filter](#layer-0-session-filter) | 0 | 0% |
 | 1 | [Path Analysis](#layer-1-path-analysis) | 0 | 0% |
-| 2 | [Keyword Matching](#layer-2-keyword-matching) | 20 | 35% |
-| 3 | [Embedding Search](#layer-3-embedding-search) | 37 | 65% |
+| 2 | [Keyword Matching](#layer-2-keyword-matching) | 25 | 37% |
+| 3 | [Embedding Search](#layer-3-embedding-search) | 43 | 63% |
 | 4 | [Semantic Analysis](#layer-4-semantic-analysis) | 0 | 0% |
 
-**Average Processing Time**: 410ms
+**Average Processing Time**: 393ms
 
 ---
 
@@ -56,6 +56,9 @@ Sessions grouped by the classification layer that made the final decision.
 - **[2025-10-24_1000-1100_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-24_1000-1100_g9b30a_from-coding.md)** - 1 coding decisions
 - **[2025-10-24_1400-1500_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-24_1400-1500_g9b30a_from-coding.md)** - 1 coding decisions
 - **[2025-10-24_1500-1600_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-24_1500-1600_g9b30a_from-coding.md)** - 1 coding decisions
+- **[2025-10-25_1200-1300_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-25_1200-1300_g9b30a_from-coding.md)** - 1 coding decisions
+- **[2025-10-25_1800-1900_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-25_1800-1900_g9b30a_from-coding.md)** - 1 coding decisions
+- **[2025-10-25_2200-2300_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-25_2200-2300_g9b30a_from-coding.md)** - 3 coding decisions
 
 ### Layer 3: Embedding Search
 
@@ -68,6 +71,9 @@ Sessions grouped by the classification layer that made the final decision.
 - **[2025-10-23_1500-1600_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-23_1500-1600_g9b30a_from-coding.md)** - 1 coding decisions
 - **[2025-10-24_1400-1500_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-24_1400-1500_g9b30a_from-coding.md)** - 1 coding decisions
 - **[2025-10-24_1500-1600_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-24_1500-1600_g9b30a_from-coding.md)** - 1 coding decisions
+- **[2025-10-24_1800-1900_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-24_1800-1900_g9b30a_from-coding.md)** - 3 coding decisions
+- **[2025-10-25_1800-1900_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-25_1800-1900_g9b30a_from-coding.md)** - 1 coding decisions
+- **[2025-10-25_1900-2000_g9b30a](../../../../coding/.specstory/logs/classification/2025-10-25_1900-2000_g9b30a_from-coding.md)** - 1 coding decisions
 
 #### Local (LOCAL)
 
@@ -82,6 +88,7 @@ Sessions grouped by the classification layer that made the final decision.
 - **[2025-10-24_0700-0800_g9b30a](2025-10-24_0700-0800_g9b30a.md)** - 2 local decisions
 - **[2025-10-24_1400-1500_g9b30a](2025-10-24_1400-1500_g9b30a.md)** - 1 local decisions
 - **[2025-10-24_1500-1600_g9b30a](2025-10-24_1500-1600_g9b30a.md)** - 2 local decisions
+- **[2025-10-25_2200-2300_g9b30a](2025-10-25_2200-2300_g9b30a.md)** - 1 local decisions
 
 ### Layer 4: Semantic Analysis
 
@@ -108,6 +115,11 @@ Complete chronological list of all classification sessions.
 - **2025-10-24_1000-1100_g9b30a** - 1 decisions ([CODING: 1](../../../../coding/.specstory/logs/classification/2025-10-24_1000-1100_g9b30a_from-coding.md))
 - **2025-10-24_1400-1500_g9b30a** - 3 decisions ([CODING: 2](../../../../coding/.specstory/logs/classification/2025-10-24_1400-1500_g9b30a_from-coding.md), [LOCAL: 1](2025-10-24_1400-1500_g9b30a.md))
 - **2025-10-24_1500-1600_g9b30a** - 4 decisions ([CODING: 2](../../../../coding/.specstory/logs/classification/2025-10-24_1500-1600_g9b30a_from-coding.md), [LOCAL: 2](2025-10-24_1500-1600_g9b30a.md))
+- **2025-10-24_1800-1900_g9b30a** - 3 decisions ([CODING: 3](../../../../coding/.specstory/logs/classification/2025-10-24_1800-1900_g9b30a_from-coding.md))
+- **2025-10-25_1200-1300_g9b30a** - 1 decisions ([CODING: 1](../../../../coding/.specstory/logs/classification/2025-10-25_1200-1300_g9b30a_from-coding.md))
+- **2025-10-25_1800-1900_g9b30a** - 2 decisions ([CODING: 2](../../../../coding/.specstory/logs/classification/2025-10-25_1800-1900_g9b30a_from-coding.md))
+- **2025-10-25_1900-2000_g9b30a** - 1 decisions ([CODING: 1](../../../../coding/.specstory/logs/classification/2025-10-25_1900-2000_g9b30a_from-coding.md))
+- **2025-10-25_2200-2300_g9b30a** - 4 decisions ([CODING: 3](../../../../coding/.specstory/logs/classification/2025-10-25_2200-2300_g9b30a_from-coding.md), [LOCAL: 1](2025-10-25_2200-2300_g9b30a.md))
 
 ---
 
