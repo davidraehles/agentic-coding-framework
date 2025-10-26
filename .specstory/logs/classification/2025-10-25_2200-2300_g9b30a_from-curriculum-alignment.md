@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-25_2200-2300_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-25T20:32:08.730Z<br>
+**Generated**: 2025-10-25T20:52:38.765Z<br>
 **Decisions in Window**: 1
 
 ---
@@ -26,26 +26,26 @@
 
 **Decisions**: 1
 
-### Prompt Set: [ps_2025-10-25T20:31:54.766Z](../../../history/2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md#ps_2025-10-25T20:31:54.766Z)
+### Prompt Set: [ps_2025-10-25T20:52:15.637Z](../../../history/2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md#ps_2025-10-25T20:52:15.637Z)
 
-**Time Range**: 2025-10-25T20:31:54.766Z → 2025-10-25T20:31:56.101Z<br>
-**LSL File**: [2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md#ps_2025-10-25T20:31:54.766Z)<br>
+**Time Range**: 2025-10-25T20:52:15.637Z → 2025-10-25T20:52:17.674Z<br>
+**LSL File**: [2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md#ps_2025-10-25T20:52:15.637Z)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.5175)
+**Final Classification**: ✅ CODING (confidence: 0.78)
 
 #### Layer-by-Layer Trace
 
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: No file operations detected
+- Reasoning: Majority (100.0%) of file operations target local project: /coding, /Users/, /Agentic/coding, /Agentic/coding/bin/../scripts/launch-claude.sh:, /start-services.sh
 - Processing Time: 1ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
-- Confidence: 0.5175
-- Reasoning: Keyword analysis: 1 matches, score: 2/1
+- Confidence: 0.78
+- Reasoning: Keyword analysis: 5 matches, score: 17/1
 - Processing Time: 1ms
 
 ---
