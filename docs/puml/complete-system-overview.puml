@@ -1,7 +1,9 @@
 @startuml
 !include _standard-style.puml
 
-title Coding System - Complete Capabilities Overview
+title Coding Project - Complete System Architecture
+
+top to bottom direction
 
 ' User Interface Layer
 actor "Developer" as dev #FFE6E6
@@ -39,7 +41,7 @@ learning -down-> ollama : sensitive\ndata
 
 ' MCP Integration Layer (compact)
 package "MCP Integration Servers" as mcp #E0E7FF {
-  [Semantic Analysis\n(11 Agents)] as semantic <<mcp>>
+  [Semantic Analysis\n(10 Agents)] as semantic <<mcp>>
   [Constraint Monitor] as mcp_constraint <<mcp>>
   [Serena AST] as serena <<mcp>>
   [Browser/Spec] as other_mcp <<mcp>>
