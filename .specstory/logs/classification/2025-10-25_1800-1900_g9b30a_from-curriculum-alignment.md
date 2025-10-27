@@ -4,55 +4,61 @@
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
 **Generated**: 2025-10-25T16:58:22.166Z<br>
-**Decisions in Window**: 1
+**Decisions in Window**: 2
 
 ---
 
 ## Statistics
 
-- **Total Prompt Sets**: 1
-- **Classified as CODING**: 1 (100%)
+- **Total Prompt Sets**: 2
+- **Classified as CODING**: 2 (100%)
 - **Classified as LOCAL**: 0 (0%)
 - **[Layer 0 (Session Filter) Decisions](#layer-0-session-filter)**: 0
-- **[Layer 1 (Path) Decisions](#layer-1-path)**: 0
+- **[Layer 1 (Path) Decisions](#layer-1-path)**: 2
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
-- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 1
+- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 638ms
+- **Average Processing Time**: 1ms
 
 ---
 
-## Layer 3: Embedding
+## Layer 1: Path
 
-**Decisions**: 1
+**Decisions**: 2
 
-### Prompt Set: [ps_2025-10-25T16:57:52.163Z](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_2025-10-25T16:57:52.163Z)
+### Prompt Set: [ps_1761410362195](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761410362195)
 
-**Time Range**: 2025-10-25T16:57:52.163Z → 2025-10-25T16:57:58.087Z<br>
-**LSL File**: [2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_2025-10-25T16:57:52.163Z)<br>
+**Time Range**: 1761410362195 → 1761593228363<br>
+**LSL File**: [2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761410362195)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.631648075)
+**Final Classification**: ✅ CODING (confidence: 0.95)
 
 #### Layer-by-Layer Trace
 
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority (100.0%) of file operations target local project: /presentation/puml/unified-semantic-architecture.puml
+✅ **Layer 1 (path)**
+- Decision: coding
+- Confidence: 0.98
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/presentation/puml/lsl-architecture.puml
 - Processing Time: 1ms
 
-❌ **Layer 2 (keyword)**
-- Decision: local
-- Confidence: 0.1
-- Reasoning: Keyword analysis: 0 matches, score: 0/1
-- Processing Time: 0ms
+---
 
-✅ **Layer 3 (embedding)**
+### Prompt Set: [ps_1761411472163](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761411472163)
+
+**Time Range**: 1761411472163 → 1761593228363<br>
+**LSL File**: [2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761411472163)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.95)
+
+#### Layer-by-Layer Trace
+
+✅ **Layer 1 (path)**
 - Decision: coding
-- Confidence: 0.631648075
-- Reasoning: Semantic similarity favors coding (coding_lsl=0.601, coding_infrastructure=0.549, curriculum_alignment=0.538, nano_degree=0.534)
-- Processing Time: 637ms
+- Confidence: 0.98
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/presentation/puml/unified-semantic-architecture.puml
+- Processing Time: 1ms
 
 ---
 

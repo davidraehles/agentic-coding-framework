@@ -4,48 +4,60 @@
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
 **Generated**: 2025-10-23T14:32:23.309Z<br>
-**Decisions in Window**: 1
+**Decisions in Window**: 2
 
 ---
 
 ## Statistics
 
-- **Total Prompt Sets**: 1
-- **Classified as CODING**: 1 (100%)
+- **Total Prompt Sets**: 2
+- **Classified as CODING**: 2 (100%)
 - **Classified as LOCAL**: 0 (0%)
 - **[Layer 0 (Session Filter) Decisions](#layer-0-session-filter)**: 0
-- **[Layer 1 (Path) Decisions](#layer-1-path)**: 0
-- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 1
+- **[Layer 1 (Path) Decisions](#layer-1-path)**: 2
+- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 1ms
+- **Average Processing Time**: 0ms
 
 ---
 
-## Layer 2: Keyword
+## Layer 1: Path
 
-**Decisions**: 1
+**Decisions**: 2
 
-### Prompt Set: [ps_2025-10-23T14:32:08.999Z](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_2025-10-23T14:32:08.999Z)
+### Prompt Set: [ps_1761229501098](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229501098)
 
-**Time Range**: 2025-10-23T14:32:08.999Z → 2025-10-23T14:32:10.255Z<br>
-**LSL File**: [2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_2025-10-23T14:32:08.999Z)<br>
+**Time Range**: 1761229501098 → 1761593227745<br>
+**LSL File**: [2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229501098)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.5875)
+**Final Classification**: ✅ CODING (confidence: 0.95)
 
 #### Layer-by-Layer Trace
 
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority (100.0%) of file operations target local project: /Users/, /Agentic/coding/docs/architecture/cross-project-knowledge.md\
-- Processing Time: 1ms
-
-✅ **Layer 2 (keyword)**
+✅ **Layer 1 (path)**
 - Decision: coding
-- Confidence: 0.5875
-- Reasoning: Keyword analysis: 2 matches, score: 6/1
+- Confidence: 0.98
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/architecture/cross-project-knowledge.md
+- Processing Time: 0ms
+
+---
+
+### Prompt Set: [ps_1761229928999](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229928999)
+
+**Time Range**: 1761229928999 → 1761593227745<br>
+**LSL File**: [2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229928999)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.95)
+
+#### Layer-by-Layer Trace
+
+✅ **Layer 1 (path)**
+- Decision: coding
+- Confidence: 0.98
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/puml/cross-project-knowledge-flow.puml, /Users/q284340/Agentic/coding/docs/architecture/cross-project-knowledge.md
 - Processing Time: 0ms
 
 ---
