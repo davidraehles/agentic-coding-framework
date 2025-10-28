@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-27_0700-0800_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-27T19:10:18.555Z<br>
+**Generated**: 2025-10-27T22:53:05.094Z<br>
 **Decisions in Window**: 6
 
 ---
@@ -14,62 +14,22 @@
 - **Classified as CODING**: 6 (100%)
 - **Classified as LOCAL**: 0 (0%)
 - **[Layer 0 (Session Filter) Decisions](#layer-0-session-filter)**: 0
-- **[Layer 1 (Path) Decisions](#layer-1-path)**: 2
-- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 3
-- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 1
+- **[Layer 1 (Path) Decisions](#layer-1-path)**: 0
+- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 2
+- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 4
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 19ms
-
----
-
-## Layer 1: Path
-
-**Decisions**: 2
-
-### Prompt Set: [ps_1761547445244](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761547445244)
-
-**Time Range**: 1761547445244 → 1761593225163<br>
-**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761547445244)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.95)
-
-#### Layer-by-Layer Trace
-
-✅ **Layer 1 (path)**
-- Decision: coding
-- Confidence: 0.98
-- Reasoning: Majority (91.2%) of file operations target coding repo: /Users/q284340/Agentic/coding/docs/images/, /Users/q284340/Agentic/coding, /Users/q284340/Agentic/coding`, /Users/q284340/Agentic/coding/docs/orphaned-images-report.md, /Users/q284340/Agentic/coding/.mcp-sync/auto-sync.md, /Users/q284340/Agentic/coding/.mcp-sync/startup-reminder.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ConfigurationPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/VSCodeExtensionBridgePattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ReduxStateManagementPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/DocumentationUpdatesPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/UkbCommand.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ArchitecturalDocumentationGeneration.md, /Users/q284340/Agentic/coding/knowledge-management/insights/AutomaticCodePatternAnalysisWorkflow.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ConditionalLoggingPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/StateDrivenAnimationPipelinePattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/CrossProjectLoggingPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ViewportCullingPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ReactThreeFiberIntegrationPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/MCPMemoryLoggingIntegrationPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/UkbCli.md, /Users/q284340/Agentic/coding/knowledge-management/insights/CommandPatternWorkflow.md, /Users/q284340/Agentic/coding/knowledge-management/insights/VSCodeToolIntegrationPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/NetworkAwareInstallationPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/CodingWorkflow.md, /Users/q284340/Agentic/coding/knowledge-management/insights/MVIReduxArchitecturePattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/AntiPatternDetectionSystem.md, /Users/q284340/Agentic/coding/knowledge-management/insights/RepositoryPatternWorkflow.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ViewportCullingOptimizationPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/ModularComponentArchitecturePattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/VkbCli.md, /Users/q284340/Agentic/coding/knowledge-management/insights/CustomHookExtractionPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/StrategyBasedModularRoutingPattern.md, /Users/q284340/Agentic/coding/knowledge-management/insights/KnowledgePersistencePattern.md, /Users/q284340/Agentic/coding/knowledge-management/PATTERN_TEMPLATE.md, /Users/q284340/Agentic/coding/.spec-workflow/user-templates/README.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/continuous-learning-knowledge-system/requirements.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/continuous-learning-knowledge-system/IMPLEMENTATION_SUMMARY.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/continuous-learning-knowledge-system/tasks.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/continuous-learning-knowledge-system/validation-report.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/continuous-learning-knowledge-system/design.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/enhanced-batch-mode/requirements.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/enhanced-batch-mode/tasks.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/enhanced-batch-mode/design.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/embedding-based-classifier/requirements.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/embedding-based-classifier/tasks.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/embedding-based-classifier/design.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/reliable-coding-classifier/requirements.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/reliable-coding-classifier/tasks.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/reliable-coding-classifier/design.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/graph-storage-migration/requirements.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/graph-storage-migration/tasks.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/graph-storage-migration/design.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/comprehensive-live-session-logging/requirements.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/comprehensive-live-session-logging/tasks.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/comprehensive-live-session-logging/design.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/real-time-guardrails/requirements.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/real-time-guardrails/tasks.md, /Users/q284340/Agentic/coding/.spec-workflow/specs/real-time-guardrails/design.md, /Users/q284340/Agentic/coding/.spec-workflow/templates/requirements-template.md, /Users/q284340/Agentic/coding/.spec-workflow/templates/product-template.md, /Users/q284340/Agentic/coding/.spec-workflow/templates/design-template.md, /Users/q284340/Agentic/coding/.spec-workflow/templates/tech-template.md, /Users/q284340/Agentic/coding/.spec-workflow/templates/structure-template.md, /Users/q284340/Agentic/coding/.spec-workflow/templates/tasks-template.md, /Users/q284340/Agentic/coding/.spec-workflow/steering/product.md, /Users/q284340/Agentic/coding/.spec-workflow/steering/structure.md, /Users/q284340/Agentic/coding/.spec-workflow/steering/tech.md, /Users/q284340/Agentic/coding/.serena/memories/project_structure.md, /Users/q284340/Agentic/coding/.serena/memories/lsl_generation_commands.md, /Users/q284340/Agentic/coding/tests/security/data/user-isolation/user-alice/alice-data.md, /Users/q284340/Agentic/coding/tests/security/data/user-isolation/user-admin/admin-data.md, /Users/q284340/Agentic/coding/tests/security/data/user-isolation/user-charlie/charlie-data.md, /Users/q284340/Agentic/coding/tests/security/data/user-isolation/user-guest/guest-data.md, /Users/q284340/Agentic/coding/tests/security/data/user-isolation/user-bob/bob-data.md, /Users/q284340/Agentic/coding/tests/performance/data/large-file-test.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-8.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-9.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-2.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-6.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-7.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-3.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-4.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-0.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-1.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/rotation-test.md, /Users/q284340/Agentic/coding/tests/performance/data/file-ops/index-test-5.md, /Users/q284340/Agentic/coding/tests/performance/BENCHMARK_SUMMARY.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-25_2300-0000_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-19_1600-1700_g9b30a_from-nano-degree.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_1400-1500_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-18_1100-1200_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/classification-status_g9b30a_from-nano-degree.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_0900-1000_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-23_1000-1100_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_1500-1600_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/classification-status_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/classification-status_g9b30a_from-coding.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-23_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_1800-1900_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-26_0800-0900_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-22_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-26_1300-1400_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-25_2200-2300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-27_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-22_1300-1400_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-25_1900-2000_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-23_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-21_0600-0700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-22_1100-1200_g9b30a_from-nano-degree.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-26_1200-1300_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-23_1500-1600_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_1000-1100_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-23_1500-1600_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-21_0600-0700_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_1400-1500_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-18_1100-1200_g9b30a_from-nano-degree.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-18_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-22_2100-2200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-25_1200-1300_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-24_1500-1600_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/logs/classification/2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/trajectory/SCHEMA_MIGRATION.md, /Users/q284340/Agentic/coding/.specstory/.what-is-this.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-18_1900-2000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_2300-0000_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-26_0800-0900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_1200-1300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1600-1700_g9b30a_from-nano-degree.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1400-1500_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1700-1800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-18_2200-2300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1900-2000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-18_1100-1200_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_0800-0900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1800-1900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1300-1400_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1800-1900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1600-1700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_0800-0900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1200-1300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_0800-0900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-06-16_13-32Z-clarification-on-code-assistance-request.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1200-1300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_1800-1900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-26_1200-1300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_0800-0900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_0900-1000_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1500-1600_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1400-1500_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_0900-1000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_1000-1100_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-26_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_1000-1100_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1800-1900_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-26_0800-0900_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_1000-1100_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_0900-1000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_2300-0000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-18_2100-2200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_0900-1000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-06-16_14-28Z-knowledge-base-viewer-statistics.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1000-1100_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1500-1600_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1900-2000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1700-1800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_2200-2300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-27_0600-0700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-26_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1600-1700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_0600-0700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-18_1800-1900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_0800-0900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-27_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1800-1900_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_1300-1400_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_2200-2300_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_1600-1700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_1300-1400_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1200-1300_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1900-2000_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_1700-1800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_0600-0700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_1300-1400_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_1100-1200_g9b30a_from-nano-degree.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-26_1200-1300_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_1500-1600_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_1300-1400_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_0600-0700_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_0700-0800_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1000-1100_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_1500-1600_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_0600-0700_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1100-1200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1400-1500_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_2100-2200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-18_1100-1200_g9b30a_from-nano-degree.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-22_2100-2200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_1500-1600_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_1200-1300_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-25_2100-2200_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_0900-1000_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-21_1400-1500_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-20_1400-1500_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-24_1500-1600_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-19_1000-1100_g9b30a.md, /Users/q284340/Agentic/coding/.specstory/history/2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md, /Users/q284340/Agentic/coding/docs/slash-commands.md, /Users/q284340/Agentic/coding/docs/monitoring-system.md, /Users/q284340/Agentic/coding/docs/knowledge-management/workflows.md, /Users/q284340/Agentic/coding/docs/knowledge-management/graph-sync.md, /Users/q284340/Agentic/coding/docs/knowledge-management/system-comparison.md, /Users/q284340/Agentic/coding/docs/knowledge-management/README.md, /Users/q284340/Agentic/coding/docs/knowledge-management/vkb-visualize.md, /Users/q284340/Agentic/coding/docs/knowledge-management/ukb-update.md, /Users/q284340/Agentic/coding/docs/knowledge-management/continuous-learning-system.md, /Users/q284340/Agentic/coding/docs/robust-startup-system.md, /Users/q284340/Agentic/coding/docs/trajectory-generation-system.md, /Users/q284340/Agentic/coding/docs/constraint-monitoring-system.md, /Users/q284340/Agentic/coding/docs/troubleshooting.md, /Users/q284340/Agentic/coding/docs/security/security-hardening-report.md, /Users/q284340/Agentic/coding/docs/provider-configuration.md, /Users/q284340/Agentic/coding/docs/multi-team-setup.md, /Users/q284340/Agentic/coding/docs/multi-collection-classification.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/simplified-startup-system.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/layer-0-session-filter-design.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/migration-guide.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/automated-insight-system.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/slash-command-lg.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/constraint-monitoring-validation.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/live-session-logging.md, /Users/q284340/Agentic/coding/docs/obsolete-invalid/constraint-monitor-effectiveness-report.md, /Users/q284340/Agentic/coding/docs/installation/quick-start.md, /Users/q284340/Agentic/coding/docs/installation/network-setup.md, /Users/q284340/Agentic/coding/docs/installation/mcp-configuration.md, /Users/q284340/Agentic/coding/docs/vkb-visualization-guide.md, /Users/q284340/Agentic/coding/docs/operations/knowledge-system-ops.md, /Users/q284340/Agentic/coding/docs/getting-started.md, /Users/q284340/Agentic/coding/docs/README.md, /Users/q284340/Agentic/coding/docs/integrations/vscode-extension-troubleshooting.md, /Users/q284340/Agentic/coding/docs/integrations/serena-ast-analysis.md, /Users/q284340/Agentic/coding/docs/integrations/mcp-semantic-analysis.md, /Users/q284340/Agentic/coding/docs/integrations/vscode-copilot-integration.md, /Users/q284340/Agentic/coding/docs/integrations/README.md, /Users/q284340/Agentic/coding/docs/integrations/browser-access.md, /Users/q284340/Agentic/coding/docs/integrations/mcp-constraint-monitor.md, /Users/q284340/Agentic/coding/docs/integrations/vscode-extension.md, /Users/q284340/Agentic/coding/docs/integrations/vscode-copilot.md, /Users/q284340/Agentic/coding/docs/integrations/vscode-testing-guide.md, /Users/q284340/Agentic/coding/docs/integrations/api-reference.md, /Users/q284340/Agentic/coding/docs/components/semantic-analysis/mcp-server-setup.md, /Users/q284340/Agentic/coding/docs/components/semantic-analysis/installation.md, /Users/q284340/Agentic/coding/docs/components/semantic-analysis/api-reference.md, /Users/q284340/Agentic/coding/docs/architecture/memory-systems.md, /Users/q284340/Agentic/coding/docs/architecture/cross-project-knowledge.md, /Users/q284340/Agentic/coding/docs/architecture/README.md, /Users/q284340/Agentic/coding/docs/newly-generated-diagrams.md, /Users/q284340/Agentic/coding/docs/agent-integration-guide.md, /Users/q284340/Agentic/coding/docs/deployment/knowledge-system-checklist.md, /Users/q284340/Agentic/coding/docs/enhanced-health-monitoring.md, /Users/q284340/Agentic/coding/docs/core-systems/constraint-monitoring.md, /Users/q284340/Agentic/coding/docs/core-systems/status-line.md, /Users/q284340/Agentic/coding/docs/core-systems/live-session-logging.md, /Users/q284340/Agentic/coding/docs/core-systems/trajectory-generation.md, /Users/q284340/Agentic/coding/docs/system-overview.md, /Users/q284340/Agentic/coding/docs/ukb/README.md, /Users/q284340/Agentic/coding/docs/ukb/user-guide.md, /Users/q284340/Agentic/coding/docs/ukb/api-reference.md, /Users/q284340/Agentic/coding/docs/performance/optimization-plan.md, /Users/q284340/Agentic/coding/docs/reference/graph-databases.md, /Users/q284340/Agentic/coding/docs/reference/commands.md, /Users/q284340/Agentic/coding/docs/reference/api-keys-setup.md, /Users/q284340/Agentic/coding/docs/reference/troubleshooting-knowledge-base.md, /Users/q284340/Agentic/coding/docs/reference/system-diagnostics.md, /Users/q284340/Agentic/coding/docs/reference/README.md, /Users/q284340/Agentic/coding/docs/reference/portable-paths.md, /Users/q284340/Agentic/coding/docs/vkb/README.md, /Users/q284340/Agentic/coding/docs/vkb/api-reference.md, /Users/q284340/Agentic/coding/docs/adaptive-transcript-format-detection.md, /Users/q284340/Agentic/coding/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-browserbase/.specstory/.what-is-this.md, /Users/q284340/Agentic/coding/integrations/mcp-server-browserbase/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-browserbase/integrations/mcp-constraint-monitor/README.md, /Users/q284340/Agentic/coding/integrations/memory-visualizer/.specstory/.what-is-this.md, /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/architecture.md, /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/user-guide.md, /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/development.md, /Users/q284340/Agentic/coding/integrations/memory-visualizer/README.md, /Users/q284340/Agentic/coding/integrations/memory-visualizer/CLAUDE.md, /Users/q284340/Agentic/coding/integrations/vscode-km-copilot/README.md, /Users/q284340/Agentic/coding/integrations/browser-access/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/.specstory/.what-is-this.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/troubleshooting.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/installation/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/troubleshooting/common-issues.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/troubleshooting/performance.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/troubleshooting/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/use-cases/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/architecture/integration.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/architecture/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/architecture/agents.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/architecture/tools.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/api/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/monitoring/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/README.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs-update-2025-10-25.md, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/CRITICAL-ARCHITECTURE-ISSUES.md, /Users/q284340/Agentic/coding/integrations/serena/CHANGELOG.md, /Users/q284340/Agentic/coding/integrations/serena/.serena/memories/serena_repository_structure.md, /Users/q284340/Agentic/coding/integrations/serena/.serena/memories/suggested_commands.md, /Users/q284340/Agentic/coding/integrations/serena/.serena/memories/serena_core_concepts_and_architecture.md, /Users/q284340/Agentic/coding/integrations/serena/.serena/memories/adding_new_language_support_guide.md, /Users/q284340/Agentic/coding/integrations/serena/llms-install.md, /Users/q284340/Agentic/coding/integrations/serena/docs/custom_agent.md, /Users/q284340/Agentic/coding/integrations/serena/docs/serena_on_chatgpt.md, /Users/q284340/Agentic/coding/integrations/serena/README.md, /Users/q284340/Agentic/coding/integrations/serena/roadmap.md, /Users/q284340/Agentic/coding/integrations/serena/CONTRIBUTING.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/flask/sansio/README.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/docstring_parser-0.17.0.dist-info/licenses/LICENSE.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/idna-3.10.dist-info/LICENSE.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/werkzeug/debug/shared/ICON_LICENSE.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/uvicorn-0.35.0.dist-info/licenses/LICENSE.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/starlette-0.47.2.dist-info/licenses/LICENSE.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/pyright/dist/dist/typeshed-fallback/README.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/pyright/dist/dist/typeshed-fallback/stdlib/_typeshed/README.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/pyright/dist/README.md, /Users/q284340/Agentic/coding/integrations/serena/.venv/lib/python3.11/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md, /Users/q284340/Agentic/coding/integrations/serena/DOCKER.md, /Users/q284340/Agentic/coding/integrations/serena/lessons_learned.md, /Users/q284340/Agentic/coding/integrations/serena/CLAUDE.md, /Users/q284340/Agentic/coding/integrations/serena/src/solidlsp/language_servers/elixir_tools/README.md, /Users/q284340/Agentic/coding/integrations/serena/
-- Processing Time: 29ms
-
----
-
-### Prompt Set: [ps_1761546814495](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546814495)
-
-**Time Range**: 1761546814495 → 1761547216433<br>
-**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546814495)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.95)
-
-#### Layer-by-Layer Trace
-
-✅ **Layer 1 (path)**
-- Decision: coding
-- Confidence: 0.98
-- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/newly-generated-diagrams.md
-- Processing Time: 11ms
+- **Average Processing Time**: 56ms
 
 ---
 
 ## Layer 2: Keyword
 
-**Decisions**: 3
+**Decisions**: 2
 
-### Prompt Set: [ps_1761547302644](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761547302644)
+### Prompt Set: [ps_2025-10-27T06:27:28.990Z](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:27:28.990Z)
 
-**Time Range**: 1761547302644 → 1761593225163<br>
-**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761547302644)<br>
+**Time Range**: 2025-10-27T06:27:28.990Z → 2025-10-27T06:27:32.921Z<br>
+**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:27:28.990Z)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
 **Final Classification**: ✅ CODING (confidence: 0.85)
@@ -79,76 +39,52 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (84.0%) of file operations target local project: /history/*.md, specstory/history/*.md, /dev/null, Users/q284340/Agentic/coding/.specstory/history/*_from-curriculum-alignment.md, dev/null, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-27_0700-0800_g9b30a.md, /.specstory/history/*_from-, /.specstory/history/*_from-nano-degree.md, /.specstory/history/*_from-curriculum-alignment.md, /.specstory/history/*_from-*.md, /Users/q284340/Agentic/nano-degree, /history, /history/, /.specstory/history/\*_from-PROJECT.md, /Users/q284340/Agentic/curriculum-alignment, /history/2025-10-27_0700-0800_g9b30a.md, ~60, /docs/puml, /docs/images, /system-reminder, /Users/q284340/Agentic/curriculum-alignment`
-- Processing Time: 10ms
+- Reasoning: Majority (100.0%) of file operations target local project: /Users/, /Agentic/coding/integrations/memory-visualizer., /docs/_standard-style.puml, /../../docs/puml/_standard-style.puml), /../../../docs/puml/_standard-style.puml), /images/viewer.png., /Views,, /auto/manual), /docs/puml, /docs/images, /docs/images/, /docs/imagesYour, /../../../docs/puml/_standard-style.puml, /knowledge-graph/, /puml/, /images/), /docs/puml/_standard-style.puml, /images/, /docs/puml/, /knowledge-graph/`, /../../../docs/puml/_standard-style.puml`, /Agentic/coding/integrations/memory-visualizer/docs/puml/architecture.puml`**, /Agentic/coding/integrations/memory-visualizer/docs/puml/data-flow.puml`**, /Agentic/coding/integrations/memory-visualizer/docs/puml/component-structure.puml`**, /Agentic/coding/integrations/memory-visualizer/docs/architecture.md`**, /Agentic/coding/integrations/memory-visualizer/docs/user-guide.md`**, /Mermaid, /Agentic/coding/integrations/memory-visualizer/docs/development.md`**, /Agentic/coding/integrations/memory-visualizer/README.md`**, /project, /auto/manual, /Views**, /Agentic/coding/docs/puml/`:, /../../docs/puml/_standard-style.puml`, /images/viewer.png, /puml/,, /docs/images**:, /Agentic/coding/docs/puml/`, /Agentic/coding/docs/images/`, /images/`
+- Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.85
 - Reasoning: Keyword analysis: 6 matches, score: 21/1
+- Processing Time: 1ms
+
+---
+
+### Prompt Set: [ps_2025-10-27T06:41:42.644Z](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:41:42.644Z)
+
+**Time Range**: 2025-10-27T06:41:42.644Z → 2025-10-27T06:41:45.442Z<br>
+**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:41:42.644Z)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.78)
+
+#### Layer-by-Layer Trace
+
+❌ **Layer 1 (path)**
+- Decision: local
+- Confidence: 0.02
+- Reasoning: Majority (100.0%) of file operations target local project: /history/*.md, /.specstory/history/*_from-, /Users/, /Agentic/coding), /.specstory/history/*_from-nano-degree.md, /.specstory/history/*_from-curriculum-alignment.md, /.specstory/history/*_from-*.md, /Agentic/nano-degree, /history, /Agentic/coding/.specstory/history/, /history/, /.specstory/history/\*_from-PROJECT.md
 - Processing Time: 0ms
 
----
-
-### Prompt Set: [ps_1761546134830](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546134830)
-
-**Time Range**: 1761546134830 → 1761593228473<br>
-**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546134830)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.85)
-
-#### Layer-by-Layer Trace
-
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority (89.1%) of file operations target local project: /images/${base}.png", Users/q284340/Agentic/coding/docs/puml, images/${base}.png", /dev/null, Users/q284340/Agentic/coding/docs/puml/*.puml, dev/null, Users/q284340/Agentic/coding/docs/images/*.png, ../images, /\.puml$//', /tmp/puml_list.txt, /images, /\.png$//', /tmp/png_list.txt, /tmp/puml_list.txt), /tmp/png_list.txt), s/\.puml$//', tmp/puml_list.txt, s/\.png$//', tmp/png_list.txt, tmp/puml_list.txt), tmp/png_list.txt), *.png, ../images/*.png, /images/, /", /images/*.png, images/, images/", images/*.png, /*.puml, /${base}.png", Users/q284340/Agentic/coding/docs, puml/*.puml, /*.png, Users/q284340/Agentic/coding/docs/images, puml/*.puml), images/*.png), /*.puml), /*.png), /docs/puml, /docs/images
-- Processing Time: 45ms
-
 ✅ **Layer 2 (keyword)**
 - Decision: coding
-- Confidence: 0.85
-- Reasoning: Keyword analysis: 7 matches, score: 25/1
-- Processing Time: 1ms
-
----
-
-### Prompt Set: [ps_1761546448990](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546448990)
-
-**Time Range**: 1761546448990 → 1761593228473<br>
-**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546448990)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.85)
-
-#### Layer-by-Layer Trace
-
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority of write operations target local project: /tmp/png_list.txt, /tmp/puml_list.txt
-- Processing Time: 1ms
-
-✅ **Layer 2 (keyword)**
-- Decision: coding
-- Confidence: 0.85
-- Reasoning: Keyword analysis: 8 matches, score: 27/1
+- Confidence: 0.78
+- Reasoning: Keyword analysis: 5 matches, score: 17/1
 - Processing Time: 0ms
 
 ---
 
 ## Layer 3: Embedding
 
-**Decisions**: 1
+**Decisions**: 4
 
-### Prompt Set: [ps_1761546350572](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546350572)
+### Prompt Set: [ps_2025-10-27T06:22:14.830Z](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:22:14.830Z)
 
-**Time Range**: 1761546350572 → 1761546448990<br>
-**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761546350572)<br>
+**Time Range**: 2025-10-27T06:22:14.830Z → 2025-10-27T06:22:17.407Z<br>
+**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:22:14.830Z)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.5820833000000001)
+**Final Classification**: ✅ CODING (confidence: 0.61249283)
 
 #### Layer-by-Layer Trace
 
@@ -166,9 +102,99 @@
 
 ✅ **Layer 3 (embedding)**
 - Decision: coding
+- Confidence: 0.61249283
+- Reasoning: Semantic similarity favors coding (coding_infrastructure=0.601, coding_lsl=0.601, curriculum_alignment=0.579, nano_degree=0.574)
+- Processing Time: 68ms
+
+---
+
+### Prompt Set: [ps_2025-10-27T06:25:50.572Z](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:25:50.572Z)
+
+**Time Range**: 2025-10-27T06:25:50.572Z → 2025-10-27T06:25:53.326Z<br>
+**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:25:50.572Z)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.5820833000000001)
+
+#### Layer-by-Layer Trace
+
+❌ **Layer 1 (path)**
+- Decision: local
+- Confidence: 0.02
+- Reasoning: Majority (100.0%) of file operations target local project: /docs/puml, /docs/images
+- Processing Time: 0ms
+
+❌ **Layer 2 (keyword)**
+- Decision: local
+- Confidence: 0.1
+- Reasoning: Keyword analysis: 0 matches, score: 0/1
+- Processing Time: 1ms
+
+✅ **Layer 3 (embedding)**
+- Decision: coding
 - Confidence: 0.5820833000000001
 - Reasoning: Semantic similarity favors coding (coding_lsl=0.579, nano_degree=0.572, curriculum_alignment=0.545, coding_infrastructure=0.501)
-- Processing Time: 19ms
+- Processing Time: 63ms
+
+---
+
+### Prompt Set: [ps_2025-10-27T06:33:34.495Z](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:33:34.495Z)
+
+**Time Range**: 2025-10-27T06:33:34.495Z → 2025-10-27T06:33:37.213Z<br>
+**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:33:34.495Z)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.642406155)
+
+#### Layer-by-Layer Trace
+
+❌ **Layer 1 (path)**
+- Decision: local
+- Confidence: 0.02
+- Reasoning: Majority (100.0%) of file operations target local project: /docs/images
+- Processing Time: 0ms
+
+❌ **Layer 2 (keyword)**
+- Decision: local
+- Confidence: 0.1
+- Reasoning: Keyword analysis: 0 matches, score: 0/1
+- Processing Time: 0ms
+
+✅ **Layer 3 (embedding)**
+- Decision: coding
+- Confidence: 0.642406155
+- Reasoning: Semantic similarity favors coding (coding_lsl=0.640, nano_degree=0.635, coding_infrastructure=0.627, curriculum_alignment=0.608)
+- Processing Time: 107ms
+
+---
+
+### Prompt Set: [ps_2025-10-27T06:44:05.244Z](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:44:05.244Z)
+
+**Time Range**: 2025-10-27T06:44:05.244Z → 2025-10-27T06:44:07.492Z<br>
+**LSL File**: [2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T06:44:05.244Z)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.68357614)
+
+#### Layer-by-Layer Trace
+
+❌ **Layer 1 (path)**
+- Decision: local
+- Confidence: 0.02
+- Reasoning: Majority (100.0%) of file operations target local project: /docs/images
+- Processing Time: 0ms
+
+❌ **Layer 2 (keyword)**
+- Decision: local
+- Confidence: 0.1
+- Reasoning: Keyword analysis: 0 matches, score: 0/1
+- Processing Time: 0ms
+
+✅ **Layer 3 (embedding)**
+- Decision: coding
+- Confidence: 0.68357614
+- Reasoning: Semantic similarity favors coding (coding_lsl=0.668, coding_infrastructure=0.652, nano_degree=0.636, curriculum_alignment=0.627)
+- Processing Time: 93ms
 
 ---
 
