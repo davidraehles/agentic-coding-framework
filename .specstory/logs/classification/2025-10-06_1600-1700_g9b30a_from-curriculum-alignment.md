@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1759762255218](../../../history/2025-10-06_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1759762255218)
 
-**Time Range**: 1759762255218 → 1761593206702<br>
+**Time Range**: 1759762255218 → 1761804565435<br>
 **LSL File**: [2025-10-06_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-06_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1759762255218)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -40,7 +40,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/integrations/mcp-constraint-monitor/README.md, /Users/q284340/Agentic/coding/integrations/mcp-constraint-monitor/install.sh, /Users/q284340/Agentic/coding/install.sh
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 
@@ -74,7 +74,7 @@
 
 ### Prompt Set: [ps_1759760929324](../../../history/2025-10-06_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1759760929324)
 
-**Time Range**: 1759760929324 → 1761593206701<br>
+**Time Range**: 1759760929324 → 1761804565435<br>
 **LSL File**: [2025-10-06_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-06_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1759760929324)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -85,8 +85,8 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (83.5%) of file operations target local project: /dev/null, Users/q284340/Agentic/coding, dev/null, Users/q284340/Agentic/coding/*.sh, Users/q284340/Agentic/coding/install.sh, /../../coding/.specstory/logs/classification/WINDOW_from-curriculum-alignment.md`, /../../coding/`, /../../../coding/`, /mcp-constraint-monitor/install.sh`, /history/`, /timezone-utils.js, /../history, /../../history/${lslFileName}`, /../history/${lslFileName}`, /../../../coding/`:, /../../../coding/.specstory/logs/classification/${window}_from-${this.projectName}.md`, /classification-logger.js`, /.specstory/logs/classification/, /.specstory/logs/classification/`, /../../coding/.specstory/logs/classification/${window}_from-${this.projectName}.md`, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification/2025-10-06_1100-1200_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification/classification-status_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification/2025-10-06_1100-1200_g9b30a-summary.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-21_2100-2200_g9b30a.md, /times, /install.sh, /install.sh`, /bin/bash, /toolkit, /react-redux, /mcp-constraint-monitor), /.., /.claude/settings.local.json, /.claude, /integrations/mcp-constraint-monitor/src/hooks/pre-prompt-hook-wrapper.js, /integrations/mcp-constraint-monitor/src/hooks/pre-tool-hook-wrapper.js, /integrations/mcp-constraint-monitor/src/hooks/pre-prompt-hook-wrapper.js\, /integrations/mcp-constraint-monitor/src/hooks/pre-tool-hook-wrapper.js\, /system-reminder, /Git, /install.log, /VPN, /memory-visualizer, /integrations/mcp-server-browserbase, /integrations/mcp-server-semantic-analysis, /memory-visualizer.git, //cc-github.bmwgroup.net/frankwoernle/memory-visualizer.git, //github.com/fwornle/memory-visualizer.git, /mcp-server-browserbase.git, //github.com/browserbase/mcp-server-browserbase.git, /mcp-server-semantic-analysis.git, //cc-github.bmwgroup.net/frankwoernle/mcp-server-semantic-analysis.git, //github.com/fwornle/mcp-server-semantic-analysis.git, /.zshrc, /.bashrc, /.bash_profile, //cc-github.bmwgroup.net, /integrations/mcp-constraint-monitor, /integrations/mcp-constraint-monitor/dashboard-new, /ui, //github.com/fwornle/mcp-server-constraint-monitor, /integrations/serena/pyproject.toml, /integrations/shadcn-mcp, /.claude/settings.json, /scripts/tool-interaction-hook-wrapper.js, //json.schemastore.org/claude-code-settings.json
-- Processing Time: 0ms
+- Reasoning: Majority (78.5%) of file operations target local project: /dev/null, /../../coding/.specstory/logs/classification/WINDOW_from-curriculum-alignment.md`, /../../coding/`, /../../../coding/`, /mcp-constraint-monitor/install.sh`, /history/`, /timezone-utils.js, /../history, /../../history/${lslFileName}`, /../history/${lslFileName}`, /../../../coding/`:, /../../../coding/.specstory/logs/classification/${window}_from-${this.projectName}.md`, /classification-logger.js`, /.specstory/logs/classification/, /.specstory/logs/classification/`, /../../coding/.specstory/logs/classification/${window}_from-${this.projectName}.md`, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification/2025-10-06_1100-1200_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification/classification-status_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification/2025-10-06_1100-1200_g9b30a-summary.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-21_2100-2200_g9b30a.md, /times, /install.sh, /install.sh`, /bin/bash, /toolkit, /react-redux, /mcp-constraint-monitor), /.., /.claude/settings.local.json, /.claude, /integrations/mcp-constraint-monitor/src/hooks/pre-prompt-hook-wrapper.js, /integrations/mcp-constraint-monitor/src/hooks/pre-tool-hook-wrapper.js, /integrations/mcp-constraint-monitor/src/hooks/pre-prompt-hook-wrapper.js\, /integrations/mcp-constraint-monitor/src/hooks/pre-tool-hook-wrapper.js\, /system-reminder, /Git, /install.log, /VPN, /memory-visualizer, /integrations/mcp-server-browserbase, /integrations/mcp-server-semantic-analysis, /memory-visualizer.git, //cc-github.bmwgroup.net/frankwoernle/memory-visualizer.git, //github.com/fwornle/memory-visualizer.git, /mcp-server-browserbase.git, //github.com/browserbase/mcp-server-browserbase.git, /mcp-server-semantic-analysis.git, //cc-github.bmwgroup.net/frankwoernle/mcp-server-semantic-analysis.git, //github.com/fwornle/mcp-server-semantic-analysis.git, /.zshrc, /.bashrc, /.bash_profile, //cc-github.bmwgroup.net, /integrations/mcp-constraint-monitor, /integrations/mcp-constraint-monitor/dashboard-new, /ui, //github.com/fwornle/mcp-server-constraint-monitor, /integrations/serena/pyproject.toml, /integrations/shadcn-mcp, /.claude/settings.json, /scripts/tool-interaction-hook-wrapper.js, //json.schemastore.org/claude-code-settings.json
+- Processing Time: 1ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding

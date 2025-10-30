@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 1
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 2ms
+- **Average Processing Time**: 0ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1759752065402](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759752065402)
 
-**Time Range**: 1759752065402 → 1761593206701<br>
+**Time Range**: 1759752065402 → 1761804565434<br>
 **LSL File**: [2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759752065402)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -46,7 +46,7 @@
 
 ### Prompt Set: [ps_1759753620240](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759753620240)
 
-**Time Range**: 1759753620240 → 1761593206701<br>
+**Time Range**: 1759753620240 → 1761804565435<br>
 **LSL File**: [2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759753620240)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -58,13 +58,13 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/scripts/classification-logger.js
-- Processing Time: 6ms
+- Processing Time: 0ms
 
 ---
 
 ### Prompt Set: [ps_1759754955309](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759754955309)
 
-**Time Range**: 1759754955309 → 1761593206701<br>
+**Time Range**: 1759754955309 → 1761804565435<br>
 **LSL File**: [2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759754955309)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -76,7 +76,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/live-session-logging.md
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 
@@ -86,7 +86,7 @@
 
 ### Prompt Set: [ps_1759753189783](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759753189783)
 
-**Time Range**: 1759753189783 → 1761593206701<br>
+**Time Range**: 1759753189783 → 1761804565434<br>
 **LSL File**: [2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-06_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1759753189783)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>

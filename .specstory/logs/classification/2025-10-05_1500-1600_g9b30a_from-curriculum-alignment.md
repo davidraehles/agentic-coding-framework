@@ -4,31 +4,31 @@
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
 **Generated**: 2025-10-27T19:27:25.075Z<br>
-**Decisions in Window**: 11
+**Decisions in Window**: 10
 
 ---
 
 ## Statistics
 
-- **Total Prompt Sets**: 11
-- **Classified as CODING**: 11 (100%)
+- **Total Prompt Sets**: 10
+- **Classified as CODING**: 10 (100%)
 - **Classified as LOCAL**: 0 (0%)
 - **[Layer 0 (Session Filter) Decisions](#layer-0-session-filter)**: 0
-- **[Layer 1 (Path) Decisions](#layer-1-path)**: 4
-- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 6
-- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 1
+- **[Layer 1 (Path) Decisions](#layer-1-path)**: 5
+- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 5
+- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 11ms
+- **Average Processing Time**: 1ms
 
 ---
 
 ## Layer 1: Path
 
-**Decisions**: 4
+**Decisions**: 5
 
 ### Prompt Set: [ps_1759669316197](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759669316197)
 
-**Time Range**: 1759669316197 → 1761593228830<br>
+**Time Range**: 1759669316197 → 1761804570388<br>
 **LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759669316197)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -40,7 +40,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/scripts/classification-logger.js
-- Processing Time: 9ms
+- Processing Time: 0ms
 
 ---
 
@@ -64,7 +64,7 @@
 
 ### Prompt Set: [ps_1759670599686](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759670599686)
 
-**Time Range**: 1759670599686 → 1761593228830<br>
+**Time Range**: 1759670599686 → 1761804570388<br>
 **LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759670599686)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -80,9 +80,27 @@
 
 ---
 
+### Prompt Set: [ps_1759671675276](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759671675276)
+
+**Time Range**: 1759671675276 → 1761804570388<br>
+**LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759671675276)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.95)
+
+#### Layer-by-Layer Trace
+
+✅ **Layer 1 (path)**
+- Decision: coding
+- Confidence: 0.98
+- Reasoning: Majority (57.1%) of file operations target coding repo: /Users/q284340/Agentic/coding/.logs/statusline-health-status.txt, Users/q284340/Agentic/coding/.logs/statusline-health-status.txt, Users/q284340/Agentic/curriculum-alignment/.transcript-monitor-health, dev/null
+- Processing Time: 0ms
+
+---
+
 ### Prompt Set: [ps_1759671774025](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759671774025)
 
-**Time Range**: 1759671774025 → 1761593228830<br>
+**Time Range**: 1759671774025 → 1761804570388<br>
 **LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759671774025)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -94,13 +112,13 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/architecture/status-line-system.md, /Users/q284340/Agentic/coding/docs/live-session-logging.md
-- Processing Time: 35ms
+- Processing Time: 0ms
 
 ---
 
 ## Layer 2: Keyword
 
-**Decisions**: 6
+**Decisions**: 5
 
 ### Prompt Set: [ps_1759669908897](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759669908897)
 
@@ -116,13 +134,13 @@
 - Decision: local
 - Confidence: 0.02
 - Reasoning: Majority of write operations target local project: /Users/q284340/Agentic/curriculum-alignment/.gitignore
-- Processing Time: 5ms
+- Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.85
 - Reasoning: Keyword analysis: 6 matches, score: 21/1
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 
@@ -139,20 +157,20 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (89.4%) of file operations target local project: "node, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/*.md, Users/q284340/Agentic/curriculum-alignment/.specstory/history/*.md, Users/q284340/Agentic/coding/docs/live-session-logging.md, Users/q284340/Agentic/coding/scripts/batch-lsl-processor.js, /Users/q284340/.claude/CLAUDE.md, /docs/live-session-logging, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1000-1100_g9b30a.md:1918:, /batch-lsl-processor.js, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1100-1200_g9b30a.md:1386:, /classification-logger.js`\n\nThe, /logs/classification/\n├──, /batch, /all-MiniLM-L6-v2\n, /**/*.js, /**/*.cjs, /**/*.md, /**/*.json, /simple-reindex.js`):\n-, /simple-reindex.js\n\n#, /183, //localhost:6333/collections/coding_infrastructure\n\n#, /reindex-coding-infrastructure.cjs`):\n-, /live-logging/ReliableCodingClassifier.js\, /**\\n, /history/`, /lsl-architecture.png), /4-layer-monitoring-architecture.png), /system-monitor-watchdog.js`, /system-monitor-watchdog.js, ~/Library/LaunchAgents/com.coding.system-watchdog.plist, /global-service-coordinator.js`, /monitoring-verifier.js`, /launch-claude.sh`, /monitoring-verifier.js, /system-reminder, /lsl-vector-db-indexing.png), /all-MiniLM-L6-v2, /Write, /analyze:, /memories/`, /milestones
-- Processing Time: 8ms
+- Reasoning: Majority (80.9%) of file operations target local project: /Users/q284340/Agentic/curriculum-alignment/.specstory/history/*.md, /Users/q284340/.claude/CLAUDE.md, /docs/live-session-logging, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1000-1100_g9b30a.md:1918:, /batch-lsl-processor.js, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1100-1200_g9b30a.md:1386:, /classification-logger.js`\n\nThe, /logs/classification/\n├──, /batch, /all-MiniLM-L6-v2\n, /**/*.js, /**/*.cjs, /**/*.md, /**/*.json, /simple-reindex.js`):\n-, /simple-reindex.js\n\n#, /183, //localhost:6333/collections/coding_infrastructure\n\n#, /reindex-coding-infrastructure.cjs`):\n-, /live-logging/ReliableCodingClassifier.js\, /**\\n, /history/`, /lsl-architecture.png), /4-layer-monitoring-architecture.png), /system-monitor-watchdog.js`, /system-monitor-watchdog.js, ~/Library/LaunchAgents/com.coding.system-watchdog.plist, /global-service-coordinator.js`, /monitoring-verifier.js`, /launch-claude.sh`, /monitoring-verifier.js, /system-reminder, /lsl-vector-db-indexing.png), /all-MiniLM-L6-v2, /Write, /analyze:, /memories/`, /milestones
+- Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.85
 - Reasoning: Keyword analysis: 17 matches, score: 61/1
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 
 ### Prompt Set: [ps_1759670241990](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759670241990)
 
-**Time Range**: 1759670241990 → 1761593228830<br>
+**Time Range**: 1759670241990 → 1761804570388<br>
 **LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759670241990)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -164,37 +182,13 @@
 - Decision: local
 - Confidence: 0.02
 - Reasoning: Majority of write operations target local project: /Users/q284340/.claude/CLAUDE.md, /Users/q284340/Agentic/curriculum-alignment/.gitignore
-- Processing Time: 47ms
+- Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.85
 - Reasoning: Keyword analysis: 10 matches, score: 36/1
 - Processing Time: 1ms
-
----
-
-### Prompt Set: [ps_1759671675276](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759671675276)
-
-**Time Range**: 1759671675276 → 1761593228830<br>
-**LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759671675276)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.5875)
-
-#### Layer-by-Layer Trace
-
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority (85.7%) of file operations target local project: Users/q284340/Agentic/coding/.logs/statusline-health-status.txt, /Users/q284340/Agentic/curriculum-alignment/.transcript-monitor-health, /dev/null, Users/q284340/Agentic/curriculum-alignment/.transcript-monitor-health, dev/null, ~/.claude/local
-- Processing Time: 0ms
-
-✅ **Layer 2 (keyword)**
-- Decision: coding
-- Confidence: 0.5875
-- Reasoning: Keyword analysis: 2 matches, score: 6/1
-- Processing Time: 0ms
 
 ---
 
@@ -211,7 +205,7 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (92.3%) of file operations target local project: /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1500-1600_g9b30a.md, /createLSLFile, /history, /batch-lsl-processor.js, /processRetroactive, /processInTimeWindows, /createPromptSetFile, /Development, ~60, /system-reminder, /live-logging/EnhancedTranscriptMonitor.js, /enhanced-transcript-monitor.js
+- Reasoning: Majority (84.6%) of file operations target local project: /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1500-1600_g9b30a.md, /createLSLFile, /history, /batch-lsl-processor.js, /processRetroactive, /processInTimeWindows, /createPromptSetFile, /Development, /system-reminder, /live-logging/EnhancedTranscriptMonitor.js, /enhanced-transcript-monitor.js
 - Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
@@ -224,7 +218,7 @@
 
 ### Prompt Set: [ps_1759672527188](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759672527188)
 
-**Time Range**: 1759672527188 → 1761593228830<br>
+**Time Range**: 1759672527188 → 1761804570388<br>
 **LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759672527188)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -235,48 +229,14 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (89.2%) of file operations target local project: /red, /logs, /architecture/status-line-system.md`, /live-session-logging.md`, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1500-1600_g9b30a.md`, /🟡/🔴), /\s+/), /\(([^)]+)\)/), ~60, /live-logging/EnhancedTranscriptMonitor.js`, /enhanced-transcript-monitor.js`, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1500-1600_g9b30a.md, /routing, /constructor, /analyzeExchangeContent, /analyzeForRouting, /cleanupHealthFile, /createOrAppendToSessionFile, /createSessionFileWithContent, /debug, /determineTargetProject, /extractExchanges, /extractTextContent, /extractUserMessage, /findAllTranscripts, /findCurrentTranscript, /formatExchangeForLogging, /formatTextOnlyContent, /formatToolCallContent, /getAllTranscriptFiles, /getCentralizedHealthFile, /getCurrentTimetranche, /getProjectDirName, /getProjectPath, /getSessionDurationMs, /getSessionFilePath, /getStateFilePath, /getUnprocessedExchanges, /hasMeaningfulContent, /hasNewContent, /initializeReliableCodingClassifier, /isCodingRelated, /isNewSessionBoundary, /isToolResultMessage, /loadLastProcessedUuid, /logDetailedToolCall, /logExchangeToSession, /logHealthError, /logTextOnlyExchange, /processExchanges, /processSingleTranscript, /processSingleTranscriptStreaming, /processTranscriptsInParallel, /processUserPromptSetCompletion, /readTranscriptMessages, /saveLastProcessedUuid, /start, /stop, /updateComprehensiveTrajectory, /updateHealthFile, /enhanced-transcript-monitor.js, /coding, /source\n, /timezone-utils.js, /generateLSLFilename, /system-reminder
-- Processing Time: 0ms
+- Reasoning: Majority (87.8%) of file operations target local project: /red, /logs, /architecture/status-line-system.md`, /live-session-logging.md`, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1500-1600_g9b30a.md`, /🟡/🔴), /\s+/), /\(([^)]+)\)/), /live-logging/EnhancedTranscriptMonitor.js`, /enhanced-transcript-monitor.js`, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-10-05_1500-1600_g9b30a.md, /routing, /constructor, /analyzeExchangeContent, /analyzeForRouting, /cleanupHealthFile, /createOrAppendToSessionFile, /createSessionFileWithContent, /debug, /determineTargetProject, /extractExchanges, /extractTextContent, /extractUserMessage, /findAllTranscripts, /findCurrentTranscript, /formatExchangeForLogging, /formatTextOnlyContent, /formatToolCallContent, /getAllTranscriptFiles, /getCentralizedHealthFile, /getCurrentTimetranche, /getProjectDirName, /getProjectPath, /getSessionDurationMs, /getSessionFilePath, /getStateFilePath, /getUnprocessedExchanges, /hasMeaningfulContent, /hasNewContent, /initializeReliableCodingClassifier, /isCodingRelated, /isNewSessionBoundary, /isToolResultMessage, /loadLastProcessedUuid, /logDetailedToolCall, /logExchangeToSession, /logHealthError, /logTextOnlyExchange, /processExchanges, /processSingleTranscript, /processSingleTranscriptStreaming, /processTranscriptsInParallel, /processUserPromptSetCompletion, /readTranscriptMessages, /saveLastProcessedUuid, /start, /stop, /updateComprehensiveTrajectory, /updateHealthFile, /enhanced-transcript-monitor.js, /coding, /source\n, /timezone-utils.js, /generateLSLFilename, /system-reminder
+- Processing Time: 1ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.85
 - Reasoning: Keyword analysis: 12 matches, score: 42/1
-- Processing Time: 2ms
-
----
-
-## Layer 3: Embedding
-
-**Decisions**: 1
-
-### Prompt Set: [ps_1759670070451](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759670070451)
-
-**Time Range**: 1759670070451 → 1761593228830<br>
-**LSL File**: [2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1759670070451)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.6517212400000001)
-
-#### Layer-by-Layer Trace
-
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: No file operations detected
-- Processing Time: 0ms
-
-❌ **Layer 2 (keyword)**
-- Decision: local
-- Confidence: 0.1
-- Reasoning: Keyword analysis: 0 matches, score: 0/1
-- Processing Time: 0ms
-
-✅ **Layer 3 (embedding)**
-- Decision: coding
-- Confidence: 0.6517212400000001
-- Reasoning: Semantic similarity favors coding (coding_lsl=0.634, curriculum_alignment=0.600, nano_degree=0.600, coding_infrastructure=0.540)
-- Processing Time: 13ms
+- Processing Time: 1ms
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Session:** 2025-10-17_0600-0700
 **Type:** Coding/Development
-**Time Range:** 2025-10-17T04:10:45.053Z - 2025-10-27T19:27:04.253Z
+**Time Range:** 2025-10-17T04:10:45.053Z - 2025-10-30T06:09:26.836Z
 **Prompt Sets:** 2
 **Classification:** Majority of write operations target coding repo: /Users/q284340/Agentic/coding/config/live-logging-config.json, /Users/q284340/Agentic/coding/src/live-logging/ReliableCodingClassifier.js, /Users/q284340/Agentic/coding/docs/layer-0-session-filter-design.md, /Users/q284340/Agentic/coding/src/live-logging/ConversationBiasTracker.js, /Users/q284340/Agentic/coding/docs/layer-0-implementation-summary.md
 
@@ -12,7 +12,7 @@
 ## Prompt Set 1 (ps_1760674245053)
 
 **Time:** 2025-10-17T04:10:45.053Z
-**Duration:** 918979200ms
+**Duration:** 1130321783ms
 **Tool Calls:** 26
 
 ### User
@@ -1995,7 +1995,7 @@ docs/layer-0-implementation-summary.md:254
 ## Prompt Set 2 (ps_1760676361647)
 
 **Time:** 2025-10-17T04:46:01.647Z
-**Duration:** 916862606ms
+**Duration:** 1128205189ms
 **Tool Calls:** 45
 
 ### User

@@ -2,30 +2,17 @@
 
 **Session:** 2025-10-07_1400-1500
 **Type:** Coding/Development
-**Time Range:** 2025-10-07T12:02:54.808Z - 2025-10-27T19:26:47.500Z
-**Prompt Sets:** 3
-**Classification:** Semantic similarity favors coding (coding_lsl=0.634, curriculum_alignment=0.600, nano_degree=0.600, coding_infrastructure=0.540)
-
----
-
-<a name="ps_1759838574808"></a>
-## Prompt Set 1 (ps_1759838574808)
-
-**Time:** 2025-10-07T12:02:54.808Z
-**Duration:** 1754632692ms
-**Tool Calls:** 0
-
-### User
-
-[Request interrupted by user for tool use]
+**Time Range:** 2025-10-07T12:03:59.299Z - 2025-10-30T06:09:26.202Z
+**Prompt Sets:** 2
+**Classification:** Majority of write operations target coding repo: /Users/q284340/Agentic/coding/scripts/enhanced-transcript-monitor.js
 
 ---
 
 <a name="ps_1759838639299"></a>
-## Prompt Set 2 (ps_1759838639299)
+## Prompt Set 1 (ps_1759838639299)
 
 **Time:** 2025-10-07T12:03:59.299Z
-**Duration:** 1754568201ms
+**Duration:** 1965926902ms
 **Tool Calls:** 10
 
 ### User
@@ -493,10 +480,10 @@ The heartbeat will now keep the trajectory files fresh automatically as long as 
 ---
 
 <a name="ps_1759839082667"></a>
-## Prompt Set 3 (ps_1759839082667)
+## Prompt Set 2 (ps_1759839082667)
 
 **Time:** 2025-10-07T12:11:22.667Z
-**Duration:** 1754124833ms
+**Duration:** 1965483535ms
 **Tool Calls:** 16
 
 ### User

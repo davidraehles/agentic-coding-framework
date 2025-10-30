@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1760623080952](../../../history/2025-10-16_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1760623080952)
 
-**Time Range**: 1760623080952 → 1761593224253<br>
+**Time Range**: 1760623080952 → 1761804566835<br>
 **LSL File**: [2025-10-16_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-16_1500-1600_g9b30a_from-curriculum-alignment.md#ps_1760623080952)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -61,7 +61,7 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (68.8%) of file operations target local project: /dev/null, Users/q284340/Agentic/coding, dev/null, Users/q284340/Agentic/coding/docs/, /cleanup-aliases.sh`, /stdout, /claude-mcp, /claude-mcp`, /ukb`, /vkb`, /system-reminder
+- Reasoning: Majority (50.0%) of file operations target local project: /dev/null, /cleanup-aliases.sh`, /stdout, /claude-mcp, /claude-mcp`, /ukb`, /vkb`, /system-reminder
 - Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**

@@ -2,9 +2,9 @@
 
 **Session:** 2025-10-26_1200-1300
 **Type:** Coding/Development
-**Time Range:** 2025-10-26T11:06:41.632Z - 2025-10-27T19:27:08.473Z
+**Time Range:** 2025-10-26T11:06:41.632Z - 2025-10-30T06:09:30.213Z
 **Prompt Sets:** 2
-**Classification:** Majority (57.1%) of file operations target coding repo: /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/puml, /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/images, /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/, /Users/q284340/Agentic/coding/integrations/memory-visualizer.
+**Classification:** Majority (100.0%) of file operations target coding repo: /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/puml, /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/images, Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/puml, Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/images, /Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/, Users/q284340/Agentic/coding/integrations/memory-visualizer/docs/, /Users/q284340/Agentic/coding/integrations/memory-visualizer.
 
 ---
 
@@ -12,7 +12,7 @@
 ## Prompt Set 1 (ps_1761476801632)
 
 **Time:** 2025-10-26T11:06:41.632Z
-**Duration:** 116426840ms
+**Duration:** 327768580ms
 **Tool Calls:** 2
 
 ### User
@@ -79,7 +79,7 @@ The folders are now ready for documentation. The structure follows the same patt
 ## Prompt Set 2 (ps_1761477265308)
 
 **Time:** 2025-10-26T11:14:25.308Z
-**Duration:** 115963165ms
+**Duration:** 327304905ms
 **Tool Calls:** 42
 
 ### User

@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 2
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 4ms
+- **Average Processing Time**: 3ms
 
 ---
 
@@ -46,7 +46,7 @@
 - Decision: coding
 - Confidence: 0.675
 - Reasoning: Keyword analysis: 3 matches, score: 11/1
-- Processing Time: 1ms
+- Processing Time: 0ms
 
 ---
 

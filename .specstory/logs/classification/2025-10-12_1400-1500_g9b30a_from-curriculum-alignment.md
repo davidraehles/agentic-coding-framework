@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1760270411699](../../../history/2025-10-12_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1760270411699)
 
-**Time Range**: 1760270411699 → 1761593228765<br>
+**Time Range**: 1760270411699 → 1761804570329<br>
 **LSL File**: [2025-10-12_1400-1500_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-12_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1760270411699)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -50,7 +50,7 @@
 
 ### Prompt Set: [ps_1760273283173](../../../history/2025-10-12_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1760273283173)
 
-**Time Range**: 1760273283173 → 1761593228765<br>
+**Time Range**: 1760273283173 → 1761804570329<br>
 **LSL File**: [2025-10-12_1400-1500_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-12_1400-1500_g9b30a_from-curriculum-alignment.md#ps_1760273283173)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -62,13 +62,13 @@
 - Decision: local
 - Confidence: 0.02
 - Reasoning: Majority of write operations target local project: /Users/q284340/Agentic/curriculum-alignment/.constraint-monitor.yaml, /Users/q284340/Agentic/curriculum-alignment/docs/constraint-pattern-fixes.md
-- Processing Time: 1ms
+- Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.85
 - Reasoning: Keyword analysis: 7 matches, score: 23/1
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 

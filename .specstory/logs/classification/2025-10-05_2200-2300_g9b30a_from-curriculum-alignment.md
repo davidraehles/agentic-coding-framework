@@ -4,27 +4,27 @@
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
 **Generated**: 2025-10-27T19:27:24.832Z<br>
-**Decisions in Window**: 5
+**Decisions in Window**: 4
 
 ---
 
 ## Statistics
 
-- **Total Prompt Sets**: 5
-- **Classified as CODING**: 5 (100%)
+- **Total Prompt Sets**: 4
+- **Classified as CODING**: 4 (100%)
 - **Classified as LOCAL**: 0 (0%)
 - **[Layer 0 (Session Filter) Decisions](#layer-0-session-filter)**: 0
-- **[Layer 1 (Path) Decisions](#layer-1-path)**: 3
-- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 1
-- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 1
+- **[Layer 1 (Path) Decisions](#layer-1-path)**: 4
+- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
+- **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 6ms
+- **Average Processing Time**: 0ms
 
 ---
 
 ## Layer 1: Path
 
-**Decisions**: 3
+**Decisions**: 4
 
 ### Prompt Set: [ps_1759694485850](../../../history/2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md#ps_1759694485850)
 
@@ -40,7 +40,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/scripts/classification-logger.js
-- Processing Time: 7ms
+- Processing Time: 0ms
 
 ---
 
@@ -58,13 +58,13 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/.specstory/trajectory/live-state.json
-- Processing Time: 7ms
+- Processing Time: 1ms
 
 ---
 
 ### Prompt Set: [ps_1759696481636](../../../history/2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md#ps_1759696481636)
 
-**Time Range**: 1759696481636 → 1761593206700<br>
+**Time Range**: 1759696481636 → 1761804565433<br>
 **LSL File**: [2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md#ps_1759696481636)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -80,65 +80,21 @@
 
 ---
 
-## Layer 2: Keyword
-
-**Decisions**: 1
-
 ### Prompt Set: [ps_1759697036841](../../../history/2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md#ps_1759697036841)
 
-**Time Range**: 1759697036841 → 1761593206700<br>
+**Time Range**: 1759697036841 → 1761804565433<br>
 **LSL File**: [2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md#ps_1759697036841)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.71)
+**Final Classification**: ✅ CODING (confidence: 0.95)
 
 #### Layer-by-Layer Trace
 
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority (66.7%) of file operations target local project: /Users/q284340/Agentic/curriculum-alignment, Users/q284340/Agentic/curriculum-alignment, Users/q284340/Agentic/coding, Users/q284340/Agentic/coding/scripts/batch-lsl-processor.js, /batch-lsl-processor.js, /Users/q284340/.claude/projects/-Users-q284340-Agentic-curriculum-alignment, Users/q284340/.claude/projects/-Users-q284340-Agentic-curriculum-alignment, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification
-- Processing Time: 0ms
-
-✅ **Layer 2 (keyword)**
+✅ **Layer 1 (path)**
 - Decision: coding
-- Confidence: 0.71
-- Reasoning: Keyword analysis: 4 matches, score: 13/1
-- Processing Time: 1ms
-
----
-
-## Layer 3: Embedding
-
-**Decisions**: 1
-
-### Prompt Set: [ps_1759696408775](../../../history/2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md#ps_1759696408775)
-
-**Time Range**: 1759696408775 → 1761593206700<br>
-**LSL File**: [2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-05_2200-2300_g9b30a_from-curriculum-alignment.md#ps_1759696408775)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.6517212400000001)
-
-#### Layer-by-Layer Trace
-
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: No file operations detected
+- Confidence: 0.98
+- Reasoning: Majority (66.7%) of file operations target coding repo: /Users/q284340/Agentic/coding, /Users/q284340/Agentic/coding/scripts/batch-lsl-processor.js, Users/q284340/Agentic/curriculum-alignment, Users/q284340/Agentic/coding, Users/q284340/Agentic/coding/scripts/batch-lsl-processor.js, scripts/batch-lsl-processor.js, Users/q284340/.claude/projects/-Users-q284340-Agentic-curriculum-alignment, /Users/q284340/Agentic/coding/.specstory/logs/classification
 - Processing Time: 0ms
-
-❌ **Layer 2 (keyword)**
-- Decision: local
-- Confidence: 0.1
-- Reasoning: Keyword analysis: 0 matches, score: 0/1
-- Processing Time: 0ms
-
-✅ **Layer 3 (embedding)**
-- Decision: coding
-- Confidence: 0.6517212400000001
-- Reasoning: Semantic similarity favors coding (coding_lsl=0.634, curriculum_alignment=0.600, nano_degree=0.600, coding_infrastructure=0.540)
-- Processing Time: 13ms
 
 ---
 

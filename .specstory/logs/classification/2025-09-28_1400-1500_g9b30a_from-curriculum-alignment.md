@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 1
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 0ms
+- **Average Processing Time**: 1ms
 
 ---
 
@@ -39,14 +39,14 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (84.8%) of file operations target local project: /dev/null, dev/null, /history/, specstory/history/, Users/q284340/Agentic/coding/.specstory/history/*curriculum-alignment*, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1400-1500_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1300-1400_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1200-1300_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1100-1200_g9b30a.md, /repo, /history, /.specstory/history/*_from-, /same:, /history/), /Users/q284340/Agentic/curriculum-alignment, /curriculum-alignment.git, ~60, /system-reminder, /workflows/deploy.yml, /Users/q284340/Agentic/curriculum-alignment/.github/workflows/deploy.yml, //claude.ai/code)\n\nCo-Authored-By:, ///, /workflows, /change-log.json, /comprehensive-project-trajectory.md, /history/2025-09-28_1200-1300_g9b30a.md, /history/2025-09-28_1300-1400_g9b30a.md, /history/2025-09-28_1400-1500_g9b30a.md
+- Reasoning: Majority (72.7%) of file operations target local project: /dev/null, /history/, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1400-1500_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1300-1400_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1200-1300_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_1100-1200_g9b30a.md, /repo, /history, /.specstory/history/*_from-, /same:, /history/), /Users/q284340/Agentic/curriculum-alignment, /curriculum-alignment.git, /system-reminder, /workflows/deploy.yml, /Users/q284340/Agentic/curriculum-alignment/.github/workflows/deploy.yml, //claude.ai/code)\n\nCo-Authored-By:, ///, /workflows, /change-log.json, /comprehensive-project-trajectory.md, /history/2025-09-28_1200-1300_g9b30a.md, /history/2025-09-28_1300-1400_g9b30a.md, /history/2025-09-28_1400-1500_g9b30a.md
 - Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.78
 - Reasoning: Keyword analysis: 5 matches, score: 17/1
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 

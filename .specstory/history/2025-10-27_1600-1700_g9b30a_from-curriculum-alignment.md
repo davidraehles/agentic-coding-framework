@@ -2,7 +2,7 @@
 
 **Session:** 2025-10-27_1600-1700
 **Type:** Coding/Development
-**Time Range:** 2025-10-27T15:10:33.325Z - 2025-10-27T19:27:05.166Z
+**Time Range:** 2025-10-27T15:10:33.325Z - 2025-10-30T06:09:27.426Z
 **Prompt Sets:** 5
 **Classification:** Keyword analysis: 5 matches, score: 17/1
 
@@ -12,7 +12,7 @@
 ## Prompt Set 1 (ps_1761577833325)
 
 **Time:** 2025-10-27T15:10:33.325Z
-**Duration:** 15391841ms
+**Duration:** 226734101ms
 **Tool Calls:** 5
 
 ### User
@@ -182,7 +182,7 @@ The key insight: When paths don't include explicit "coding" prefix, I must searc
 ## Prompt Set 2 (ps_1761578056923)
 
 **Time:** 2025-10-27T15:14:16.923Z
-**Duration:** 15168243ms
+**Duration:** 226510503ms
 **Tool Calls:** 23
 
 ### User
@@ -2037,7 +2037,7 @@ The fix will prevent future misclassifications like the one we manually correcte
 ## Prompt Set 3 (ps_1761579105258)
 
 **Time:** 2025-10-27T15:31:45.258Z
-**Duration:** 14119908ms
+**Duration:** 225462168ms
 **Tool Calls:** 25
 
 ### User
@@ -3756,7 +3756,7 @@ All fixes are now in place and will automatically apply to future LSL sessions!
 ## Prompt Set 4 (ps_1761580306985)
 
 **Time:** 2025-10-27T15:51:46.985Z
-**Duration:** 12918181ms
+**Duration:** 224260441ms
 **Tool Calls:** 1
 
 ### User
@@ -3890,7 +3890,7 @@ Will automatically clean these up when the LSL window closes.
 ## Prompt Set 5 (ps_1761580466241)
 
 **Time:** 2025-10-27T15:54:26.241Z
-**Duration:** 12758925ms
+**Duration:** 224101185ms
 **Tool Calls:** 9
 
 ### User

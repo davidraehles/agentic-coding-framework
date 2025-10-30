@@ -39,7 +39,7 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (100.0%) of file operations target local project: /workflows/deploy.yml, github/workflows/deploy.yml, /Users/q284340/Agentic/curriculum-alignment/.github/workflows/deploy.yml, /curriculum-alignment/${{, /db/host, /dev/null, /db/name, /db/username, /db/password, /migrations, /system-reminder, //github.com/fwornle/curriculum-alignment/actions/runs/18073003191, /smoke, /smoke[0m, /usr/bin/bash, //h7edwpo2lk.execute-api.eu-central-1.amazonaws.com/staging/, /smoke.test.js, /health, /health/database, /health/info, /api/programs, /api/universities, /api/analysis, /api/reports, /api/agents/status, /json, /home/runner/work/curriculum-alignment/curriculum-alignment/tests/smoke
+- Reasoning: Majority (96.3%) of file operations target local project: /workflows/deploy.yml, /Users/q284340/Agentic/curriculum-alignment/.github/workflows/deploy.yml, /curriculum-alignment/${{, /db/host, /dev/null, /db/name, /db/username, /db/password, /migrations, /system-reminder, //github.com/fwornle/curriculum-alignment/actions/runs/18073003191, /smoke, /smoke[0m, /usr/bin/bash, //h7edwpo2lk.execute-api.eu-central-1.amazonaws.com/staging/, /smoke.test.js, /health, /health/database, /health/info, /api/programs, /api/universities, /api/analysis, /api/reports, /api/agents/status, /json, /home/runner/work/curriculum-alignment/curriculum-alignment/tests/smoke
 - Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**

@@ -2,27 +2,14 @@
 
 **Session:** 2025-10-06_1300-1400
 **Type:** Coding/Development
-**Time Range:** 2025-10-06T11:45:20.880Z - 2025-10-06T12:00:34.376Z
-**Prompt Sets:** 3
-**Classification:** Semantic similarity favors coding (coding_lsl=0.634, curriculum_alignment=0.600, nano_degree=0.600, coding_infrastructure=0.540)
-
----
-
-<a name="ps_1759751120880"></a>
-## Prompt Set 1 (ps_1759751120880)
-
-**Time:** 2025-10-06T11:45:20.880Z
-**Duration:** 1842085821ms
-**Tool Calls:** 0
-
-### User
-
-[Request interrupted by user for tool use]
+**Time Range:** 2025-10-06T11:45:36.228Z - 2025-10-06T12:00:34.376Z
+**Prompt Sets:** 2
+**Classification:** Majority of write operations target coding repo: /Users/q284340/Agentic/coding/scripts/classification-logger.js
 
 ---
 
 <a name="ps_1759751136228"></a>
-## Prompt Set 2 (ps_1759751136228)
+## Prompt Set 1 (ps_1759751136228)
 
 **Time:** 2025-10-06T11:45:36.228Z
 **Duration:** 592923ms
@@ -298,7 +285,7 @@ Now let's test this by regenerating the classification logs:
 ---
 
 <a name="ps_1759751729151"></a>
-## Prompt Set 3 (ps_1759751729151)
+## Prompt Set 2 (ps_1759751729151)
 
 **Time:** 2025-10-06T11:55:29.151Z
 **Duration:** 305225ms

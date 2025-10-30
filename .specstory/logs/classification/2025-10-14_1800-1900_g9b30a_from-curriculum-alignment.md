@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 7ms
+- **Average Processing Time**: 0ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1760458211381](../../../history/2025-10-14_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1760458211381)
 
-**Time Range**: 1760458211381 → 1761593226054<br>
+**Time Range**: 1760458211381 → 1761804567870<br>
 **LSL File**: [2025-10-14_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-14_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1760458211381)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -40,7 +40,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/scripts/global-service-coordinator.js, /Users/q284340/Agentic/coding/docs/monitoring-layers-analysis.md, /Users/q284340/Agentic/coding/docs/monitoring-system-integration-guide.md
-- Processing Time: 7ms
+- Processing Time: 0ms
 
 ---
 

@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 2
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 4ms
+- **Average Processing Time**: 3ms
 
 ---
 
@@ -39,14 +39,14 @@
 ❌ **Layer 1 (path)**
 - Decision: local
 - Confidence: 0.02
-- Reasoning: Majority (88.9%) of file operations target local project: /.*\///', /\.git$//', s/.*\///', s/\.git$//', /history/, /dev/null, specstory/history/, dev/null, Users/q284340/Agentic/coding/.specstory/history/*from-curriculum-alignment*.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_0600-0700_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-27_2200-2300_g9b30a.md, /repo, /history, /.specstory/history/*_from-, /same:, /history/), ~60, /system-reminder, /CD, /../lib/utils, /grep/find, /../lib/utils`, /src/lib/`, /production, /lib,, /components,, /Users/, /Agentic/curriculum-alignment/.github/workflows/deploy.yml`, /Agentic/curriculum-alignment/frontend/src/components/modals/UploadDocumentModal.tsx`, /lib/utils, /Agentic/curriculum-alignment/.gitignore`, /lib/`, /lib/, /src/lib/, /Agentic/curriculum-alignment/frontend/src/lib/utils.ts`, /Users/q284340/Agentic/curriculum-alignment, /.claude/projects/-Users-, /debug, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/system.log, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification.log
+- Reasoning: Majority (75.6%) of file operations target local project: /.*\///', /\.git$//', /history/, /dev/null, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-28_0600-0700_g9b30a.md, /Users/q284340/Agentic/curriculum-alignment/.specstory/history/2025-09-27_2200-2300_g9b30a.md, /repo, /history, /.specstory/history/*_from-, /same:, /history/), /system-reminder, /CD, /../lib/utils, /grep/find, /../lib/utils`, /src/lib/`, /production, /lib,, /components,, /Users/, /Agentic/curriculum-alignment/.github/workflows/deploy.yml`, /Agentic/curriculum-alignment/frontend/src/components/modals/UploadDocumentModal.tsx`, /lib/utils, /Agentic/curriculum-alignment/.gitignore`, /lib/`, /lib/, /src/lib/, /Agentic/curriculum-alignment/frontend/src/lib/utils.ts`, /Users/q284340/Agentic/curriculum-alignment, /.claude/projects/-Users-, /debug, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/system.log, /Users/q284340/Agentic/curriculum-alignment/.specstory/logs/classification.log
 - Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
 - Confidence: 0.85
 - Reasoning: Keyword analysis: 7 matches, score: 25/1
-- Processing Time: 1ms
+- Processing Time: 0ms
 
 ---
 
@@ -64,7 +64,7 @@
 - Decision: local
 - Confidence: 0.02
 - Reasoning: Majority of write operations target local project: /Users/q284340/Agentic/curriculum-alignment/README.md
-- Processing Time: 1ms
+- Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
