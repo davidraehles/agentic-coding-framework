@@ -1,9 +1,9 @@
 # Classification Decision Log (Foreign/Coding)
 
-**Time Window**: 2025-10-27_1700-1800_g9b30a<br>
+**Time Window**: 2025-10-30_1500-1600_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-30T16:08:41.897Z<br>
+**Generated**: 2025-10-30T16:08:41.968Z<br>
 **Decisions in Window**: 3
 
 ---
@@ -26,10 +26,10 @@
 
 **Decisions**: 3
 
-### Prompt Set: [ps_2025-10-27T16:03:57.081Z](../../../history/2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T16:03:57.081Z)
+### Prompt Set: [ps_2025-10-30T14:45:20.925Z](../../../history/2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T14:45:20.925Z)
 
-**Time Range**: 2025-10-27T16:03:57.081Z → 2025-10-27T16:06:11.856Z<br>
-**LSL File**: [2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T16:03:57.081Z)<br>
+**Time Range**: 2025-10-30T14:45:20.925Z → 2025-10-30T14:45:28.477Z<br>
+**LSL File**: [2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T14:45:20.925Z)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
 **Final Classification**: ✅ CODING (confidence: 0.78)
@@ -50,10 +50,10 @@
 
 ---
 
-### Prompt Set: [ps_2025-10-27T16:22:27.203Z](../../../history/2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T16:22:27.203Z)
+### Prompt Set: [ps_2025-10-30T14:47:23.099Z](../../../history/2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T14:47:23.099Z)
 
-**Time Range**: 2025-10-27T16:22:27.203Z → 2025-10-27T16:22:30.161Z<br>
-**LSL File**: [2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T16:22:27.203Z)<br>
+**Time Range**: 2025-10-30T14:47:23.099Z → 2025-10-30T14:47:29.183Z<br>
+**LSL File**: [2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T14:47:23.099Z)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
 **Final Classification**: ✅ CODING (confidence: 0.78)
@@ -64,36 +64,36 @@
 - Decision: local
 - Confidence: 0.02
 - Reasoning: Majority (100.0%) of file operations target local project: /history/*.md, /.specstory/history/*_from-, /Users/, /Agentic/coding), /.specstory/history/*_from-nano-degree.md, /.specstory/history/*_from-curriculum-alignment.md, /.specstory/history/*_from-*.md, /Agentic/nano-degree, /history, /Agentic/coding/.specstory/history/, /history/, /.specstory/history/\*_from-PROJECT.md
-- Processing Time: 0ms
-
-✅ **Layer 2 (keyword)**
-- Decision: coding
-- Confidence: 0.78
-- Reasoning: Keyword analysis: 5 matches, score: 17/1
-- Processing Time: 0ms
-
----
-
-### Prompt Set: [ps_2025-10-27T16:34:34.601Z](../../../history/2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T16:34:34.601Z)
-
-**Time Range**: 2025-10-27T16:34:34.601Z → 2025-10-27T16:34:36.173Z<br>
-**LSL File**: [2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-27_1700-1800_g9b30a_from-curriculum-alignment.md#ps_2025-10-27T16:34:34.601Z)<br>
-**LSL Lines**: 0-0<br>
-**Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.535)
-
-#### Layer-by-Layer Trace
-
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority (100.0%) of file operations target local project: /Users/, /Agentic/curriculum-alignment/.specstory/history/2025-10-25_2200-2300_g9b30a.md
 - Processing Time: 1ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding
-- Confidence: 0.535
-- Reasoning: Keyword analysis: 1 matches, score: 3/1
+- Confidence: 0.78
+- Reasoning: Keyword analysis: 5 matches, score: 17/1
+- Processing Time: 0ms
+
+---
+
+### Prompt Set: [ps_2025-10-30T14:54:09.197Z](../../../history/2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T14:54:09.197Z)
+
+**Time Range**: 2025-10-30T14:54:09.197Z → 2025-10-30T14:54:11.248Z<br>
+**LSL File**: [2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-30_1500-1600_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T14:54:09.197Z)<br>
+**LSL Lines**: 0-0<br>
+**Target**: 🌍 FOREIGN (coding)<br>
+**Final Classification**: ✅ CODING (confidence: 0.605)
+
+#### Layer-by-Layer Trace
+
+❌ **Layer 1 (path)**
+- Decision: local
+- Confidence: 0.02
+- Reasoning: Majority (100.0%) of file operations target local project: /Users/, /Agentic/curriculum-alignment/.specstory/history/2025-10-30_0800-0900_g9b30a.md, /memory-visualizer/docs/images/component-structure.png
+- Processing Time: 0ms
+
+✅ **Layer 2 (keyword)**
+- Decision: coding
+- Confidence: 0.605
+- Reasoning: Keyword analysis: 2 matches, score: 7/1
 - Processing Time: 0ms
 
 ---

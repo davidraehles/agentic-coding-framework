@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-30_1000-1100_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-30T09:09:38.647Z<br>
+**Generated**: 2025-10-30T16:08:41.954Z<br>
 **Decisions in Window**: 1
 
 ---
@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 1
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 0ms
+- **Average Processing Time**: 1ms
 
 ---
 
@@ -26,10 +26,10 @@
 
 **Decisions**: 1
 
-### Prompt Set: [ps_1761815357680](../../../history/2025-10-30_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761815357680)
+### Prompt Set: [ps_2025-10-30T09:09:17.680Z](../../../history/2025-10-30_1000-1100_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T09:09:17.680Z)
 
-**Time Range**: 2025-10-30T09:09:17.680Z → 2025-10-30T09:09:20.504Z<br>
-**LSL File**: [2025-10-30_1000-1100_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-30_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761815357680)<br>
+**Time Range**: 2025-10-30T09:09:17.680Z → 2025-10-30T09:09:20.292Z<br>
+**LSL File**: [2025-10-30_1000-1100_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-30_1000-1100_g9b30a_from-curriculum-alignment.md#ps_2025-10-30T09:09:17.680Z)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
 **Final Classification**: ✅ CODING (confidence: 0.6224999999999999)
@@ -46,7 +46,7 @@
 - Decision: coding
 - Confidence: 0.6224999999999999
 - Reasoning: Keyword analysis: 2 matches, score: 8/1
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 
