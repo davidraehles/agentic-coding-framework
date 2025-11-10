@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-23_1000-1100_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-23T08:45:02.696Z<br>
+**Generated**: 2025-10-23T10:00:00.000Z<br>
 **Decisions in Window**: 6
 
 ---
@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 1
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 12ms
+- **Average Processing Time**: 0ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1761206594738](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761206594738)
 
-**Time Range**: 1761206594738 → 1761593244526<br>
+**Time Range**: 1761206594738 → 1762756511671<br>
 **LSL File**: [2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761206594738)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -40,13 +40,13 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/src/knowledge-management/KnowledgeExportService.js, /Users/q284340/Agentic/coding/src/knowledge-management/GraphKnowledgeExporter.js
-- Processing Time: 8ms
+- Processing Time: 0ms
 
 ---
 
 ### Prompt Set: [ps_1761206900902](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761206900902)
 
-**Time Range**: 1761206900902 → 1761593244526<br>
+**Time Range**: 1761206900902 → 1762756511671<br>
 **LSL File**: [2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761206900902)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -82,7 +82,7 @@
 
 ### Prompt Set: [ps_1761207409602](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761207409602)
 
-**Time Range**: 1761207409602 → 1761593244526<br>
+**Time Range**: 1761207409602 → 1762756511672<br>
 **LSL File**: [2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761207409602)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -94,13 +94,13 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/bin/graph-sync
-- Processing Time: 13ms
+- Processing Time: 0ms
 
 ---
 
 ### Prompt Set: [ps_1761209791337](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761209791337)
 
-**Time Range**: 1761209791337 → 1761593244526<br>
+**Time Range**: 1761209791337 → 1762756511672<br>
 **LSL File**: [2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761209791337)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -112,7 +112,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/README.md, /Users/q284340/Agentic/coding/docs/knowledge-management/README.md, /Users/q284340/Agentic/coding/docs/knowledge-management/graph-sync.md
-- Processing Time: 28ms
+- Processing Time: 1ms
 
 ---
 
@@ -122,7 +122,7 @@
 
 ### Prompt Set: [ps_1761209090963](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761209090963)
 
-**Time Range**: 1761209090963 → 1761593244526<br>
+**Time Range**: 1761209090963 → 1762756511672<br>
 **LSL File**: [2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1000-1100_g9b30a_from-curriculum-alignment.md#ps_1761209090963)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -134,7 +134,7 @@
 - Decision: local
 - Confidence: 0.02
 - Reasoning: Majority of write operations target local project: /Users/q284340/Agentic/curriculum-alignment/.gitignore, /Users/q284340/Agentic/nano-degree/.gitignore
-- Processing Time: 21ms
+- Processing Time: 0ms
 
 ✅ **Layer 2 (keyword)**
 - Decision: coding

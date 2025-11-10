@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-17_1800-1900_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-27T19:27:25.032Z<br>
+**Generated**: 2025-10-17T18:00:00.000Z<br>
 **Decisions in Window**: 1
 
 ---
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1760716986453](../../../history/2025-10-17_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1760716986453)
 
-**Time Range**: 1760716986453 → 1761804567845<br>
+**Time Range**: 1760716986453 → 1762756508880<br>
 **LSL File**: [2025-10-17_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-17_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1760716986453)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>

@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-23_1600-1700_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-23T14:32:23.309Z<br>
+**Generated**: 2025-10-23T16:00:00.000Z<br>
 **Decisions in Window**: 2
 
 ---
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1761229501098](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229501098)
 
-**Time Range**: 1761229501098 → 1761593227745<br>
+**Time Range**: 1761229501098 → 1762756510813<br>
 **LSL File**: [2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229501098)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -46,7 +46,7 @@
 
 ### Prompt Set: [ps_1761229928999](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229928999)
 
-**Time Range**: 1761229928999 → 1761593227745<br>
+**Time Range**: 1761229928999 → 1762756510813<br>
 **LSL File**: [2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-23_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1761229928999)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>

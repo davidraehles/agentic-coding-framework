@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-14_1600-1700_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-27T19:27:25.035Z<br>
+**Generated**: 2025-10-14T16:00:00.000Z<br>
 **Decisions in Window**: 2
 
 ---
@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 0ms
+- **Average Processing Time**: 1ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1760450835357](../../../history/2025-10-14_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1760450835357)
 
-**Time Range**: 1760450835357 → 1761804567869<br>
+**Time Range**: 1760450835357 → 1762756508906<br>
 **LSL File**: [2025-10-14_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-14_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1760450835357)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -46,7 +46,7 @@
 
 ### Prompt Set: [ps_1760451196844](../../../history/2025-10-14_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1760451196844)
 
-**Time Range**: 1760451196844 → 1761804567869<br>
+**Time Range**: 1760451196844 → 1762756508906<br>
 **LSL File**: [2025-10-14_1600-1700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-14_1600-1700_g9b30a_from-curriculum-alignment.md#ps_1760451196844)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -58,7 +58,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/scripts/launch-claude.sh, /Users/q284340/Agentic/coding/scripts/psm-session-cleanup.js, /Users/q284340/Agentic/coding/scripts/psm-register-session.js
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 

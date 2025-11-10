@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-26_0700-0800_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-30T16:38:42.577Z<br>
+**Generated**: 2025-10-26T07:00:00.000Z<br>
 **Decisions in Window**: 1
 
 ---
@@ -14,38 +14,32 @@
 - **Classified as CODING**: 1 (100%)
 - **Classified as LOCAL**: 0 (0%)
 - **[Layer 0 (Session Filter) Decisions](#layer-0-session-filter)**: 0
-- **[Layer 1 (Path) Decisions](#layer-1-path)**: 0
-- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 1
+- **[Layer 1 (Path) Decisions](#layer-1-path)**: 1
+- **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
 - **Average Processing Time**: 0ms
 
 ---
 
-## Layer 2: Keyword
+## Layer 1: Path
 
 **Decisions**: 1
 
-### Prompt Set: [ps_2025-10-26T06:52:45.292Z](../../../history/2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-26T06:52:45.292Z)
+### Prompt Set: [ps_1761461565292](../../../history/2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761461565292)
 
-**Time Range**: 2025-10-26T06:52:45.292Z → 2025-10-26T06:52:48.111Z<br>
-**LSL File**: [2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md#ps_2025-10-26T06:52:45.292Z)<br>
+**Time Range**: 1761461565292 → 1762756511454<br>
+**LSL File**: [2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-26_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761461565292)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
-**Final Classification**: ✅ CODING (confidence: 0.5875)
+**Final Classification**: ✅ CODING (confidence: 0.95)
 
 #### Layer-by-Layer Trace
 
-❌ **Layer 1 (path)**
-- Decision: local
-- Confidence: 0.02
-- Reasoning: Majority (100.0%) of file operations target local project: /mcp-server-semantic-analysis/docs/images/tool-overview.png, /mcp-server-semantic-analysis/docs/images/mcp-server-architecture.png, /mcp-server-semantic-analysis/docs/images/agent-coordination-flow.png
-- Processing Time: 0ms
-
-✅ **Layer 2 (keyword)**
+✅ **Layer 1 (path)**
 - Decision: coding
-- Confidence: 0.5875
-- Reasoning: Keyword analysis: 2 matches, score: 6/1
+- Confidence: 0.98
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/puml/tool-overview.puml, /Users/q284340/Agentic/coding/integrations/mcp-server-semantic-analysis/docs/puml/agent-coordination-flow.puml
 - Processing Time: 0ms
 
 ---

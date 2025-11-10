@@ -1,9 +1,9 @@
 # Classification Decision Log (Foreign/Coding)
 
-**Time Window**: 2025-10-25_1800-1900_g9b30a<br>
+**Time Window**: 2025-10-30_0800-0900_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-25T18:00:00.000Z<br>
+**Generated**: 2025-10-30T08:00:00.000Z<br>
 **Decisions in Window**: 2
 
 ---
@@ -26,10 +26,10 @@
 
 **Decisions**: 2
 
-### Prompt Set: [ps_1761410362195](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761410362195)
+### Prompt Set: [ps_1761808808639](../../../history/2025-10-30_0800-0900_g9b30a_from-curriculum-alignment.md#ps_1761808808639)
 
-**Time Range**: 1761410362195 → 1762756511387<br>
-**LSL File**: [2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761410362195)<br>
+**Time Range**: 1761808808639 → 1762756508664<br>
+**LSL File**: [2025-10-30_0800-0900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-30_0800-0900_g9b30a_from-curriculum-alignment.md#ps_1761808808639)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
 **Final Classification**: ✅ CODING (confidence: 0.95)
@@ -39,15 +39,15 @@
 ✅ **Layer 1 (path)**
 - Decision: coding
 - Confidence: 0.98
-- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/presentation/puml/lsl-architecture.puml
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/presentation/puml/memory-visualizer-components.puml
 - Processing Time: 0ms
 
 ---
 
-### Prompt Set: [ps_1761411472163](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761411472163)
+### Prompt Set: [ps_1761809382519](../../../history/2025-10-30_0800-0900_g9b30a_from-curriculum-alignment.md#ps_1761809382519)
 
-**Time Range**: 1761411472163 → 1762756511387<br>
-**LSL File**: [2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-25_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1761411472163)<br>
+**Time Range**: 1761809382519 → 1762756508664<br>
+**LSL File**: [2025-10-30_0800-0900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-30_0800-0900_g9b30a_from-curriculum-alignment.md#ps_1761809382519)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
 **Final Classification**: ✅ CODING (confidence: 0.95)
@@ -57,7 +57,7 @@
 ✅ **Layer 1 (path)**
 - Decision: coding
 - Confidence: 0.98
-- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/presentation/puml/unified-semantic-architecture.puml
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/presentation/puml/memory-visualizer-components.puml
 - Processing Time: 0ms
 
 ---

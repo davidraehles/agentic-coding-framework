@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-26_1300-1400_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-27T19:27:25.071Z<br>
+**Generated**: 2025-10-26T13:00:00.000Z<br>
 **Decisions in Window**: 1
 
 ---
@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 12ms
+- **Average Processing Time**: 3ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1761480011354](../../../history/2025-10-26_1300-1400_g9b30a_from-curriculum-alignment.md#ps_1761480011354)
 
-**Time Range**: 1761480011354 → 1761593228473<br>
+**Time Range**: 1761480011354 → 1762756511455<br>
 **LSL File**: [2025-10-26_1300-1400_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-26_1300-1400_g9b30a_from-curriculum-alignment.md#ps_1761480011354)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -40,7 +40,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/integrations/memory-visualizer/README.md
-- Processing Time: 12ms
+- Processing Time: 3ms
 
 ---
 

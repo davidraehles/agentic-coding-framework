@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-21_0600-0700_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-21T04:28:30.455Z<br>
+**Generated**: 2025-10-21T06:00:00.000Z<br>
 **Decisions in Window**: 1
 
 ---
@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 1
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 22ms
+- **Average Processing Time**: 29ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1761020879420](../../../history/2025-10-21_0600-0700_g9b30a_from-curriculum-alignment.md#ps_1761020879420)
 
-**Time Range**: 1761020879420 → 1761593223888<br>
+**Time Range**: 1761020879420 → 1762756507969<br>
 **LSL File**: [2025-10-21_0600-0700_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-21_0600-0700_g9b30a_from-curriculum-alignment.md#ps_1761020879420)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -52,7 +52,7 @@
 - Decision: coding
 - Confidence: 0.56805368
 - Reasoning: Semantic similarity favors coding (coding_lsl=0.555, nano_degree=0.529, curriculum_alignment=0.508, coding_infrastructure=0.503)
-- Processing Time: 22ms
+- Processing Time: 29ms
 
 ---
 

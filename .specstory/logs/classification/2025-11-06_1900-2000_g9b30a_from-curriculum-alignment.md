@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 1ms
+- **Average Processing Time**: 0ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1762452414267](../../../history/2025-11-06_1900-2000_g9b30a_from-curriculum-alignment.md#ps_1762452414267)
 
-**Time Range**: 2025-11-06T18:06:54.267Z → 2025-11-06T18:06:55.818Z<br>
+**Time Range**: 1762452414267 → 1762756509916<br>
 **LSL File**: [2025-11-06_1900-2000_g9b30a_from-curriculum-alignment.md](../../../history/2025-11-06_1900-2000_g9b30a_from-curriculum-alignment.md#ps_1762452414267)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -39,8 +39,8 @@
 ✅ **Layer 1 (path)**
 - Decision: coding
 - Confidence: 0.98
-- Reasoning: Majority (100.0%) of file operations target coding repo: 11/3/2025, 11/4/2025, 11/5/2025, 11/6/2025
-- Processing Time: 1ms
+- Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/integrations/mcp-constraint-monitor/dashboard/components/constraint-dashboard.tsx
+- Processing Time: 0ms
 
 ---
 

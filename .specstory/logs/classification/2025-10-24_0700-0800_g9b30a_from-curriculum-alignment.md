@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-24_0700-0800_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-24T05:13:16.825Z<br>
+**Generated**: 2025-10-24T07:00:00.000Z<br>
 **Decisions in Window**: 2
 
 ---
@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 1ms
+- **Average Processing Time**: 0ms
 
 ---
 
@@ -40,13 +40,13 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/docs/presentation/puml/_presentation-style.puml, /Users/q284340/Agentic/coding/docs/presentation/puml/cross-project-knowledge-flow.puml, /Users/q284340/Agentic/coding/.constraint-monitor.yaml
-- Processing Time: 1ms
+- Processing Time: 0ms
 
 ---
 
 ### Prompt Set: [ps_1761283678775](../../../history/2025-10-24_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761283678775)
 
-**Time Range**: 1761283678775 → 1761593227746<br>
+**Time Range**: 1761283678775 → 1762756510813<br>
 **LSL File**: [2025-10-24_0700-0800_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-24_0700-0800_g9b30a_from-curriculum-alignment.md#ps_1761283678775)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>

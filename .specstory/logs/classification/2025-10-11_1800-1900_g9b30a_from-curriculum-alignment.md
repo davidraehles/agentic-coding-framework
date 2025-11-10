@@ -3,7 +3,7 @@
 **Time Window**: 2025-10-11_1800-1900_g9b30a<br>
 **Project**: curriculum-alignment<br>
 **Target**: CODING<br>
-**Generated**: 2025-10-27T19:27:25.031Z<br>
+**Generated**: 2025-10-11T18:00:00.000Z<br>
 **Decisions in Window**: 1
 
 ---
@@ -18,7 +18,7 @@
 - **[Layer 2 (Keyword) Decisions](#layer-2-keyword)**: 0
 - **[Layer 3 (Embedding) Decisions](#layer-3-embedding)**: 0
 - **[Layer 4 (Semantic) Decisions](#layer-4-semantic)**: 0
-- **Average Processing Time**: 0ms
+- **Average Processing Time**: 1ms
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Prompt Set: [ps_1760198497306](../../../history/2025-10-11_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1760198497306)
 
-**Time Range**: 1760198497306 → 1761804567686<br>
+**Time Range**: 1760198497306 → 1762756508585<br>
 **LSL File**: [2025-10-11_1800-1900_g9b30a_from-curriculum-alignment.md](../../../history/2025-10-11_1800-1900_g9b30a_from-curriculum-alignment.md#ps_1760198497306)<br>
 **LSL Lines**: 0-0<br>
 **Target**: 🌍 FOREIGN (coding)<br>
@@ -40,7 +40,7 @@
 - Decision: coding
 - Confidence: 0.98
 - Reasoning: Majority of write operations target coding repo: /Users/q284340/Agentic/coding/integrations/mcp-constraint-monitor/src/engines/semantic-validator.js, /Users/q284340/Agentic/coding/integrations/mcp-constraint-monitor/src/engines/constraint-engine.js, /Users/q284340/Agentic/coding/integrations/mcp-constraint-monitor/.constraint-monitor.yaml
-- Processing Time: 0ms
+- Processing Time: 1ms
 
 ---
 
