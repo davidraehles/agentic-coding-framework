@@ -40,6 +40,26 @@ const CODING_DIR = path.resolve(SCRIPT_DIR, '..');
 const execAsync = promisify(exec);
 const psm = new ProcessStateManager();
 
+// Parse CLI arguments for service control
+const args = process.argv.slice(2);
+const SERVICE_FLAGS = {
+  skipVkb: args.includes('--no-vkb'),
+  skipConstraints: args.includes('--no-constraints'),
+  skipTranscript: args.includes('--no-transcript'),
+  skipLogging: args.includes('--no-logging'),
+  skipHealth: args.includes('--no-health')
+};
+
+if (Object.values(SERVICE_FLAGS).some(Boolean)) {
+  console.log('🔧 Service Configuration:');
+  if (SERVICE_FLAGS.skipVkb) console.log('   - VKB Server disabled (--no-vkb)');
+  if (SERVICE_FLAGS.skipConstraints) console.log('   - Constraint Monitor disabled (--no-constraints)');
+  if (SERVICE_FLAGS.skipTranscript) console.log('   - Transcript Monitor disabled (--no-transcript)');
+  if (SERVICE_FLAGS.skipLogging) console.log('   - Live Logging disabled (--no-logging)');
+  if (SERVICE_FLAGS.skipHealth) console.log('   - Health Monitoring disabled (--no-health)');
+  console.log('');
+}
+
 // Service configurations
 const SERVICE_CONFIGS = {
   transcriptMonitor: {
@@ -504,46 +524,54 @@ async function startAllServices() {
   console.log('📋 Starting REQUIRED services (Live Logging System)...');
   console.log('');
 
-  try {
-    const transcriptResult = await startServiceWithRetry(
-      SERVICE_CONFIGS.transcriptMonitor.name,
-      SERVICE_CONFIGS.transcriptMonitor.startFn,
-      SERVICE_CONFIGS.transcriptMonitor.healthCheckFn,
-      {
-        required: SERVICE_CONFIGS.transcriptMonitor.required,
-        maxRetries: SERVICE_CONFIGS.transcriptMonitor.maxRetries,
-        timeout: SERVICE_CONFIGS.transcriptMonitor.timeout
-      }
-    );
-    results.successful.push(transcriptResult);
-    await registerWithPSM(transcriptResult, 'scripts/enhanced-transcript-monitor.js');
-  } catch (error) {
-    results.failed.push({
-      serviceName: SERVICE_CONFIGS.transcriptMonitor.name,
-      error: error.message,
-      required: true
-    });
+  if (!SERVICE_FLAGS.skipTranscript) {
+    try {
+      const transcriptResult = await startServiceWithRetry(
+        SERVICE_CONFIGS.transcriptMonitor.name,
+        SERVICE_CONFIGS.transcriptMonitor.startFn,
+        SERVICE_CONFIGS.transcriptMonitor.healthCheckFn,
+        {
+          required: SERVICE_CONFIGS.transcriptMonitor.required,
+          maxRetries: SERVICE_CONFIGS.transcriptMonitor.maxRetries,
+          timeout: SERVICE_CONFIGS.transcriptMonitor.timeout
+        }
+      );
+      results.successful.push(transcriptResult);
+      await registerWithPSM(transcriptResult, 'scripts/enhanced-transcript-monitor.js');
+    } catch (error) {
+      results.failed.push({
+        serviceName: SERVICE_CONFIGS.transcriptMonitor.name,
+        error: error.message,
+        required: true
+      });
+    }
+  } else {
+    console.log('⏭️  Skipping Transcript Monitor (--no-transcript)');
   }
 
-  try {
-    const coordinatorResult = await startServiceWithRetry(
-      SERVICE_CONFIGS.liveLoggingCoordinator.name,
-      SERVICE_CONFIGS.liveLoggingCoordinator.startFn,
-      SERVICE_CONFIGS.liveLoggingCoordinator.healthCheckFn,
-      {
-        required: SERVICE_CONFIGS.liveLoggingCoordinator.required,
-        maxRetries: SERVICE_CONFIGS.liveLoggingCoordinator.maxRetries,
-        timeout: SERVICE_CONFIGS.liveLoggingCoordinator.timeout
-      }
-    );
-    results.successful.push(coordinatorResult);
-    await registerWithPSM(coordinatorResult, 'scripts/live-logging-coordinator.js');
-  } catch (error) {
-    results.failed.push({
-      serviceName: SERVICE_CONFIGS.liveLoggingCoordinator.name,
-      error: error.message,
-      required: true
-    });
+  if (!SERVICE_FLAGS.skipLogging) {
+    try {
+      const coordinatorResult = await startServiceWithRetry(
+        SERVICE_CONFIGS.liveLoggingCoordinator.name,
+        SERVICE_CONFIGS.liveLoggingCoordinator.startFn,
+        SERVICE_CONFIGS.liveLoggingCoordinator.healthCheckFn,
+        {
+          required: SERVICE_CONFIGS.liveLoggingCoordinator.required,
+          maxRetries: SERVICE_CONFIGS.liveLoggingCoordinator.maxRetries,
+          timeout: SERVICE_CONFIGS.liveLoggingCoordinator.timeout
+        }
+      );
+      results.successful.push(coordinatorResult);
+      await registerWithPSM(coordinatorResult, 'scripts/live-logging-coordinator.js');
+    } catch (error) {
+      results.failed.push({
+        serviceName: SERVICE_CONFIGS.liveLoggingCoordinator.name,
+        error: error.message,
+        required: true
+      });
+    }
+  } else {
+    console.log('⏭️  Skipping Live Logging Coordinator (--no-logging)');
   }
 
   console.log('');
@@ -552,85 +580,97 @@ async function startAllServices() {
   console.log('🔵 Starting OPTIONAL services (graceful degradation enabled)...');
   console.log('');
 
-  const vkbResult = await startServiceWithRetry(
-    SERVICE_CONFIGS.vkbServer.name,
-    SERVICE_CONFIGS.vkbServer.startFn,
-    SERVICE_CONFIGS.vkbServer.healthCheckFn,
-    {
-      required: SERVICE_CONFIGS.vkbServer.required,
-      maxRetries: SERVICE_CONFIGS.vkbServer.maxRetries,
-      timeout: SERVICE_CONFIGS.vkbServer.timeout
-    }
-  );
+  if (!SERVICE_FLAGS.skipVkb) {
+    const vkbResult = await startServiceWithRetry(
+      SERVICE_CONFIGS.vkbServer.name,
+      SERVICE_CONFIGS.vkbServer.startFn,
+      SERVICE_CONFIGS.vkbServer.healthCheckFn,
+      {
+        required: SERVICE_CONFIGS.vkbServer.required,
+        maxRetries: SERVICE_CONFIGS.vkbServer.maxRetries,
+        timeout: SERVICE_CONFIGS.vkbServer.timeout
+      }
+    );
 
-  if (vkbResult.status === 'success') {
-    results.successful.push(vkbResult);
-    await registerWithPSM(vkbResult, 'lib/vkb-server/cli.js');
+    if (vkbResult.status === 'success') {
+      results.successful.push(vkbResult);
+      await registerWithPSM(vkbResult, 'lib/vkb-server/cli.js');
+    } else {
+      results.degraded.push(vkbResult);
+    }
   } else {
-    results.degraded.push(vkbResult);
+    console.log('⏭️  Skipping VKB Server (--no-vkb)');
   }
 
   console.log('');
 
   // 3. OPTIONAL: Constraint Monitor
-  const constraintResult = await startServiceWithRetry(
-    SERVICE_CONFIGS.constraintMonitor.name,
-    SERVICE_CONFIGS.constraintMonitor.startFn,
-    SERVICE_CONFIGS.constraintMonitor.healthCheckFn,
-    {
-      required: SERVICE_CONFIGS.constraintMonitor.required,
-      maxRetries: SERVICE_CONFIGS.constraintMonitor.maxRetries,
-      timeout: SERVICE_CONFIGS.constraintMonitor.timeout
-    }
-  );
+  if (!SERVICE_FLAGS.skipConstraints) {
+    const constraintResult = await startServiceWithRetry(
+      SERVICE_CONFIGS.constraintMonitor.name,
+      SERVICE_CONFIGS.constraintMonitor.startFn,
+      SERVICE_CONFIGS.constraintMonitor.healthCheckFn,
+      {
+        required: SERVICE_CONFIGS.constraintMonitor.required,
+        maxRetries: SERVICE_CONFIGS.constraintMonitor.maxRetries,
+        timeout: SERVICE_CONFIGS.constraintMonitor.timeout
+      }
+    );
 
-  if (constraintResult.status === 'success') {
-    results.successful.push(constraintResult);
-    // No PSM registration for Docker-based service
+    if (constraintResult.status === 'success') {
+      results.successful.push(constraintResult);
+      // No PSM registration for Docker-based service
+    } else {
+      results.degraded.push(constraintResult);
+    }
   } else {
-    results.degraded.push(constraintResult);
+    console.log('⏭️  Skipping Constraint Monitor (--no-constraints)');
   }
 
   console.log('');
 
   // 4. OPTIONAL: Health Verifier
-  const healthVerifierResult = await startServiceWithRetry(
-    SERVICE_CONFIGS.healthVerifier.name,
-    SERVICE_CONFIGS.healthVerifier.startFn,
-    SERVICE_CONFIGS.healthVerifier.healthCheckFn,
-    {
-      required: SERVICE_CONFIGS.healthVerifier.required,
-      maxRetries: SERVICE_CONFIGS.healthVerifier.maxRetries,
-      timeout: SERVICE_CONFIGS.healthVerifier.timeout
+  if (!SERVICE_FLAGS.skipHealth) {
+    const healthVerifierResult = await startServiceWithRetry(
+      SERVICE_CONFIGS.healthVerifier.name,
+      SERVICE_CONFIGS.healthVerifier.startFn,
+      SERVICE_CONFIGS.healthVerifier.healthCheckFn,
+      {
+        required: SERVICE_CONFIGS.healthVerifier.required,
+        maxRetries: SERVICE_CONFIGS.healthVerifier.maxRetries,
+        timeout: SERVICE_CONFIGS.healthVerifier.timeout
+      }
+    );
+
+    if (healthVerifierResult.status === 'success') {
+      results.successful.push(healthVerifierResult);
+      await registerWithPSM(healthVerifierResult, 'scripts/health-verifier.js');
+    } else {
+      results.degraded.push(healthVerifierResult);
     }
-  );
 
-  if (healthVerifierResult.status === 'success') {
-    results.successful.push(healthVerifierResult);
-    await registerWithPSM(healthVerifierResult, 'scripts/health-verifier.js');
-  } else {
-    results.degraded.push(healthVerifierResult);
-  }
+    console.log('');
 
-  console.log('');
+    // 5. OPTIONAL: StatusLine Health Monitor
+    const statuslineHealthResult = await startServiceWithRetry(
+      SERVICE_CONFIGS.statuslineHealthMonitor.name,
+      SERVICE_CONFIGS.statuslineHealthMonitor.startFn,
+      SERVICE_CONFIGS.statuslineHealthMonitor.healthCheckFn,
+      {
+        required: SERVICE_CONFIGS.statuslineHealthMonitor.required,
+        maxRetries: SERVICE_CONFIGS.statuslineHealthMonitor.maxRetries,
+        timeout: SERVICE_CONFIGS.statuslineHealthMonitor.timeout
+      }
+    );
 
-  // 5. OPTIONAL: StatusLine Health Monitor
-  const statuslineHealthResult = await startServiceWithRetry(
-    SERVICE_CONFIGS.statuslineHealthMonitor.name,
-    SERVICE_CONFIGS.statuslineHealthMonitor.startFn,
-    SERVICE_CONFIGS.statuslineHealthMonitor.healthCheckFn,
-    {
-      required: SERVICE_CONFIGS.statuslineHealthMonitor.required,
-      maxRetries: SERVICE_CONFIGS.statuslineHealthMonitor.maxRetries,
-      timeout: SERVICE_CONFIGS.statuslineHealthMonitor.timeout
+    if (statuslineHealthResult.status === 'success') {
+      results.successful.push(statuslineHealthResult);
+      await registerWithPSM(statuslineHealthResult, 'scripts/statusline-health-monitor.js');
+    } else {
+      results.degraded.push(statuslineHealthResult);
     }
-  );
-
-  if (statuslineHealthResult.status === 'success') {
-    results.successful.push(statuslineHealthResult);
-    await registerWithPSM(statuslineHealthResult, 'scripts/statusline-health-monitor.js');
   } else {
-    results.degraded.push(statuslineHealthResult);
+    console.log('⏭️  Skipping Health Monitoring (--no-health)');
   }
 
   console.log('');
