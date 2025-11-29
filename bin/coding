@@ -106,6 +106,10 @@ while [[ $# -gt 0 ]]; do
     --lsl-validate)
       exec node "$SCRIPT_DIR/../tests/integration/full-system-validation.test.js"
       ;;
+    board|consensus)
+      shift
+      exec node "$SCRIPT_DIR/../scripts/run-board-meeting.js" "$@"
+      ;;
     --no-vkb|--no-constraints|--no-transcript|--no-logging|--no-health)
       SERVICE_ARGS+=("$1")
       shift
