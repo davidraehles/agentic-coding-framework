@@ -18,7 +18,7 @@ if [ "$ROBUST_MODE" = "true" ]; then
     echo ""
 
     # Use the Node.js-based robust service starter
-    exec node "$SCRIPT_DIR/scripts/start-services-robust.js"
+    exec node "$SCRIPT_DIR/scripts/start-services-robust.js" "$@"
 fi
 
 # LEGACY MODE (kept for backward compatibility, disable with ROBUST_MODE=false)
