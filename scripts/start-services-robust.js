@@ -208,7 +208,7 @@ const SERVICE_CONFIGS = {
       }
 
       try {
-        await execAsync('docker-compose up -d', {
+        await execAsync('docker compose up -d', {
           cwd: constraintDir,
           timeout: 60000
         });
@@ -219,7 +219,7 @@ const SERVICE_CONFIGS = {
       console.log('[ConstraintMonitor] Docker containers started successfully');
       console.log('[ConstraintMonitor] Web services (API + Dashboard) managed by Global Service Coordinator');
 
-      return {
+        return {
         service: 'constraint-monitor-docker',
         mode: 'docker-compose',
         containers: ['redis', 'qdrant']
