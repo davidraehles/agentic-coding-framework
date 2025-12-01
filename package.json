@@ -1,11 +1,12 @@
 {
-  "name": "agent-agnostic-coding-tools",
-  "version": "2.0.0",
-  "description": "Unified coding tools that work with both Claude Code (MCP) and GitHub CoPilot (fallbacks)",
+  "name": "antigravity-coding-tools",
+  "version": "2.1.0",
+  "description": "Antigravity Coding Tools - Agentic, Premium, Powerful.",
   "main": "lib/agent-registry.js",
   "type": "module",
   "bin": {
-    "coding": "./bin/coding"
+    "coding": "./bin/coding",
+    "antigravity": "./bin/coding"
   },
   "scripts": {
     "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",

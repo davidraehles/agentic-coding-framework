@@ -96,29 +96,6 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --verbose)
-      VERBOSE=true
-      shift
-      ;;
-    --lsl-status)
-      exec node "$SCRIPT_DIR/../scripts/live-logging-coordinator.js" --status
-      ;;
-    --lsl-validate)
-      exec node "$SCRIPT_DIR/../tests/integration/full-system-validation.test.js"
-      ;;
-    --help|-h)
-      show_help
-      exit 0
-      ;;
-    *)
-      ARGS+=("$1")
-      shift
-      ;;
-  esac
-done
-
-# Script directory already defined above
-
-# Detect Node.js
 if ! command -v node &> /dev/null; then
   error "Node.js is required but not found in PATH"
 fi
