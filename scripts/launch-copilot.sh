@@ -111,6 +111,9 @@ start_http_adapter() {
   fi
 }
 
+# Reconstruct SERVICE_ARGS array from env var
+SERVICE_ARGS=($SERVICE_ARGS_STR)
+
 # Use target project directory if specified, otherwise use coding repo
 if [ -n "$CODING_PROJECT_DIR" ]; then
   TARGET_PROJECT_DIR="$CODING_PROJECT_DIR"
@@ -148,7 +151,8 @@ if ! command -v node &> /dev/null; then
 fi
 
 # Start services using the simple startup script (from coding repo)
-if ! "$CODING_REPO/start-services.sh"; then
+# Forward any service-related arguments
+if ! "$CODING_REPO/start-services.sh" "${SERVICE_ARGS[@]}"; then
   log "Error: Failed to start services"
   exit 1
 fi

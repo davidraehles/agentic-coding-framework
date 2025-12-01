@@ -9,6 +9,7 @@ set -e
 AGENT=""
 FORCE_AGENT=""
 ARGS=()
+SERVICE_ARGS=()
 VERBOSE=false
 CONFIG_FILE=""
 PROJECT_DIR=""
@@ -105,6 +106,14 @@ while [[ $# -gt 0 ]]; do
     --lsl-validate)
       exec node "$SCRIPT_DIR/../tests/integration/full-system-validation.test.js"
       ;;
+    board|consensus)
+      shift
+      exec node "$SCRIPT_DIR/../scripts/run-board-meeting.js" "$@"
+      ;;
+    --no-vkb|--no-constraints|--no-transcript|--no-logging|--no-health)
+      SERVICE_ARGS+=("$1")
+      shift
+      ;;
     --help|-h)
       show_help
       exit 0
@@ -177,6 +186,8 @@ export CODING_AGENT="$AGENT"
 export CODING_TOOLS_PATH="$SCRIPT_DIR/.."
 export CODING_REPO="$SCRIPT_DIR/.."
 export CODING_PROJECT_DIR="$PROJECT_DIR"
+# Pass service args as a space-separated string
+export SERVICE_ARGS_STR="${SERVICE_ARGS[*]}"
 
 # Launch appropriate agent
 case "$AGENT" in
